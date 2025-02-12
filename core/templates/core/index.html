@@ -1,0 +1,16 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Página Principal{% endblock %}
+
+{% block content %}
+<div class="jumbotron text-center">
+    <p>
+        {% if user.is_authenticated %}
+            <a class="btn btn-primary btn-lg" href="{% url 'dashboard' %}" role="button">Ir al Dashboard</a>
+        {% else %}
+            <a class="btn btn-primary btn-lg" href="{% url 'login' %}" role="button">Iniciar Sesión</a>
+            <a class="btn btn-secondary btn-lg" href="{% url 'register' %}" role="button">Registrarse</a>
+        {% endif %}
+    </p>
+</div>
+{% endblock %}

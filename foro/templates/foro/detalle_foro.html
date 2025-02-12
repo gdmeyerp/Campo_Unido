@@ -1,0 +1,17 @@
+{% extends 'core/dashboard.html' %}
+
+{% block content %}
+  <h2>{{ foro.titulo_foro }}</h2>
+  <p>{{ foro.descripcion_foro }}</p>
+
+  <h3>Publicaciones en este Foro</h3>
+  <ul>
+    {% for publicacion in foro.publicacionforo_set.all %}
+      <li><a href="{% url 'foro:detalle_publicacion' publicacion.pk %}">{{ publicacion.titulo_publicacion }}</a></li>
+    {% endfor %}
+  </ul>
+
+  <a href="{% url 'foro:crear_publicacion' foro.pk %}">Crear nueva publicación</a>
+  <a href="{% url 'foro:editar_foro' foro.pk %}">Editar Foro</a>
+  <a href="{% url 'foro:eliminar_foro' foro.pk %}">Eliminar Foro</a>
+{% endblock %}

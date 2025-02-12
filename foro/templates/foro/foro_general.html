@@ -1,0 +1,22 @@
+{% extends 'core/dashboard.html' %}
+
+{% block content %}
+  <h2>Foro General</h2>
+  <p>Explora las diferentes categorías y participa en las discusiones.</p>
+
+  <div class="categorias-foro">
+    {% for categoria in categorias %}
+      <div class="categoria">
+        <h3>{{ categoria.nombre_categoria }}</h3>
+        <p>{{ categoria.descripcion_categoria }}</p>
+        <ul>
+          {% for foro in categoria.foro_set.all %}
+            <li><a href="{% url 'foro:detalle_foro' foro.pk %}">{{ foro.titulo_foro }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endfor %}
+  </div>
+
+  <a href="{% url 'foro:crear_foro' %}" class="btn btn-primary">Crear un nuevo foro</a>
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends 'core/dashboard.html' %}
+
+{% block content %}
+  <h2>Editar Foro</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Guardar Cambios</button>
+  </form>
+  <a href="{% url 'foro:detalle_foro' object.pk %}">Cancelar</a>
+{% endblock %}

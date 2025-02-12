@@ -1,0 +1,18 @@
+{% extends 'core/dashboard.html' %}
+
+{% block content %}
+  <h2>{{ publicacion.titulo_publicacion }}</h2>
+  <p>{{ publicacion.contenido_publicacion }}</p>
+  <p>Publicado por: {{ publicacion.usuario }}</p>
+
+  <h3>Comentarios</h3>
+  <ul>
+    {% for comentario in publicacion.comentariopublicacion_set.all %}
+      <li>{{ comentario.contenido_comentario }} - <i>por {{ comentario.usuario }}</i></li>
+    {% endfor %}
+  </ul>
+
+  <a href="{% url 'foro:crear_comentario' publicacion.pk %}">Añadir comentario</a>
+  <a href="{% url 'foro:editar_publicacion' publicacion.pk %}">Editar Publicación</a>
+  <a href="{% url 'foro:eliminar_publicacion' publicacion.pk %}">Eliminar Publicación</a>
+{% endblock %}

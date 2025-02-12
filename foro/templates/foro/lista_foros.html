@@ -1,0 +1,11 @@
+{% extends 'core/dashboard.html' %}
+
+{% block content %}
+  <h2>Foros Disponibles</h2>
+  <ul>
+    {% for foro in foros %}
+      <li><a href="{% url 'foro:detalle_foro' foro.pk %}">{{ foro.titulo_foro }}</a></li>
+    {% endfor %}
+  </ul>
+  <a href="{% url 'foro:crear_foro' %}">Crear nuevo foro</a>
+{% endblock %}

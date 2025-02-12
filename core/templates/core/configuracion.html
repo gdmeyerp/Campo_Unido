@@ -1,0 +1,36 @@
+{% extends "core\dashboard.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Configuración de Usuario</h2>
+    <form method="post" action="{% url 'configuracion' %}">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="nombre" class="form-label">Nombre</label>
+            <input type="text" class="form-control" id="nombre" name="nombre" value="{{ user.first_name }}">
+        </div>
+
+        <div class="mb-3">
+            <label for="apellido" class="form-label">Apellido</label>
+            <input type="text" class="form-control" id="apellido" name="apellido" value="{{ user.last_name }}">
+        </div>
+
+        <div class="mb-3">
+            <label for="email" class="form-label">Correo Electrónico</label>
+            <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" readonly>
+        </div>
+
+        <div class="mb-3">
+            <label for="preferencias" class="form-label">Preferencias</label>
+            <textarea class="form-control" id="preferencias" name="preferencias" rows="3">{{ user.profile.preferencias }}</textarea>
+        </div>
+
+        <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="notificaciones" name="notificaciones" {% if user.profile.notificaciones_activas %}checked{% endif %}>
+            <label class="form-check-label" for="notificaciones">Recibir Notificaciones</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+    </form>
+</div>
+{% endblock %}

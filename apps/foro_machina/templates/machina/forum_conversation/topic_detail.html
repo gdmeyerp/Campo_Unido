@@ -1,0 +1,7 @@
+{% extends "machina/forum_conversation/topic_detail.html" %}
+{% load static %}
+
+{% block js %}
+{{ block.super }}
+<script src="{% static 'foro_machina/editor_fix.js' %}"></script>
+{% endblock %} 

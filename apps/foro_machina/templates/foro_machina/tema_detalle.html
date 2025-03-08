@@ -1,0 +1,265 @@
+{% extends "foro_machina/base_foro.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{{ topic.subject }} - {% trans "Foro Campo Unido" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ topic.subject }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'foro_machina:foro_detalle' topic.forum.id %}" class="btn btn-outline-secondary">
+                <span data-feather="arrow-left"></span>
+                {% trans "Volver al foro" %}
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        <div class="messages mb-4">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{% trans "Información del tema" %}</h5>
+                        <div>
+                            <span class="badge badge-primary">{{ topic.posts_count }} {% trans "respuestas" %}</span>
+                            <span class="badge badge-secondary ml-2">{{ topic.views_count }} {% trans "vistas" %}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p><strong>{% trans "Foro:" %}</strong> <a href="{% url 'foro_machina:foro_detalle' topic.forum.id %}">{{ topic.forum.name }}</a></p>
+                    <p><strong>{% trans "Creado por:" %}</strong> {{ topic.poster.username }} - {{ topic.created|date:"d/m/Y H:i" }}</p>
+                    <p><strong>{% trans "Último post:" %}</strong> {{ topic.last_post_on|date:"d/m/Y H:i" }}</p>
+                    
+                    {% if topic.tags.all %}
+                    <div class="topic-tags mt-2">
+                        <strong>{% trans "Etiquetas:" %}</strong>
+                        {% for tag in topic.tags.all %}
+                            <span class="badge badge-primary">{{ tag.name }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{% trans "Mensajes" %}</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% for post in posts %}
+                        <div class="post-container p-3 {% if not forloop.last %}border-bottom{% endif %}">
+                            <div class="d-flex">
+                                <div class="post-user mr-3 text-center" style="min-width: 120px;">
+                                    <div class="avatar mb-2">
+                                        {% if post.poster.perfilusuario.foto_perfil %}
+                                            <img src="{{ post.poster.perfilusuario.foto_perfil.url }}" alt="{{ post.poster.username }}" class="rounded-circle" width="64" height="64">
+                                        {% else %}
+                                            <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                                                {{ post.poster.username|first|upper }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="user-info">
+                                        <h6 class="mb-1">{{ post.poster.username }}</h6>
+                                        <small class="text-muted">{% trans "Posts:" %} {{ post.poster.posts_count }}</small>
+                                    </div>
+                                </div>
+                                <div class="post-content flex-grow-1">
+                                    <div class="post-header d-flex justify-content-between mb-2">
+                                        <h6 class="mb-0">{% if post.subject %}{{ post.subject }}{% else %}Re: {{ topic.subject }}{% endif %}</h6>
+                                        <small class="text-muted">{{ post.created|date:"d/m/Y H:i" }}</small>
+                                    </div>
+                                    <div class="post-body">
+                                        {{ post.content.rendered|safe }}
+                                        
+                                        {% if post.custom_attachments.exists %}
+                                        <div class="attachments mt-3">
+                                            <h6>{% trans "Archivos adjuntos:" %}</h6>
+                                            <div class="row">
+                                                {% for attachment in post.custom_attachments.all %}
+                                                    <div class="col-md-3 col-sm-4 col-6 mb-3">
+                                                        {% if attachment.mimetype|slice:":5" == "image" %}
+                                                            <a href="{{ attachment.file.url }}" target="_blank" class="d-block">
+                                                                <img src="{{ attachment.file.url }}" alt="{{ attachment.filename }}" class="img-fluid img-thumbnail">
+                                                            </a>
+                                                        {% else %}
+                                                            <a href="{{ attachment.file.url }}" target="_blank" class="attachment-file">
+                                                                <div class="card">
+                                                                    <div class="card-body text-center">
+                                                                        <i class="fas fa-file fa-2x mb-2"></i>
+                                                                        <p class="mb-0 small text-truncate">{{ attachment.filename }}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </a>
+                                                        {% endif %}
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if forloop.first and topic.attachments.exists %}
+                                        <div class="attachments mt-3">
+                                            <h6>{% trans "Archivos adjuntos del tema:" %}</h6>
+                                            <div class="row">
+                                                {% for attachment in topic.attachments.all %}
+                                                    {% if not attachment.post %}
+                                                    <div class="col-md-3 col-sm-4 col-6 mb-3">
+                                                        {% if attachment.mimetype|slice:":5" == "image" %}
+                                                            <a href="{{ attachment.file.url }}" target="_blank" class="d-block">
+                                                                <img src="{{ attachment.file.url }}" alt="{{ attachment.filename }}" class="img-fluid img-thumbnail">
+                                                            </a>
+                                                        {% else %}
+                                                            <a href="{{ attachment.file.url }}" target="_blank" class="attachment-file">
+                                                                <div class="card">
+                                                                    <div class="card-body text-center">
+                                                                        <i class="fas fa-file fa-2x mb-2"></i>
+                                                                        <p class="mb-0 small text-truncate">{{ attachment.filename }}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </a>
+                                                        {% endif %}
+                                                    </div>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="p-4 text-center">
+                            {% trans "No hay mensajes en este tema." %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario de respuesta -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">{% trans "Responder" %}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" action="">
+                        {% csrf_token %}
+                        <input type="hidden" name="subject" value="Re: {{ topic.subject }}">
+                        
+                        <div class="form-group">
+                            <label for="id_content">{{ post_form.content.label }}</label>
+                            {{ post_form.content }}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_attachment">{{ post_form.attachment.label }}</label>
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="id_attachment" name="attachment">
+                                <label class="custom-file-label" for="id_attachment">Seleccionar archivo</label>
+                            </div>
+                            <small class="form-text text-muted">Puedes adjuntar un archivo (imagen, documento, etc.) a tu respuesta.</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Enviar respuesta
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block css %}
+    {{ block.super }}
+    {{ post_form.media.css }}
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        .custom-file-input:focus ~ .custom-file-label {
+            border-color: #80bdff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        .custom-file-label::after {
+            content: "Buscar";
+        }
+    </style>
+{% endblock css %}
+
+{% block js %}
+    {{ block.super }}
+    {{ post_form.media.js }}
+    <script src="{% static 'foro_machina/editor_fix.js' %}"></script>
+    <script>
+        $(document).ready(function() {
+            // Mostrar el nombre del archivo seleccionado
+            $('.custom-file-input').on('change', function() {
+                var fileName = $(this).val().split('\\').pop();
+                $(this).next('.custom-file-label').html(fileName);
+                
+                // Vista previa de imágenes
+                var previewContainer = $('.image-previews');
+                previewContainer.empty();
+                
+                if (this.files && this.files[0]) {
+                    var file = this.files[0];
+                    if (file.type.match('image.*')) {
+                        var reader = new FileReader();
+                        reader.onload = function(e) {
+                            var img = $('<img class="img-thumbnail mr-2 mb-2" style="max-height: 150px;">');
+                            img.attr('src', e.target.result);
+                            previewContainer.append(img);
+                        }
+                        reader.readAsDataURL(file);
+                    } else {
+                        var fileInfo = $('<span class="badge badge-info mr-2 mb-2 p-2"></span>');
+                        fileInfo.text(file.name);
+                        previewContainer.append(fileInfo);
+                    }
+                }
+            });
+            
+            // Manejar el botón de carga
+            $('#upload-btn').on('click', function() {
+                $('.custom-file-input').click();
+            });
+            
+            // Abrir imágenes adjuntas en modal
+            $('.attachments a').on('click', function(e) {
+                var imgUrl = $(this).attr('href');
+                if (imgUrl.match(/\.(jpeg|jpg|gif|png)$/)) {
+                    e.preventDefault();
+                    var modal = $('<div class="modal fade" tabindex="-1" role="dialog"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Imagen adjunta</h5><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button></div><div class="modal-body text-center"><img src="' + imgUrl + '" class="img-fluid"></div></div></div></div>');
+                    modal.modal('show');
+                    modal.on('hidden.bs.modal', function() {
+                        $(this).remove();
+                    });
+                }
+            });
+        });
+    </script>
+{% endblock js %} 

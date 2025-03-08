@@ -1,0 +1,223 @@
+{% extends 'inventario/base.html' %}
+{% load static %}
+
+{% block title %}Pedidos a Proveedores - Campo Unido{% endblock %}
+
+{% block inventario_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Pedidos a Proveedores</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'inventario:crear_pedido' %}" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus"></i> Nuevo Pedido
+        </a>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="fas fa-filter mr-2"></i> Filtros
+    </div>
+    <div class="card-body">
+        <form method="get" class="row">
+            <div class="col-md-3 mb-3">
+                <label for="proveedor">Proveedor</label>
+                <select class="form-control select2" id="proveedor" name="proveedor">
+                    <option value="">Todos los proveedores</option>
+                    {% for p in proveedores %}
+                    <option value="{{ p.id }}" {% if request.GET.proveedor == p.id|stringformat:"i" %}selected{% endif %}>
+                        {{ p.nombre_proveedor }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label for="estado">Estado</label>
+                <select class="form-control" id="estado" name="estado">
+                    <option value="">Todos los estados</option>
+                    <option value="PENDIENTE" {% if request.GET.estado == 'PENDIENTE' %}selected{% endif %}>Pendiente</option>
+                    <option value="PARCIAL" {% if request.GET.estado == 'PARCIAL' %}selected{% endif %}>Recibido Parcialmente</option>
+                    <option value="RECIBIDO" {% if request.GET.estado == 'RECIBIDO' %}selected{% endif %}>Recibido</option>
+                    <option value="CANCELADO" {% if request.GET.estado == 'CANCELADO' %}selected{% endif %}>Cancelado</option>
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label for="fecha_desde">Fecha Desde</label>
+                <input type="text" class="form-control datepicker" id="fecha_desde" name="fecha_desde" value="{{ request.GET.fecha_desde|default:'' }}" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label for="fecha_hasta">Fecha Hasta</label>
+                <input type="text" class="form-control datepicker" id="fecha_hasta" name="fecha_hasta" value="{{ request.GET.fecha_hasta|default:'' }}" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Filtrar
+                </button>
+                <a href="{% url 'inventario:lista_pedidos' %}" class="btn btn-secondary">
+                    <i class="fas fa-undo"></i> Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabla de Pedidos -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-clipboard-list mr-2"></i> Pedidos</span>
+            <span class="badge badge-primary">{{ page_obj.paginator.count }} pedidos</span>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if pedidos %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Proveedor</th>
+                        <th>Fecha Pedido</th>
+                        <th>Fecha Entrega</th>
+                        <th>Estado</th>
+                        <th class="text-right">Total</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pedido in pedidos %}
+                    <tr>
+                        <td>{{ pedido.id }}</td>
+                        <td>
+                            <a href="{% url 'inventario:detalle_proveedor' pedido.proveedor.id %}">
+                                {{ pedido.proveedor.nombre_proveedor }}
+                            </a>
+                        </td>
+                        <td>{{ pedido.fecha_pedido|date:"d/m/Y" }}</td>
+                        <td>{{ pedido.fecha_entrega|date:"d/m/Y"|default:"-" }}</td>
+                        <td>
+                            <span class="badge {% if pedido.estado_pedido == 'PENDIENTE' %}badge-warning{% elif pedido.estado_pedido == 'PARCIAL' %}badge-info{% elif pedido.estado_pedido == 'RECIBIDO' %}badge-success{% else %}badge-danger{% endif %}">
+                                {{ pedido.get_estado_pedido_display }}
+                            </span>
+                        </td>
+                        <td class="text-right">{{ pedido.total|floatformat:2 }}</td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'inventario:detalle_pedido' pedido.id %}" class="btn btn-info" data-toggle="tooltip" title="Ver detalles">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'inventario:editar_pedido' pedido.id %}" class="btn btn-primary" data-toggle="tooltip" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% if pedido.estado_pedido == 'PENDIENTE' or pedido.estado_pedido == 'PARCIAL' %}
+                                <a href="{% url 'inventario:recibir_pedido' pedido.id %}" class="btn btn-success" data-toggle="tooltip" title="Recibir">
+                                    <i class="fas fa-check"></i>
+                                </a>
+                                {% endif %}
+                                {% if pedido.estado_pedido == 'PENDIENTE' %}
+                                <a href="{% url 'inventario:cancelar_pedido' pedido.id %}" class="btn btn-danger" data-toggle="tooltip" title="Cancelar">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginación -->
+        {% if is_paginated %}
+        <nav aria-label="Paginación de pedidos">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Primera">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Anterior">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Primera">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Anterior">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                    </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Siguiente">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Última">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Siguiente">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Última">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle mr-2"></i> No se encontraron pedidos con los criterios de búsqueda especificados.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script>
+        $(document).ready(function() {
+            // Inicializar select2 para los campos de selección
+            $('.select2').select2({
+                theme: 'bootstrap4'
+            });
+            
+            // Inicializar datepickers
+            $('.datepicker').datepicker({
+                format: 'yyyy-mm-dd',
+                autoclose: true,
+                todayHighlight: true
+            });
+        });
+    </script>
+{% endblock %} 

@@ -1,0 +1,133 @@
+{% extends 'db_explorer/base.html' %}
+{% load static %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item"><a href="{% url 'db_explorer:index' %}">Explorador de Base de Datos</a></li>
+<li class="breadcrumb-item"><a href="{% url 'db_explorer:model_list' app_label model %}">{{ verbose_name_plural }}</a></li>
+<li class="breadcrumb-item active">Visualización de Datos</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group mr-2">
+    <a href="{% url 'db_explorer:create_record' app_label model %}" class="btn btn-sm btn-success">
+        <i class="fas fa-plus"></i> Nuevo Registro
+    </a>
+    <a href="{% url 'db_explorer:model_list' app_label model %}" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-table"></i> Ver como Tabla
+    </a>
+    <a href="?export=csv" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-file-csv"></i> Exportar CSV
+    </a>
+    <a href="?export=json" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-file-code"></i> Exportar JSON
+    </a>
+</div>
+{% endblock %}
+
+{% block db_explorer_content %}
+<div class="container-fluid my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Visualización de {{ verbose_name_plural }}</h2>
+        <div class="btn-group">
+            <a href="{% url 'db_explorer:model_list' app_label model %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver a la lista
+            </a>
+        </div>
+    </div>
+
+    {% if error_message %}
+    <div class="alert alert-warning">
+        <h4 class="alert-heading">Aviso</h4>
+        <p>{{ error_message }}</p>
+    </div>
+    {% else %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Resumen de Datos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Estadística</th>
+                                    {% for column in columns %}
+                                    <th>{{ column }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat, values in summary_stats.items %}
+                                <tr>
+                                    <td><strong>{{ stat }}</strong></td>
+                                    {% for value in values %}
+                                    <td>{{ value }}</td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        {% if chart_pie_url %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Distribución por Categoría</h5>
+                </div>
+                <div class="card-body">
+                    <img src="{{ chart_pie_url }}" alt="Gráfico de distribución" class="img-fluid">
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if chart_bar_url %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Comparación de Valores</h5>
+                </div>
+                <div class="card-body">
+                    <img src="{{ chart_bar_url }}" alt="Gráfico de barras" class="img-fluid">
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if chart_line_url %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Tendencia</h5>
+                </div>
+                <div class="card-body">
+                    <img src="{{ chart_line_url }}" alt="Gráfico de línea" class="img-fluid">
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if correlation_matrix_url %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Matriz de Correlación</h5>
+                </div>
+                <div class="card-body">
+                    <img src="{{ correlation_matrix_url }}" alt="Matriz de correlación" class="img-fluid">
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

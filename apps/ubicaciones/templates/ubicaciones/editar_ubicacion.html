@@ -1,0 +1,383 @@
+{% extends "core/dashboard.html" %}
+{% load static %}
+
+{% block title %}Editar Ubicación - Campo Unido{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+        <h1 class="h2">Editar Ubicación</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'ubicaciones:mis_ubicaciones' %}" class="btn btn-outline-secondary">
+                <span data-feather="arrow-left"></span> Volver a Mis Ubicaciones
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Detalles de la Ubicación</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'ubicaciones:editar_ubicacion' ubicacion.id %}">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="id_nombre">Nombre de la ubicación *</label>
+                                    <input type="text" name="nombre" id="id_nombre" class="form-control" value="{{ ubicacion.nombre }}" required>
+                                    <small class="form-text text-muted">Por ejemplo: Mi Rancho, Casa de Campo, etc.</small>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="id_direccion">Dirección *</label>
+                                    <input type="text" name="direccion" id="id_direccion" class="form-control" value="{{ ubicacion.direccion }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="id_pais">País *</label>
+                                    <select name="pais" id="id_pais" class="form-control" required>
+                                        <option value="">Seleccione un país</option>
+                                        {% for pais in paises %}
+                                            <option value="{{ pais.id }}" {% if pais.id == ubicacion.ciudad.estado.pais.id %}selected{% endif %}>{{ pais.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="id_estado">Estado/Provincia/Departamento *</label>
+                                    <select name="estado" id="id_estado" class="form-control" required>
+                                        <option value="{{ ubicacion.ciudad.estado.id }}">{{ ubicacion.ciudad.estado.nombre }}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="id_ciudad">Ciudad *</label>
+                                    <select name="ciudad" id="id_ciudad" class="form-control" required>
+                                        <option value="{{ ubicacion.ciudad.id }}">{{ ubicacion.ciudad.nombre }}</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="id_codigo_postal">Código Postal</label>
+                                    <input type="text" name="codigo_postal" id="id_codigo_postal" class="form-control" value="{{ ubicacion.codigo_postal|default:'' }}">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="id_latitud">Latitud</label>
+                                    <input type="number" name="latitud" id="id_latitud" class="form-control" step="0.0000001" value="{{ ubicacion.latitud|default:'' }}" placeholder="Ej: 4.7110">
+                                    <small class="form-text text-muted">Opcional. Puede dejar en blanco o hacer clic en el mapa.</small>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="id_longitud">Longitud</label>
+                                    <input type="number" name="longitud" id="id_longitud" class="form-control" step="0.0000001" value="{{ ubicacion.longitud|default:'' }}" placeholder="Ej: -74.0721">
+                                    <small class="form-text text-muted">Opcional. Puede dejar en blanco o hacer clic en el mapa.</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" name="es_principal" id="id_es_principal" class="custom-control-input" {% if ubicacion.es_principal %}checked{% endif %}>
+                                        <label class="custom-control-label" for="id_es_principal">Establecer como ubicación principal</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <div id="map" style="height: 300px;"></div>
+                                <small class="form-text text-muted text-center mt-2">Puede hacer clic en el mapa para actualizar la ubicación</small>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'ubicaciones:mis_ubicaciones' %}" class="btn btn-secondary">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <span data-feather="save"></span> Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block css %}
+<style>
+    #map {
+        width: 100%;
+        height: 300px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+    }
+    @media (max-width: 768px) {
+        #map {
+            height: 250px !important;
+        }
+    }
+    
+    /* Destacar campos requeridos */
+    .required-field label:after {
+        content: " *";
+        color: red;
+    }
+    
+    /* Estilos para errores */
+    .field-error {
+        border-color: red !important;
+    }
+    
+    .error-message {
+        color: red;
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar el mapa siguiendo la documentación oficial de Leaflet
+        var latitudInicial = '{{ ubicacion.latitud|default:"4.6097" }}';
+        var longitudInicial = '{{ ubicacion.longitud|default:"-74.0817" }}';
+        
+        var map = L.map('map').setView([parseFloat(latitudInicial), parseFloat(longitudInicial)], 13);
+        
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+        
+        // Variables para almacenar marcador y coordenadas
+        var marker = null;
+        var latInput = document.getElementById('id_latitud');
+        var lngInput = document.getElementById('id_longitud');
+        
+        // Función para actualizar marcador
+        function updateMarker(latlng) {
+            if (marker) {
+                map.removeLayer(marker);
+            }
+            marker = L.marker(latlng).addTo(map);
+            latInput.value = latlng.lat.toFixed(7);
+            lngInput.value = latlng.lng.toFixed(7);
+        }
+        
+        // Evento de clic en el mapa
+        map.on('click', function(e) {
+            updateMarker(e.latlng);
+        });
+        
+        // Si ya hay coordenadas en los campos, mostrar el marcador
+        if (latInput.value && lngInput.value) {
+            var latlng = L.latLng(parseFloat(latInput.value), parseFloat(lngInput.value));
+            updateMarker(latlng);
+            map.setView(latlng, 15);
+        }
+        
+        // Invalidar tamaño después de cargar completamente
+        setTimeout(function() {
+            map.invalidateSize();
+        }, 300);
+        
+        // Referencias a los elementos del formulario
+        var paisSelect = document.getElementById('id_pais');
+        var estadoSelect = document.getElementById('id_estado');
+        var ciudadSelect = document.getElementById('id_ciudad');
+        var formulario = document.querySelector('form');
+        
+        // Función para cargar los estados basados en el país seleccionado
+        function cargarEstados(paisId, callback) {
+            if (!paisId) {
+                estadoSelect.innerHTML = '<option value="">Seleccione primero un país</option>';
+                estadoSelect.disabled = true;
+                ciudadSelect.innerHTML = '<option value="">Seleccione primero un estado</option>';
+                ciudadSelect.disabled = true;
+                return;
+            }
+            
+            estadoSelect.disabled = false;
+            estadoSelect.innerHTML = '<option value="">Cargando estados...</option>';
+            
+            fetch('/ubicaciones/api/estados/' + paisId + '/')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error en la respuesta del servidor');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    estadoSelect.innerHTML = '<option value="">Seleccione un estado</option>';
+                    if (data.estados.length === 0) {
+                        estadoSelect.innerHTML = '<option value="">No hay estados disponibles</option>';
+                        estadoSelect.disabled = true;
+                    } else {
+                        data.estados.forEach(estado => {
+                            var option = document.createElement('option');
+                            option.value = estado.id;
+                            option.textContent = estado.nombre;
+                            // Si coincide con el estado actual, seleccionarlo
+                            if (estado.id == {{ ubicacion.ciudad.estado.id|default:"0" }}) {
+                                option.selected = true;
+                            }
+                            estadoSelect.appendChild(option);
+                        });
+                        
+                        if (callback) {
+                            callback();
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar estados:', error);
+                    estadoSelect.innerHTML = '<option value="">Error al cargar estados</option>';
+                    estadoSelect.disabled = true;
+                });
+        }
+        
+        // Función para cargar las ciudades basadas en el estado seleccionado
+        function cargarCiudades(estadoId, callback) {
+            if (!estadoId) {
+                ciudadSelect.innerHTML = '<option value="">Seleccione primero un estado</option>';
+                ciudadSelect.disabled = true;
+                return;
+            }
+            
+            ciudadSelect.disabled = false;
+            ciudadSelect.innerHTML = '<option value="">Cargando ciudades...</option>';
+            
+            fetch('/ubicaciones/api/ciudades/' + estadoId + '/')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error en la respuesta del servidor');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    ciudadSelect.innerHTML = '<option value="">Seleccione una ciudad</option>';
+                    if (data.ciudades.length === 0) {
+                        ciudadSelect.innerHTML = '<option value="">No hay ciudades disponibles</option>';
+                        ciudadSelect.disabled = true;
+                    } else {
+                        data.ciudades.forEach(ciudad => {
+                            var option = document.createElement('option');
+                            option.value = ciudad.id;
+                            option.textContent = ciudad.nombre;
+                            // Si coincide con la ciudad actual, seleccionarla
+                            if (ciudad.id == {{ ubicacion.ciudad.id|default:"0" }}) {
+                                option.selected = true;
+                            }
+                            ciudadSelect.appendChild(option);
+                        });
+                        
+                        if (callback) {
+                            callback();
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar ciudades:', error);
+                    ciudadSelect.innerHTML = '<option value="">Error al cargar ciudades</option>';
+                    ciudadSelect.disabled = true;
+                });
+        }
+        
+        // Evento para cambio de país
+        paisSelect.addEventListener('change', function() {
+            var paisId = this.value;
+            cargarEstados(paisId);
+        });
+        
+        // Evento para cambio de estado
+        estadoSelect.addEventListener('change', function() {
+            var estadoId = this.value;
+            cargarCiudades(estadoId);
+        });
+        
+        // Validación antes de enviar el formulario
+        formulario.addEventListener('submit', function(e) {
+            // Verificar si hay un país seleccionado
+            if (!paisSelect.value) {
+                e.preventDefault();
+                paisSelect.classList.add('field-error');
+                alert('Por favor, seleccione un país.');
+                return false;
+            }
+            
+            // Verificar si hay un estado seleccionado
+            if (!estadoSelect.value) {
+                e.preventDefault();
+                estadoSelect.classList.add('field-error');
+                alert('Por favor, seleccione un estado/departamento.');
+                return false;
+            }
+            
+            // Verificar si hay una ciudad seleccionada
+            if (!ciudadSelect.value) {
+                e.preventDefault();
+                ciudadSelect.classList.add('field-error');
+                alert('Por favor, seleccione una ciudad.');
+                return false;
+            }
+            
+            // Todo está correcto, permitir el envío del formulario
+            return true;
+        });
+        
+        // Inicializar los selectores con los valores actuales
+        // Si hay un país preseleccionado, cargar sus estados
+        if (paisSelect.value) {
+            cargarEstados(paisSelect.value, function() {
+                // Una vez cargados los estados, cargar las ciudades si hay un estado seleccionado
+                if (estadoSelect.value) {
+                    cargarCiudades(estadoSelect.value);
+                }
+            });
+        }
+    });
+</script>
+{% endblock %} 

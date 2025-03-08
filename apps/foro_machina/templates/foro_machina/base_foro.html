@@ -1,0 +1,420 @@
+{% extends "core/dashboard.html" %}
+{% load i18n %}
+{% load static %}
+{% load mptt_tags %}
+
+{% block title %}{% trans "Foro Campo Unido" %}{% endblock %}
+
+{% block dashboard_content %}
+    {% if user.is_authenticated %}
+    <div class="admin-panel mb-4">
+        <h4 class="admin-panel-title">{% trans "Panel del Foro" %}</h4>
+        <p>{% trans "Bienvenido al foro de Campo Unido. Aquí puedes participar en discusiones y crear tus propios foros." %}</p>
+        <div class="d-flex flex-wrap">
+            <a href="{% url 'foro_machina:crear_foro' %}" class="btn btn-success btn-lg mr-2 mb-2 admin-button">
+                <i class="fas fa-plus-circle fa-lg"></i> {% trans "Crear Nuevo Foro" %}
+            </a>
+            <a href="{% url 'foro_machina:admin_foros' %}" class="btn btn-primary btn-lg mb-2 admin-button">
+                <i class="fas fa-list fa-lg"></i> {% trans "Ver Todos los Foros" %}
+            </a>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Sección de foros públicos -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">{% trans "Foros disponibles" %}</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if forums %}
+                <div class="list-group list-group-flush">
+                    {% recursetree forums %}
+                        <div class="list-group-item forum-item" style="padding-left: {{ node.level|add:1 }}rem;">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="mb-1">
+                                        {% if node.type == 1 %}
+                                            <span class="badge badge-secondary">{% trans "Categoría" %}</span>
+                                        {% elif node.type == 0 %}
+                                            <span class="badge badge-info">{% trans "Foro" %}</span>
+                                        {% elif node.type == 2 %}
+                                            <span class="badge badge-warning">{% trans "Enlace" %}</span>
+                                        {% endif %}
+                                        <a href="{% url 'foro_machina:foro_detalle' node.pk %}">{{ node.name }}</a>
+                                    </h5>
+                                    <p class="mb-1">{{ node.description|safe }}</p>
+                                    {% if node.type != 1 %}
+                                        <small class="text-muted">
+                                            {% trans "Temas:" %} {{ node.topics_count }} | 
+                                            {% trans "Mensajes:" %} {{ node.posts_count }}
+                                        </small>
+                                    {% endif %}
+                                </div>
+                                {% if node.image %}
+                                    <img src="{{ node.image.url }}" alt="{{ node.name }}" class="forum-icon">
+                                {% else %}
+                                    <i class="fas fa-comments forum-icon-fa"></i>
+                                {% endif %}
+                            </div>
+                            {% if not node.is_leaf_node %}
+                                <div class="children mt-3">
+                                    {{ children }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endrecursetree %}
+                </div>
+            {% else %}
+                <div class="alert alert-info m-3">
+                    <p>{% trans "No hay foros disponibles." %}</p>
+                    {% if user.is_authenticated %}
+                        <div class="text-center mt-4">
+                            <p class="lead">{% trans "¡Sé el primero en crear un foro!" %}</p>
+                            <a href="{% url 'foro_machina:crear_foro' %}" class="btn btn-primary btn-lg" style="font-size: 1.2rem; padding: 10px 20px;">
+                                <i class="fas fa-plus-circle fa-lg mr-2"></i> {% trans "Crear el primer foro" %}
+                            </a>
+                        </div>
+                    {% else %}
+                        <p>{% trans "Inicia sesión para crear un foro." %}</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% block content %}{% endblock %}
+{% endblock %}
+
+{% block css %}
+    {{ block.super }}
+    <!-- Font Awesome - Cargado directamente en el head -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        /* Estilos para iconos */
+        .forum-icon {
+            width: 48px;
+            height: 48px;
+            object-fit: cover;
+        }
+        
+        .forum-icon-fa {
+            font-size: 2rem;
+            color: #6c757d;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Estilos para elementos del foro */
+        .forum-item {
+            transition: background-color 0.2s;
+        }
+        
+        .forum-item:hover {
+            background-color: rgba(0, 123, 255, 0.05);
+        }
+        
+        .post-content img {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .post-avatar {
+            width: 64px;
+            height: 64px;
+            object-fit: cover;
+        }
+        
+        .post-card {
+            margin-bottom: 1rem;
+        }
+        
+        .post-header {
+            background-color: rgba(0, 0, 0, 0.03);
+        }
+        
+        .topic-info {
+            font-size: 0.9rem;
+        }
+        
+        .search-form {
+            max-width: 300px;
+        }
+        
+        /* Estilos para badges */
+        .badge-category {
+            background-color: #6c757d;
+        }
+        
+        .badge-forum {
+            background-color: #17a2b8;
+        }
+        
+        .badge-link {
+            background-color: #ffc107;
+        }
+        
+        /* Estilos para botones - Mejorados */
+        .btn {
+            margin-bottom: 0.25rem;
+            margin-right: 0.25rem;
+        }
+        
+        .btn-outline-primary {
+            color: #007bff;
+            border-color: #007bff;
+        }
+        
+        .btn-outline-primary:hover {
+            color: #fff;
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        
+        .btn-success {
+            color: #fff;
+            background-color: #28a745;
+            border-color: #28a745;
+            font-weight: bold;
+            font-size: 1.1rem;
+            padding: 8px 16px;
+        }
+        
+        .btn-success:hover {
+            color: #fff;
+            background-color: #218838;
+            border-color: #1e7e34;
+        }
+        
+        .btn-primary {
+            color: #fff;
+            background-color: #007bff;
+            border-color: #007bff;
+            font-weight: bold;
+        }
+        
+        .btn-primary:hover {
+            color: #fff;
+            background-color: #0069d9;
+            border-color: #0062cc;
+        }
+        
+        .btn-lg {
+            padding: 0.5rem 1rem;
+            font-size: 1.25rem;
+            line-height: 1.5;
+            border-radius: 0.3rem;
+        }
+        
+        /* Utilidades de margen */
+        .mr-2 {
+            margin-right: 0.5rem !important;
+        }
+        
+        .ml-2 {
+            margin-left: 0.5rem !important;
+        }
+        
+        .mb-4 {
+            margin-bottom: 1.5rem !important;
+        }
+        
+        /* Estilos para administradores */
+        .admin-panel {
+            border: 2px solid #007bff;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            background-color: #f8f9fa;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .admin-panel-title {
+            color: #007bff;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+        
+        .admin-button {
+            font-weight: bold;
+            font-size: 1.1rem;
+            padding: 0.5rem 1rem;
+        }
+        
+        /* Estilos para hacer los botones más visibles */
+        .btn-create-forum {
+            background-color: #28a745;
+            color: white;
+            font-size: 1.2rem;
+            padding: 10px 20px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 0.3rem;
+            display: inline-block;
+            margin: 1rem 0;
+            text-align: center;
+        }
+        
+        .btn-create-forum:hover {
+            background-color: #218838;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Estilos para alertas y mensajes */
+        .alert {
+            border-radius: 0.3rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        
+        /* Estilos para la estructura de foros */
+        .forum-structure {
+            margin-bottom: 2rem;
+        }
+        
+        .forum-category {
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            margin-bottom: 1rem;
+        }
+        
+        .forum-subforum {
+            margin-left: 2rem;
+            border-left: 2px solid #6c757d;
+            padding-left: 1rem;
+        }
+        
+        /* Mejoras visuales para la jerarquía de foros */
+        .list-group-item.forum-item {
+            border-left: 3px solid transparent;
+        }
+        
+        .list-group-item.forum-item:hover {
+            border-left-color: #007bff;
+        }
+    </style>
+{% endblock %}
+
+{% block js %}
+    {{ block.super }}
+    <!-- jQuery (necesario para Bootstrap) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Inicializando funcionalidades del foro...');
+        console.log('Usuario actual:', '{% if user.is_authenticated %}{{ user.username }} (Staff: {{ user.is_staff }}, Superuser: {{ user.is_superuser }}){% else %}No autenticado{% endif %}');
+        
+        // Inicializar tooltips de Bootstrap
+        try {
+            if (typeof $ !== 'undefined' && typeof $.fn.tooltip !== 'undefined') {
+                $('[data-toggle="tooltip"]').tooltip();
+                console.log('Tooltips inicializados con jQuery');
+            } else {
+                console.warn('jQuery o Bootstrap tooltip no están disponibles');
+                // Intentar cargar jQuery si no está disponible
+                if (typeof $ === 'undefined') {
+                    var script = document.createElement('script');
+                    script.src = 'https://code.jquery.com/jquery-3.5.1.slim.min.js';
+                    script.integrity = 'sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj';
+                    script.crossOrigin = 'anonymous';
+                    document.head.appendChild(script);
+                    console.log('jQuery cargado dinámicamente');
+                }
+            }
+        } catch (e) {
+            console.error('Error al inicializar tooltips:', e);
+        }
+        
+        // Inicializar dropdowns de Bootstrap
+        try {
+            if (typeof $ !== 'undefined' && typeof $.fn.dropdown !== 'undefined') {
+                $('.dropdown-toggle').dropdown();
+                console.log('Dropdowns inicializados con jQuery');
+            } else {
+                console.warn('jQuery o Bootstrap dropdown no están disponibles');
+            }
+        } catch (e) {
+            console.error('Error al inicializar dropdowns:', e);
+        }
+        
+        // Verificar si Font Awesome está cargado
+        var fontAwesomeLoaded = false;
+        var styles = document.styleSheets;
+        for (var i = 0; i < styles.length; i++) {
+            if (styles[i].href && styles[i].href.includes('font-awesome')) {
+                fontAwesomeLoaded = true;
+                console.log('Font Awesome detectado:', styles[i].href);
+                break;
+            }
+        }
+        
+        if (!fontAwesomeLoaded) {
+            console.warn('Font Awesome no parece estar cargado. Intentando cargar dinámicamente...');
+            var link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css';
+            link.integrity = 'sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==';
+            link.crossOrigin = 'anonymous';
+            link.referrerPolicy = 'no-referrer';
+            document.head.appendChild(link);
+        }
+        
+        // Añadir clases de Bootstrap a botones y inputs generados por Django
+        document.querySelectorAll('input[type="submit"]').forEach(function(button) {
+            if (!button.classList.contains('btn')) {
+                button.classList.add('btn', 'btn-primary');
+            }
+        });
+        
+        document.querySelectorAll('input[type="text"], input[type="password"], input[type="email"], textarea').forEach(function(input) {
+            if (!input.classList.contains('form-control')) {
+                input.classList.add('form-control');
+            }
+        });
+        
+        document.querySelectorAll('select').forEach(function(select) {
+            if (!select.classList.contains('form-control')) {
+                select.classList.add('form-control');
+            }
+        });
+        
+        // Hacer los botones de administración más visibles
+        document.querySelectorAll('.btn-success, .btn-primary').forEach(function(btn) {
+            btn.style.fontWeight = 'bold';
+            if (btn.textContent.includes('Crear')) {
+                btn.style.fontSize = '1.2rem';
+                btn.style.padding = '10px 20px';
+            }
+        });
+        
+        // Verificar si hay alertas de "No hay foros disponibles" y añadir botón destacado
+        document.querySelectorAll('.alert-info').forEach(function(alert) {
+            if (alert.textContent.includes('No hay foros disponibles')) {
+                var createBtn = alert.querySelector('a[href*="crear-foro"]');
+                if (createBtn) {
+                    createBtn.classList.add('btn-create-forum');
+                    createBtn.style.display = 'block';
+                    createBtn.style.margin = '1rem auto';
+                    createBtn.style.maxWidth = '300px';
+                }
+            }
+        });
+        
+        console.log('Inicialización del foro completada');
+    });
+    </script>
+{% endblock %} 

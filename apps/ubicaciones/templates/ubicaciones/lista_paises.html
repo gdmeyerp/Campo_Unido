@@ -1,0 +1,82 @@
+{% extends "core/dashboard.html" %}
+{% load static %}
+
+{% block title %}Países - Campo Unido{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+        <h1 class="h2">Países y Ubicaciones</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'ubicaciones:mis_ubicaciones' %}" class="btn btn-primary mr-2">
+                <span data-feather="map-pin"></span> Mis Ubicaciones
+            </a>
+            <a href="{% url 'ubicaciones:crear_ubicacion' %}" class="btn btn-success">
+                <span data-feather="plus"></span> Nueva Ubicación
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Países Disponibles</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for pais in paises %}
+                            <div class="col-md-4 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ pais.nombre }}</h5>
+                                        <p class="card-text text-muted">Código: {{ pais.codigo }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    No hay países registrados en el sistema.
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Gestión de Ubicaciones</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title"><span data-feather="map"></span> Mis Ubicaciones</h5>
+                                    <p class="card-text">Administra tus ubicaciones guardadas.</p>
+                                    <a href="{% url 'ubicaciones:mis_ubicaciones' %}" class="btn btn-primary">Ver mis ubicaciones</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title"><span data-feather="users"></span> Buscar Personas Cercanas</h5>
+                                    <p class="card-text">Encuentra agricultores y ganaderos cerca de ti.</p>
+                                    <a href="{% url 'ubicaciones:buscar_cercanos' %}" class="btn btn-success">Buscar cercanos</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

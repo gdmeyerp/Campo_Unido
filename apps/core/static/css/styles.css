@@ -1,0 +1,51 @@
+/* Estilos para Marketplace */
+.product-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 10px;
+    overflow: hidden;
+    height: 100%;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+#marketplace {
+    background-color: #f8f9fa;
+    padding: 3rem 0;
+}
+
+.marketplace-section h2 {
+    margin-bottom: 2rem;
+    color: #333;
+    text-align: center;
+}
+
+.marketplace-section .card-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.marketplace-section .card-text {
+    color: #666;
+    margin-bottom: 1rem;
+}
+
+.marketplace-section .btn {
+    border-radius: 20px;
+    padding: 0.5rem 1.5rem;
+    font-size: 0.9rem;
+}
+
+.product-price {
+    font-weight: 700;
+    color: #28a745;
+    font-size: 1.1rem;
+} 

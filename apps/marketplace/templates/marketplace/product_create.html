@@ -1,0 +1,150 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Crear Nuevo Producto{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h2 class="mb-0 text-center">Crear Nuevo Producto</h2>
+                </div>
+                <div class="card-body p-4">
+                    
+                    {% if messages %}
+                    <div class="messages mb-4">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label">Nombre del Producto*</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" value="{{ values.nombre }}" required>
+                            <div class="invalid-feedback">
+                                Por favor ingrese un nombre para el producto.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="descripcion" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="descripcion" name="descripcion" rows="4">{{ values.descripcion }}</textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="precio" class="form-label">Precio*</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control" id="precio" name="precio" value="{{ values.precio }}" required>
+                                    <div class="invalid-feedback">
+                                        Por favor ingrese un precio válido.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="stock" class="form-label">Stock Disponible</label>
+                                <input type="number" class="form-control" id="stock" name="stock" value="{{ values.stock|default:'1' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="categoria" class="form-label">Categoría</label>
+                            <select class="form-select" id="categoria" name="categoria">
+                                <option value="">Seleccionar categoría...</option>
+                                {% for categoria in categorias %}
+                                <option value="{{ categoria.id }}" {% if values.categoria == categoria.id %}selected{% endif %}>
+                                    {{ categoria.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="imagen" class="form-label">Imagen del Producto</label>
+                            <input type="file" class="form-control" id="imagen" name="imagen" accept="image/*">
+                            <div class="form-text">Formatos aceptados: JPG, PNG, GIF. Tamaño máximo: 5MB.</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save me-2"></i>Crear Producto
+                            </button>
+                            <a href="{% url 'marketplace:product_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Volver
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Validación de Bootstrap
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms)
+        .forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+})()
+
+// Previsualización de imagen
+document.getElementById('imagen').addEventListener('change', function(e) {
+    const fileInput = e.target;
+    if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.createElement('div');
+            preview.className = 'mt-2';
+            preview.innerHTML = `
+                <div class="card">
+                    <img src="${e.target.result}" class="card-img-top img-thumbnail" style="max-height: 200px; object-fit: contain;">
+                    <div class="card-body text-center">
+                        <button type="button" class="btn btn-sm btn-danger remove-preview">
+                            <i class="fas fa-times"></i> Eliminar
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            const previewContainer = document.querySelector('.preview-container');
+            if (previewContainer) {
+                previewContainer.innerHTML = '';
+                previewContainer.appendChild(preview);
+            } else {
+                const newContainer = document.createElement('div');
+                newContainer.className = 'preview-container';
+                newContainer.appendChild(preview);
+                fileInput.parentNode.appendChild(newContainer);
+            }
+            
+            document.querySelector('.remove-preview').addEventListener('click', function() {
+                document.querySelector('.preview-container').remove();
+                fileInput.value = '';
+            });
+        }
+        reader.readAsDataURL(fileInput.files[0]);
+    }
+});
+</script>
+{% endblock %} 

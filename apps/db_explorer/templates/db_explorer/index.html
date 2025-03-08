@@ -1,0 +1,83 @@
+{% extends 'db_explorer/base.html' %}
+{% load static %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item active">Explorador de Base de Datos</li>
+{% endblock %}
+
+{% block page_title %}Explorador de Base de Datos{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'admin:index' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-cogs"></i> Sitio Administrativo
+    </a>
+</div>
+{% endblock %}
+
+{% block db_explorer_content %}
+<div class="container-fluid my-4">
+    <div class="row">
+        {% for app_name, app_data in app_models.items %}
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{{ app_name }}</h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for model in app_data.models %}
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <a href="{{ model.url }}" class="font-weight-bold text-primary">
+                                        {{ model.verbose_name }}
+                                    </a>
+                                    <small class="text-muted d-block">{{ model.name }}</small>
+                                </div>
+                                {% if model.count == "Tabla no creada" %}
+                                <span class="badge badge-warning">{{ model.count }}</span>
+                                {% else %}
+                                <span class="badge badge-primary badge-pill">{{ model.count }}</span>
+                                {% endif %}
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle mr-2"></i> No se encontraron modelos registrados en la aplicación.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    $(document).ready(function() {
+        // Contador animado para las badges
+        $('.badge-pill').each(function() {
+            var $this = $(this);
+            var count = parseInt($this.text());
+            if (!isNaN(count) && count > 0) {
+                $this.prop('Counter', 0).animate({
+                    Counter: count
+                }, {
+                    duration: 1000,
+                    easing: 'swing',
+                    step: function(now) {
+                        $this.text(Math.ceil(now));
+                    }
+                });
+            }
+        });
+    });
+</script>
+{% endblock %} 

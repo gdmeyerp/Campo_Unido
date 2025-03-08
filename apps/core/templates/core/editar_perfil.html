@@ -1,0 +1,101 @@
+{% extends "core/dashboard.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Editar Perfil</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" action="{% url 'core:editar_perfil' %}">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-4 text-center mb-4">
+                                <h6 class="mb-3">Foto de Perfil</h6>
+                                <div class="mb-3">
+                                    {% if user.perfilusuario.foto_perfil %}
+                                        <img src="{{ user.perfilusuario.foto_perfil.url }}" alt="{{ user.username }}" class="img-fluid rounded-circle mb-3" style="max-width: 200px; max-height: 200px;">
+                                    {% else %}
+                                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 200px; height: 200px; font-size: 72px;">
+                                            {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="mb-3">
+                                        <label for="foto_perfil" class="form-label">Cambiar foto</label>
+                                        <input type="file" class="form-control" id="foto_perfil" name="foto_perfil" accept="image/*">
+                                    </div>
+                                    {% if user.perfilusuario.foto_perfil %}
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="eliminar_foto" name="eliminar_foto">
+                                        <label class="form-check-label" for="eliminar_foto">
+                                            Eliminar foto actual
+                                        </label>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-8">
+                                <h6 class="mb-3">Información Personal</h6>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="first_name" class="form-label">Nombre</label>
+                                        <input type="text" class="form-control" id="first_name" name="first_name" value="{{ user.first_name }}">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="last_name" class="form-label">Apellido</label>
+                                        <input type="text" class="form-control" id="last_name" name="last_name" value="{{ user.last_name }}">
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Correo Electrónico</label>
+                                    <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" readonly>
+                                    <small class="text-muted">El correo electrónico no se puede cambiar.</small>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="descripcion" class="form-label">Descripción</label>
+                                    <textarea class="form-control" id="descripcion" name="descripcion" rows="3">{{ user.perfilusuario.descripcion }}</textarea>
+                                    <small class="text-muted">Una breve descripción sobre ti.</small>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="intereses" class="form-label">Intereses</label>
+                                    <textarea class="form-control" id="intereses" name="intereses" rows="3">{{ user.perfilusuario.intereses }}</textarea>
+                                    <small class="text-muted">Tus intereses, separados por comas.</small>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento</label>
+                                    <input type="date" class="form-control" id="fecha_nacimiento" name="fecha_nacimiento" value="{% if user.perfilusuario.fecha_nacimiento %}{{ user.perfilusuario.fecha_nacimiento|date:'Y-m-d' }}{% endif %}">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="genero" class="form-label">Género</label>
+                                    <select class="form-select" id="genero" name="genero">
+                                        <option value="" {% if not user.perfilusuario.genero %}selected{% endif %}>Prefiero no decirlo</option>
+                                        <option value="masculino" {% if user.perfilusuario.genero == 'masculino' %}selected{% endif %}>Masculino</option>
+                                        <option value="femenino" {% if user.perfilusuario.genero == 'femenino' %}selected{% endif %}>Femenino</option>
+                                        <option value="otro" {% if user.perfilusuario.genero == 'otro' %}selected{% endif %}>Otro</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'core:profile' %}" class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

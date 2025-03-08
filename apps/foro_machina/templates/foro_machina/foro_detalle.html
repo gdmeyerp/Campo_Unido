@@ -1,0 +1,113 @@
+{% extends "foro_machina/base_foro.html" %}
+{% load i18n %}
+
+{% block title %}{{ forum.name }} - {% trans "Foro Campo Unido" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ forum.name }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'foro_machina:dashboard' %}" class="btn btn-outline-secondary mr-2">
+                <span data-feather="arrow-left"></span>
+                {% trans "Volver a foros" %}
+            </a>
+            <a href="{% url 'foro_machina:crear_tema' forum.id %}" class="btn btn-primary">
+                <span data-feather="plus-circle"></span>
+                {% trans "Nuevo tema" %}
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{% trans "Descripción" %}</h5>
+                        <span class="badge badge-primary">{{ forum.topics_count }} {% trans "temas" %}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p>{{ forum.description.rendered|safe }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{% trans "Temas en este foro" %}</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>{% trans "Tema" %}</th>
+                                    <th>{% trans "Respuestas" %}</th>
+                                    <th>{% trans "Vistas" %}</th>
+                                    <th>{% trans "Último post" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for topic in topics %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="mr-3">
+                                                    {% if topic.poster.perfilusuario.foto_perfil %}
+                                                        <img src="{{ topic.poster.perfilusuario.foto_perfil.url }}" alt="{{ topic.poster.username }}" class="rounded-circle" width="40" height="40">
+                                                    {% else %}
+                                                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                            {{ topic.poster.username|first|upper }}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                                <div>
+                                                    <a href="{% url 'foro_machina:tema_detalle' topic.id %}" class="text-decoration-none">
+                                                        <h6 class="mb-1">{{ topic.subject }}</h6>
+                                                        <small class="text-muted">{% trans "por" %} {{ topic.poster.username }} - {{ topic.created|date:"d/m/Y H:i" }}</small>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ topic.posts_count }}</td>
+                                        <td>{{ topic.views_count }}</td>
+                                        <td>
+                                            {% if topic.last_post %}
+                                                <small>
+                                                    {{ topic.last_post_on|date:"d/m/Y H:i" }}<br>
+                                                    {% trans "por" %} {{ topic.last_post.poster.username }}
+                                                </small>
+                                            {% else %}
+                                                <small class="text-muted">{% trans "No hay posts" %}</small>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4">
+                                            {% trans "No hay temas en este foro." %}
+                                            <a href="{% url 'foro_machina:crear_tema' forum.id %}" class="btn btn-sm btn-primary ml-2">
+                                                <span data-feather="plus-circle"></span> {% trans "Crear el primer tema" %}
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'foro_machina:crear_tema' forum.id %}" class="btn btn-primary">
+                        <span data-feather="plus-circle"></span> {% trans "Crear nuevo tema" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

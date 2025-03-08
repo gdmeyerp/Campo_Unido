@@ -1,0 +1,98 @@
+{% extends 'inventario/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ titulo }} - Campo Unido{% endblock %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <style>
+        .form-group.required .control-label:after {
+            content: "*";
+            color: red;
+            margin-left: 4px;
+        }
+    </style>
+{% endblock %}
+
+{% block inventario_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ titulo }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'inventario:detalle_almacen' pk=ubicacion.almacen.pk %}" class="btn btn-sm btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al almacén
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-boxes mr-2"></i> Asignar Producto a {{ ubicacion.nombre_ubicacion }}
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            {{ form.producto_inventario|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="id_cantidad">Cantidad:</label>
+                                {{ form.cantidad|as_crispy_field }}
+                                <small class="form-text text-muted">Cantidad de unidades del producto en esta ubicación.</small>
+                                {% if form.cantidad.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.cantidad.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group text-center mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Guardar
+                        </button>
+                        <a href="{% url 'inventario:detalle_almacen' pk=ubicacion.almacen.pk %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script>
+        $(document).ready(function() {
+            // Inicializar select2 para los campos de selección
+            $('#id_producto_inventario').select2({
+                placeholder: "Seleccione un producto",
+                allowClear: true
+            });
+            
+            // Validación de cantidad
+            $('#id_cantidad').on('change', function() {
+                var cantidad = parseFloat($(this).val());
+                if (cantidad < 0) {
+                    $(this).val(0);
+                    alert('La cantidad no puede ser negativa.');
+                }
+            });
+        });
+    </script>
+{% endblock %} 

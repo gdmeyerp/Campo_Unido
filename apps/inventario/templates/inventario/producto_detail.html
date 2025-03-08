@@ -1,0 +1,286 @@
+{% extends 'inventario/base.html' %}
+{% load static %}
+
+{% block title %}{{ producto.nombre }} - Detalles del Producto{% endblock %}
+
+{% block inventario_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ producto.nombre }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group mr-2">
+            <a href="{% url 'inventario:editar_producto' producto.id %}" class="btn btn-sm btn-primary">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="{% url 'inventario:registrar_movimiento' %}?producto={{ producto.id }}" class="btn btn-sm btn-success">
+                <i class="fas fa-exchange-alt"></i> Registrar Movimiento
+            </a>
+            <a href="{% url 'inventario:eliminar_producto' producto.id %}" class="btn btn-sm btn-danger">
+                <i class="fas fa-trash"></i> Eliminar
+            </a>
+        </div>
+        <a href="{% url 'inventario:lista_productos' %}" class="btn btn-sm btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver a la lista
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Información del Producto -->
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-info-circle mr-2"></i> Información Básica
+            </div>
+            <div class="card-body">
+                {% if producto.imagen %}
+                <div class="text-center mb-3">
+                    <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" class="img-fluid rounded" style="max-height: 200px;">
+                </div>
+                {% endif %}
+                
+                <table class="table table-sm">
+                    <tr>
+                        <th>Código:</th>
+                        <td>{{ producto.codigo }}</td>
+                    </tr>
+                    <tr>
+                        <th>Categoría:</th>
+                        <td>{{ producto.categoria.nombre }}</td>
+                    </tr>
+                    <tr>
+                        <th>Estado:</th>
+                        <td>
+                            <span class="badge badge-{{ producto.estado.color|default:'secondary' }}">
+                                {{ producto.estado.nombre }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Unidad de Medida:</th>
+                        <td>{{ producto.unidad_medida.nombre }} ({{ producto.unidad_medida.simbolo }})</td>
+                    </tr>
+                    <tr>
+                        <th>Stock Actual:</th>
+                        <td class="{% if producto.cantidad_disponible <= producto.stock_minimo %}text-danger{% endif %}">
+                            {{ producto.cantidad_disponible }} {{ producto.unidad_medida.simbolo }}
+                            {% if producto.cantidad_disponible <= producto.stock_minimo %}
+                            <i class="fas fa-exclamation-triangle text-warning" data-toggle="tooltip" title="Stock bajo"></i>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Stock Mínimo:</th>
+                        <td>{{ producto.stock_minimo }} {{ producto.unidad_medida.simbolo }}</td>
+                    </tr>
+                    <tr>
+                        <th>Stock Máximo:</th>
+                        <td>{{ producto.stock_maximo }} {{ producto.unidad_medida.simbolo }}</td>
+                    </tr>
+                    <tr>
+                        <th>Precio de Compra:</th>
+                        <td>${{ producto.precio_compra|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <th>Precio de Venta:</th>
+                        <td>${{ producto.precio_venta|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <th>Margen:</th>
+                        <td>
+                            {% if producto.precio_compra > 0 %}
+                                {{ margen_ganancia|floatformat:2 }}%
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Perecedero:</th>
+                        <td>{% if producto.es_perecedero %}Sí{% else %}No{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <th>Fecha de Creación:</th>
+                        <td>{{ producto.fecha_creacion|date:"d/m/Y" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Última Actualización:</th>
+                        <td>{{ producto.fecha_actualizacion|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        {% if producto.notas %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-sticky-note mr-2"></i> Notas
+            </div>
+            <div class="card-body">
+                <p>{{ producto.notas|linebreaks }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-8">
+        <!-- Descripción del Producto -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-align-left mr-2"></i> Descripción
+            </div>
+            <div class="card-body">
+                {% if producto.descripcion %}
+                    <p>{{ producto.descripcion|linebreaks }}</p>
+                {% else %}
+                    <p class="text-muted">No hay descripción disponible para este producto.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Ubicaciones del Producto -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-map-marker-alt mr-2"></i> Ubicaciones</span>
+                <span class="badge badge-primary">{{ ubicaciones|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if ubicaciones %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Almacén</th>
+                                <th>Ubicación</th>
+                                <th class="text-right">Cantidad</th>
+                                <th>Última Actualización</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inventario in ubicaciones %}
+                            <tr>
+                                <td>{{ inventario.ubicacion.almacen.nombre }}</td>
+                                <td>{{ inventario.ubicacion.nombre }}</td>
+                                <td class="text-right">{{ inventario.cantidad }} {{ producto.unidad_medida.simbolo }}</td>
+                                <td>{{ inventario.fecha_actualizacion|date:"d/m/Y H:i" }}</td>
+                                <td class="text-center">
+                                    <a href="{% url 'inventario:asignar_producto_ubicacion' inventario.ubicacion.id %}?producto={{ producto.id }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle mr-2"></i> Este producto no tiene ubicaciones asignadas.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Fechas de Caducidad -->
+        {% if producto.es_perecedero %}
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-calendar-times mr-2"></i> Fechas de Caducidad</span>
+                <div>
+                    <span class="badge badge-primary mr-2">{{ caducidades|length }}</span>
+                    <a href="{% url 'inventario:registrar_caducidad' producto.id %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-plus"></i> Registrar Caducidad
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if caducidades %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Lote</th>
+                                <th>Fecha Caducidad</th>
+                                <th>Ubicación</th>
+                                <th class="text-right">Cantidad</th>
+                                <th class="text-right">Días Restantes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for caducidad in caducidades %}
+                            <tr class="{% if caducidad.dias_restantes <= 7 %}table-danger{% elif caducidad.dias_restantes <= 30 %}table-warning{% endif %}">
+                                <td>{{ caducidad.lote|default:"No especificado" }}</td>
+                                <td>{{ caducidad.fecha_caducidad|date:"d/m/Y" }}</td>
+                                <td>
+                                    {% if caducidad.ubicacion %}
+                                    {{ caducidad.ubicacion.almacen.nombre }} - {{ caducidad.ubicacion.nombre }}
+                                    {% else %}
+                                    No especificada
+                                    {% endif %}
+                                </td>
+                                <td class="text-right">{{ caducidad.cantidad }} {{ producto.unidad_medida.simbolo }}</td>
+                                <td class="text-right {% if caducidad.dias_restantes <= 7 %}text-danger{% elif caducidad.dias_restantes <= 30 %}text-warning{% endif %}">
+                                    {{ caducidad.dias_restantes }} días
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle mr-2"></i> No hay fechas de caducidad registradas para este producto.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Historial de Movimientos -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-history mr-2"></i> Historial de Movimientos</span>
+                <span class="badge badge-primary">{{ movimientos|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if movimientos %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Tipo</th>
+                                <th>Referencia</th>
+                                <th class="text-right">Cantidad</th>
+                                <th>Responsable</th>
+                                <th>Notas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for movimiento in movimientos %}
+                            <tr>
+                                <td>{{ movimiento.fecha|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    <span class="badge {% if movimiento.tipo == 'ENTRADA' %}badge-entrada{% elif movimiento.tipo == 'SALIDA' %}badge-salida{% else %}badge-ajuste{% endif %}">
+                                        {{ movimiento.get_tipo_display }}
+                                    </span>
+                                </td>
+                                <td>{{ movimiento.referencia|default:"-" }}</td>
+                                <td class="text-right">{{ movimiento.cantidad }} {{ producto.unidad_medida.simbolo }}</td>
+                                <td>{{ movimiento.usuario.get_full_name|default:movimiento.usuario.username }}</td>
+                                <td>{{ movimiento.notas|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle mr-2"></i> No hay movimientos registrados para este producto.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

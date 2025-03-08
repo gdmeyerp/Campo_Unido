@@ -1,0 +1,393 @@
+{% extends "core/dashboard.html" %}
+{% load static %}
+
+{% block title %}Panel de Inventario{% endblock %}
+
+{% block extra_css %}
+<style>
+    .product-status {
+        border-left: 4px solid #4e73df;
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+        background-color: #f8f9fc;
+    }
+    .product-status.low-stock {
+        border-left-color: #f6c23e;
+    }
+    .product-status.very-low-stock {
+        border-left-color: #e74a3b;
+    }
+    .chart-container {
+        position: relative;
+        height: 200px;
+        width: 100%;
+    }
+    .quick-action-btn {
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0">Panel de Control de Inventario</h1>
+        <div>
+            <a href="{% url 'inventario:crear_producto' %}" class="btn btn-success">
+                <i class="fas fa-plus mr-2"></i> Nuevo Producto
+            </a>
+            <a href="{% url 'inventario:verificar_stock_bajo' %}" class="btn btn-warning ml-2">
+                <i class="fas fa-exclamation-triangle mr-2"></i> Verificar Stock Bajo
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Estadísticas generales -->
+        <div class="col-md-4 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Productos</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_productos }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-box fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Productos con Stock Bajo</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ productos_stock_bajo }}</div>
+                            {% if productos_stock_bajo > 0 %}
+                            <div class="mt-2">
+                                <a href="#stock-bajo-section" class="small text-warning">Ver detalles</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Pedidos Pendientes</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pedidos_pendientes|length }}</div>
+                            {% if pedidos_pendientes %}
+                            <div class="mt-2">
+                                <a href="#pedidos-section" class="small text-info">Ver detalles</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-shipping-fast fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if productos_bajo_stock %}
+    <div class="row" id="stock-bajo-section">
+        <div class="col-12 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-warning">Productos con Stock Bajo</h6>
+                    <a href="{% url 'inventario:verificar_stock_bajo' %}" class="btn btn-sm btn-warning">
+                        <i class="fas fa-bell mr-1"></i> Crear Alertas
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for producto in productos_bajo_stock %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="product-status {% if producto.cantidad_disponible <= producto.stock_minimo|divisibleby:2 %}very-low-stock{% else %}low-stock{% endif %}">
+                                <h6 class="font-weight-bold">
+                                    <a href="{% url 'inventario:detalle_producto' producto.id %}">{{ producto.nombre_producto }}</a>
+                                </h6>
+                                <div>Stock actual: <span class="font-weight-bold text-danger">{{ producto.cantidad_disponible }}</span></div>
+                                <div>Mínimo requerido: <span class="font-weight-bold">{{ producto.stock_minimo }}</span></div>
+                                <div class="mt-2">
+                                    <a href="{% url 'inventario:crear_alerta_stock' producto.id %}" class="btn btn-sm btn-warning mr-1">
+                                        <i class="fas fa-bell"></i> Alertar
+                                    </a>
+                                    <a href="{% url 'inventario:registrar_movimiento' %}?producto={{ producto.id }}&tipo=ENTRADA" class="btn btn-sm btn-success">
+                                        <i class="fas fa-plus"></i> Agregar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <!-- Productos más vendidos -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Productos Más Vendidos (Últimos 30 días)</h6>
+                </div>
+                <div class="card-body">
+                    {% if productos_mas_vendidos %}
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Cantidad Vendida</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in productos_mas_vendidos %}
+                                <tr>
+                                    <td><a href="{% url 'inventario:detalle_producto' item.producto.id %}">{{ item.producto.nombre_producto }}</a></td>
+                                    <td>{{ item.total_vendido }}</td>
+                                    <td>
+                                        <a href="{% url 'inventario:detalle_producto' item.producto.id %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-center">No hay datos de ventas en los últimos 30 días.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Alertas recientes -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Alertas Recientes</h6>
+                </div>
+                <div class="card-body">
+                    {% if alertas_recientes %}
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Cantidad</th>
+                                    <th>Fecha</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for alerta in alertas_recientes %}
+                                <tr>
+                                    <td><a href="{% url 'inventario:detalle_producto' alerta.producto_inventario.id %}">{{ alerta.producto_inventario.nombre_producto }}</a></td>
+                                    <td>{{ alerta.cantidad_disponible }}</td>
+                                    <td>{{ alerta.fecha_alerta|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <a href="{% url 'inventario:registrar_movimiento' %}?producto={{ alerta.producto_inventario.id }}&tipo=ENTRADA" class="btn btn-sm btn-success">
+                                            <i class="fas fa-plus"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-center">No hay alertas recientes.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row" id="pedidos-section">
+        <!-- Gráfica de categorías -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Productos por Categoría</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="categoriesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pedidos pendientes -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Pedidos Pendientes</h6>
+                </div>
+                <div class="card-body">
+                    {% if pedidos_pendientes %}
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Proveedor</th>
+                                    <th>Fecha Pedido</th>
+                                    <th>Entrega Estimada</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pedido in pedidos_pendientes %}
+                                <tr>
+                                    <td>{{ pedido.proveedor.nombre_proveedor }}</td>
+                                    <td>{{ pedido.fecha_pedido|date:"d/m/Y" }}</td>
+                                    <td>{% if pedido.fecha_entrega %}{{ pedido.fecha_entrega|date:"d/m/Y" }}{% else %}No establecida{% endif %}</td>
+                                    <td>
+                                        {% if pedido.estado_pedido == 'PENDIENTE' %}
+                                            <span class="badge badge-warning">Pendiente</span>
+                                        {% elif pedido.estado_pedido == 'EN_TRANSITO' %}
+                                            <span class="badge badge-info">En Tránsito</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'inventario:detalle_pedido' pedido.id %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-center">No hay pedidos pendientes.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Acciones Rápidas</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'inventario:lista_productos' %}" class="btn btn-primary btn-block quick-action-btn">
+                                <i class="fas fa-boxes mr-2"></i> Ver Productos
+                            </a>
+                            <a href="{% url 'inventario:crear_producto' %}" class="btn btn-success btn-block quick-action-btn">
+                                <i class="fas fa-plus mr-2"></i> Nuevo Producto
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'inventario:lista_movimientos' %}" class="btn btn-info btn-block quick-action-btn">
+                                <i class="fas fa-exchange-alt mr-2"></i> Movimientos
+                            </a>
+                            <a href="{% url 'inventario:registrar_movimiento' %}" class="btn btn-outline-info btn-block quick-action-btn">
+                                <i class="fas fa-plus mr-2"></i> Registrar Movimiento
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'inventario:lista_proveedores' %}" class="btn btn-success btn-block quick-action-btn">
+                                <i class="fas fa-truck mr-2"></i> Proveedores
+                            </a>
+                            <a href="{% url 'inventario:crear_proveedor' %}" class="btn btn-outline-success btn-block quick-action-btn">
+                                <i class="fas fa-plus mr-2"></i> Nuevo Proveedor
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'inventario:lista_pedidos' %}" class="btn btn-warning btn-block quick-action-btn">
+                                <i class="fas fa-shopping-cart mr-2"></i> Pedidos
+                            </a>
+                            <a href="{% url 'inventario:crear_pedido' %}" class="btn btn-outline-warning btn-block quick-action-btn">
+                                <i class="fas fa-plus mr-2"></i> Nuevo Pedido
+                            </a>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-4 mb-3">
+                            <a href="{% url 'inventario:lista_almacenes' %}" class="btn btn-secondary btn-block quick-action-btn">
+                                <i class="fas fa-warehouse mr-2"></i> Gestionar Almacenes
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="dropdown">
+                                <button id="exportarReporte" class="btn btn-dark btn-block quick-action-btn dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="fas fa-file-export mr-2"></i> Exportar Reporte
+                                </button>
+                                <div class="dropdown-menu w-100" aria-labelledby="exportarReporte">
+                                    <a class="dropdown-item" href="{% url 'inventario:exportar_informe' formato='excel' %}">
+                                        <i class="far fa-file-excel mr-2"></i> Exportar como Excel
+                                    </a>
+                                    <a class="dropdown-item" href="{% url 'inventario:exportar_informe' formato='csv' %}">
+                                        <i class="far fa-file-alt mr-2"></i> Exportar como CSV
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{% url 'inventario:verificar_stock_bajo' %}" class="btn btn-danger btn-block quick-action-btn">
+                                <i class="fas fa-bell mr-2"></i> Verificar Stock Bajo
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Datos para el gráfico de categorías
+    var ctxCategories = document.getElementById('categoriesChart').getContext('2d');
+    var categoriesChart = new Chart(ctxCategories, {
+        type: 'doughnut',
+        data: {
+            labels: [{% for cat in productos_por_categoria %}'{{ cat.nombre_categoria }}',{% endfor %}],
+            datasets: [{
+                data: [{% for cat in productos_por_categoria %}{{ cat.cantidad_productos }},{% endfor %}],
+                backgroundColor: [
+                    '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#6f42c1', '#5a5c69', '#858796'
+                ],
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            legend: {
+                position: 'right',
+                labels: {
+                    boxWidth: 12
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

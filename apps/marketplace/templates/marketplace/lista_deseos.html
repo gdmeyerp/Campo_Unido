@@ -1,0 +1,147 @@
+{% extends "marketplace/base.html" %}
+{% load static %}
+
+{% block page_title %}Mi Lista de Deseos{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item active">Lista de Deseos</li>
+{% endblock %}
+
+{% block marketplace_content %}
+<div class="card">
+    <div class="card-header bg-danger text-white">
+        <h4 class="mb-0"><i class="fas fa-heart mr-2"></i> Mi Lista de Deseos</h4>
+    </div>
+    <div class="card-body">
+        {% if productos %}
+            <div class="row">
+                {% for producto_lista in productos %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="position-relative">
+                                <a href="{% url 'marketplace:producto_detalle' producto_lista.producto.slug %}">
+                                    {% if producto_lista.producto.imagen_principal %}
+                                        <img src="{{ producto_lista.producto.imagen_principal.url }}" class="card-img-top" alt="{{ producto_lista.producto.nombre_producto }}">
+                                    {% else %}
+                                        <img src="{% static 'marketplace/img/default-product.jpg' %}" class="card-img-top" alt="{{ producto_lista.producto.nombre_producto }}">
+                                    {% endif %}
+                                </a>
+                                {% if producto_lista.producto.es_organico %}
+                                    <span class="badge badge-success position-absolute" style="top: 10px; right: 10px;">Orgánico</span>
+                                {% endif %}
+                                {% if producto_lista.producto.obtener_descuento > 0 %}
+                                    <span class="badge badge-danger position-absolute" style="top: 10px; left: 10px;">{{ producto_lista.producto.obtener_descuento }}% OFF</span>
+                                {% endif %}
+                                <button class="btn btn-sm btn-danger position-absolute" style="top: 10px; right: 10px;" 
+                                        onclick="removeFromWishlist({{ producto_lista.producto.producto_id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <a href="{% url 'marketplace:producto_detalle' producto_lista.producto.slug %}" class="text-dark">
+                                        {{ producto_lista.producto.nombre_producto }}
+                                    </a>
+                                </h5>
+                                <p class="card-text small text-muted">{{ producto_lista.producto.categoria_producto.nombre_categoria }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        {% if producto_lista.producto.obtener_descuento > 0 %}
+                                            <span class="text-muted small"><del>${{ producto_lista.producto.precio_base }}</del></span>
+                                            <span class="font-weight-bold text-success">${{ producto_lista.producto.precio_actual }}</span>
+                                        {% else %}
+                                            <span class="font-weight-bold">${{ producto_lista.producto.precio_actual }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted">Añadido {{ producto_lista.fecha_agregado|date:"d/m/Y" }}</small>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-white border-top-0">
+                                <button class="btn btn-primary btn-block add-to-cart" data-product-id="{{ producto_lista.producto.producto_id }}">
+                                    <i class="fas fa-shopping-cart"></i> Añadir al carrito
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="far fa-heart fa-4x text-muted mb-3"></i>
+                <h4>Tu lista de deseos está vacía</h4>
+                <p class="text-muted">No tienes productos guardados en tu lista de deseos.</p>
+                <a href="{% url 'marketplace:index' %}" class="btn btn-primary mt-3">
+                    <i class="fas fa-shopping-bag me-2"></i> Explorar productos
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block marketplace_js %}
+<script>
+    // Función para eliminar de la lista de deseos
+    function removeFromWishlist(productId) {
+        if (confirm('¿Estás seguro de que deseas eliminar este producto de tu lista de deseos?')) {
+            window.location.href = `/marketplace/lista-deseos/eliminar/${productId}/`;
+        }
+    }
+    
+    // Añadir al carrito
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.add-to-cart').forEach(button => {
+            button.addEventListener('click', function() {
+                const productId = this.getAttribute('data-product-id');
+                fetch('/marketplace/api/carrito/agregar/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        product_id: productId,
+                        quantity: 1
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Actualizar contador de carrito
+                        const cartCounter = document.getElementById('cart-counter');
+                        if (cartCounter) {
+                            cartCounter.textContent = data.cart_count;
+                            cartCounter.classList.remove('d-none');
+                        }
+                        
+                        // Mostrar notificación
+                        alert('Producto añadido al carrito');
+                    } else {
+                        alert(data.error || 'Error al añadir al carrito');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al añadir al carrito');
+                });
+            });
+        });
+        
+        // Función auxiliar para obtener CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>
+{% endblock %} 

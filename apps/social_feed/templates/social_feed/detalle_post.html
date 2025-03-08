@@ -1,0 +1,211 @@
+{% extends 'social_feed/base.html' %}
+{% load static %}
+
+{% block feed_content %}
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="d-flex align-items-center">
+                <img src="{% static 'img/default-avatar.png' %}" alt="{{ post.usuario.username }}" class="rounded-circle me-2" width="40" height="40">
+                <div>
+                    <div class="fw-bold">{{ post.usuario.get_full_name|default:post.usuario.username }}</div>
+                    <div class="text-muted small">{{ post.fecha_creacion|date:"d/m/Y H:i" }}</div>
+                </div>
+            </div>
+            
+            {% if post.usuario == request.user %}
+            <div class="dropdown">
+                <button class="btn btn-sm btn-light" type="button" id="postOptions" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="postOptions">
+                    <li><a class="dropdown-item" href="{% url 'social_feed:editar_post' post_id=post.id %}"><i class="fas fa-edit me-2"></i> Editar</a></li>
+                    <li><a class="dropdown-item text-danger" href="{% url 'social_feed:eliminar_post' post_id=post.id %}"><i class="fas fa-trash-alt me-2"></i> Eliminar</a></li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+        
+        <p class="mb-3">{{ post.contenido|linebreaksbr }}</p>
+        
+        {% if post.multimedia.exists %}
+        <div class="post-media mb-3">
+            {% for media in post.multimedia.all %}
+                {% if media.tipo == 'imagen' %}
+                <div class="mb-3">
+                    <img src="{{ media.archivo.url }}" alt="{{ media.titulo|default:'Imagen' }}" class="img-fluid rounded">
+                    {% if media.titulo or media.descripcion %}
+                    <div class="mt-1">
+                        {% if media.titulo %}<h6 class="mb-0">{{ media.titulo }}</h6>{% endif %}
+                        {% if media.descripcion %}<p class="text-muted small">{{ media.descripcion }}</p>{% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% elif media.tipo == 'video' %}
+                <div class="mb-3">
+                    <video controls class="img-fluid rounded w-100">
+                        <source src="{{ media.archivo.url }}" type="video/mp4">
+                        Tu navegador no soporta la reproducción de videos.
+                    </video>
+                    {% if media.titulo or media.descripcion %}
+                    <div class="mt-1">
+                        {% if media.titulo %}<h6 class="mb-0">{{ media.titulo }}</h6>{% endif %}
+                        {% if media.descripcion %}<p class="text-muted small">{{ media.descripcion }}</p>{% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-file fa-2x me-3 text-primary"></i>
+                                <div>
+                                    <h6 class="mb-0">{{ media.titulo|default:media.archivo.name }}</h6>
+                                    {% if media.descripcion %}<p class="text-muted small mb-2">{{ media.descripcion }}</p>{% endif %}
+                                    <a href="{{ media.archivo.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                        <i class="fas fa-download me-1"></i> Descargar archivo
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <div class="d-flex justify-content-between align-items-center border-top pt-3">
+            <div>
+                <form action="{% url 'social_feed:like_post' post_id=post.id %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm {% if request.user in post.likes.all %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                        <i class="fas fa-heart"></i> {{ post.total_likes }}
+                    </button>
+                </form>
+                <button class="btn btn-sm btn-outline-secondary ms-2" onclick="document.getElementById('commentForm').scrollIntoView({behavior: 'smooth'})">
+                    <i class="fas fa-comment"></i> {{ post.total_comentarios }}
+                </button>
+                <button class="btn btn-sm btn-outline-secondary ms-2" data-bs-toggle="modal" data-bs-target="#shareModal">
+                    <i class="fas fa-share-alt"></i> Compartir
+                </button>
+            </div>
+            <div>
+                {% if not post.es_publico %}
+                <span class="badge bg-secondary"><i class="fas fa-lock me-1"></i> Privado</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para compartir -->
+<div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="shareModalLabel">Compartir publicación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Comparte esta publicación con tus amigos:</p>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="shareUrl" value="{{ request.scheme }}://{{ request.get_host }}{% url 'social_feed:detalle_post' post_id=post.id %}" readonly>
+                    <button class="btn btn-outline-primary" type="button" onclick="copyShareUrl()">Copiar</button>
+                </div>
+                <div class="d-flex justify-content-center gap-3 mt-3">
+                    <a href="#" class="btn btn-outline-primary"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="btn btn-outline-info"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="btn btn-outline-success"><i class="fab fa-whatsapp"></i></a>
+                    <a href="#" class="btn btn-outline-danger"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sección de comentarios -->
+<div class="card">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Comentarios ({{ post.total_comentarios }})</h5>
+    </div>
+    <div class="card-body">
+        {% if post.comentarios.exists %}
+            {% for comentario in post.comentarios.all %}
+            <div class="d-flex mb-4">
+                <img src="{% static 'img/default-avatar.png' %}" alt="{{ comentario.usuario.username }}" class="rounded-circle me-2" width="32" height="32">
+                <div class="flex-grow-1">
+                    <div class="bg-light rounded p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="fw-bold">{{ comentario.usuario.get_full_name|default:comentario.usuario.username }}</div>
+                            <small class="text-muted">{{ comentario.fecha_creacion|date:"d/m/Y H:i" }}</small>
+                        </div>
+                        <p class="mb-0">{{ comentario.contenido|linebreaksbr }}</p>
+                    </div>
+                    
+                    <div class="d-flex mt-2">
+                        <form action="{% url 'social_feed:like_comentario' comentario_id=comentario.id %}" method="post" class="me-3">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm {% if request.user in comentario.likes.all %}text-danger{% else %}text-muted{% endif %} p-0 border-0 bg-transparent">
+                                <i class="fas fa-heart"></i> {{ comentario.total_likes }}
+                            </button>
+                        </form>
+                        
+                        {% if comentario.usuario == request.user %}
+                        <div class="dropdown">
+                            <button class="btn btn-sm p-0 border-0 bg-transparent text-muted" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{% url 'social_feed:editar_comentario' comentario_id=comentario.id %}"><i class="fas fa-edit me-2"></i> Editar</a></li>
+                                <li><a class="dropdown-item text-danger" href="{% url 'social_feed:eliminar_comentario' comentario_id=comentario.id %}"><i class="fas fa-trash-alt me-2"></i> Eliminar</a></li>
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                <p>No hay comentarios todavía. ¡Sé el primero en comentar!</p>
+            </div>
+        {% endif %}
+        
+        <!-- Formulario para añadir comentario -->
+        <div class="mt-4" id="commentForm">
+            <h6 class="mb-3">Añadir un comentario</h6>
+            <form action="{% url 'social_feed:comentar_post' post_id=post.id %}" method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <textarea name="contenido" class="form-control" rows="3" placeholder="Escribe tu comentario aquí..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane me-1"></i> Publicar comentario
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    function copyShareUrl() {
+        var copyText = document.getElementById("shareUrl");
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyText.value);
+        
+        // Mostrar mensaje de copiado
+        var button = copyText.nextElementSibling;
+        var originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check me-1"></i> Copiado';
+        setTimeout(function() {
+            button.innerHTML = originalText;
+        }, 2000);
+    }
+</script>
+{% endblock %}
+{% endblock %} 

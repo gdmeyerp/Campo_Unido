@@ -1,0 +1,143 @@
+{% extends "foro_machina/base_foro.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Búsqueda" %} - {% trans "Foro Campo Unido" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+        <h1 class="h2">{% trans "Búsqueda en el foro" %}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'foro_machina:dashboard' %}" class="btn btn-outline-secondary">
+                <span data-feather="arrow-left"></span>
+                {% trans "Volver a foros" %}
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "Buscar" %}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" action="{% url 'foro_machina:buscar' %}" class="search-form">
+                        <div class="input-group">
+                            <input type="text" name="q" class="form-control" placeholder="{% trans 'Buscar en el foro...' %}" value="{{ query }}">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" type="submit">
+                                    <span data-feather="search"></span> {% trans "Buscar" %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if query %}
+        <!-- Resultados de temas -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">{% trans "Temas encontrados" %}</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>{% trans "Tema" %}</th>
+                                        <th>{% trans "Foro" %}</th>
+                                        <th>{% trans "Respuestas" %}</th>
+                                        <th>{% trans "Vistas" %}</th>
+                                        <th>{% trans "Último post" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for topic in results.topics %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'foro_machina:tema_detalle' topic.id %}" class="text-decoration-none">
+                                                    <h6 class="mb-1">{{ topic.subject }}</h6>
+                                                    <small class="text-muted">{% trans "por" %} {{ topic.poster.username }}</small>
+                                                </a>
+                                            </td>
+                                            <td>{{ topic.forum.name }}</td>
+                                            <td>{{ topic.posts_count }}</td>
+                                            <td>{{ topic.views_count }}</td>
+                                            <td>
+                                                <small>
+                                                    {{ topic.last_post_on|date:"d/m/Y H:i" }}<br>
+                                                    {% if topic.last_post %}
+                                                        {% trans "por" %} {{ topic.last_post.poster.username }}
+                                                    {% endif %}
+                                                </small>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="5" class="text-center py-4">
+                                                {% trans "No se encontraron temas que coincidan con tu búsqueda." %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resultados de posts -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">{% trans "Posts encontrados" %}</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>{% trans "Post" %}</th>
+                                        <th>{% trans "Tema" %}</th>
+                                        <th>{% trans "Autor" %}</th>
+                                        <th>{% trans "Fecha" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for post in results.posts %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'foro_machina:tema_detalle' post.topic.id %}" class="text-decoration-none">
+                                                    <h6 class="mb-1">{{ post.subject|default:post.topic.subject }}</h6>
+                                                    <p class="text-muted small mb-0">{{ post.content.rendered|truncatewords_html:20|safe }}</p>
+                                                </a>
+                                            </td>
+                                            <td>{{ post.topic.subject }}</td>
+                                            <td>{{ post.poster.username }}</td>
+                                            <td>{{ post.created|date:"d/m/Y H:i" }}</td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="4" class="text-center py-4">
+                                                {% trans "No se encontraron posts que coincidan con tu búsqueda." %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

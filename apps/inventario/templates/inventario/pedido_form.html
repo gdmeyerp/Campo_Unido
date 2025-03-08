@@ -1,0 +1,364 @@
+{% extends 'inventario/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+    {% if form.instance.id %}Editar Pedido{% else %}Nuevo Pedido{% endif %} - Campo Unido
+{% endblock %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <style>
+        .form-group.required .control-label:after {
+            content: "*";
+            color: red;
+            margin-left: 4px;
+        }
+        
+        .producto-row {
+            background-color: #f8f9fa;
+            border-radius: 0.25rem;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .producto-row:hover {
+            background-color: #e9ecef;
+        }
+        
+        .total-pedido {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+    </style>
+{% endblock %}
+
+{% block inventario_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        {% if form.instance.id %}
+            Editar Pedido #{{ form.instance.id }}
+        {% else %}
+            Nuevo Pedido
+        {% endif %}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'inventario:lista_pedidos' %}" class="btn btn-sm btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver a la lista
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-clipboard-list mr-2"></i> 
+                {% if form.instance.id %}
+                    Información del Pedido
+                {% else %}
+                    Información del Nuevo Pedido
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <form method="post" id="pedido-form" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form.proveedor|as_crispy_field }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ form.fecha_pedido|as_crispy_field }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ form.fecha_entrega|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form.estado_pedido|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="form-group text-center mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 
+                            {% if form.instance.id %}
+                                Guardar Cambios
+                            {% else %}
+                                Crear Pedido
+                            {% endif %}
+                        </button>
+                        <a href="{% url 'inventario:lista_pedidos' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        {% if form.instance.id %}
+        <!-- Detalles del Pedido -->
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-box mr-2"></i> Productos del Pedido</span>
+                    <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#agregarProductoModal">
+                        <i class="fas fa-plus"></i> Agregar Producto
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if detalles %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-center">Cantidad</th>
+                                <th class="text-right">Precio Unitario</th>
+                                <th class="text-right">Subtotal</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for detalle in detalles %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'inventario:detalle_producto' detalle.producto_inventario.id %}">
+                                        {{ detalle.producto_inventario.nombre_producto }}
+                                    </a>
+                                </td>
+                                <td class="text-center">{{ detalle.cantidad }}</td>
+                                <td class="text-right">{{ detalle.precio_unitario|floatformat:2 }}</td>
+                                <td class="text-right">{{ detalle.subtotal|floatformat:2 }}</td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-primary editar-detalle" 
+                                                data-id="{{ detalle.id }}"
+                                                data-producto="{{ detalle.producto_inventario.id }}"
+                                                data-cantidad="{{ detalle.cantidad }}"
+                                                data-precio="{{ detalle.precio_unitario }}"
+                                                data-toggle="modal" data-target="#editarProductoModal">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <a href="{% url 'inventario:eliminar_detalle_pedido' detalle.id %}" class="btn btn-danger" onclick="return confirm('¿Está seguro de eliminar este producto del pedido?')">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-right font-weight-bold">Total:</td>
+                                <td class="text-right total-pedido">{{ total|floatformat:2 }}</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle mr-2"></i> No hay productos agregados a este pedido.
+                </div>
+                <div class="text-center">
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#agregarProductoModal">
+                        <i class="fas fa-plus"></i> Agregar Producto
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Modal para Agregar Producto -->
+        <div class="modal fade" id="agregarProductoModal" tabindex="-1" role="dialog" aria-labelledby="agregarProductoModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="agregarProductoModalLabel">Agregar Producto al Pedido</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <form method="post" action="{% url 'inventario:agregar_producto_pedido' form.instance.id %}">
+                        <div class="modal-body">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label for="producto">Producto</label>
+                                <select class="form-control select2-modal" id="producto" name="producto" required>
+                                    <option value="">Seleccione un producto</option>
+                                    {% for producto in productos %}
+                                    <option value="{{ producto.id }}" data-precio="{{ producto.precio_compra }}">
+                                        {{ producto.nombre_producto }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="cantidad">Cantidad</label>
+                                <input type="number" class="form-control" id="cantidad" name="cantidad" min="1" value="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="precio_unitario">Precio Unitario</label>
+                                <input type="number" class="form-control" id="precio_unitario" name="precio_unitario" step="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="subtotal">Subtotal</label>
+                                <input type="text" class="form-control" id="subtotal" readonly>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Agregar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal para Editar Producto -->
+        <div class="modal fade" id="editarProductoModal" tabindex="-1" role="dialog" aria-labelledby="editarProductoModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editarProductoModalLabel">Editar Producto del Pedido</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <form method="post" action="{% url 'inventario:editar_producto_pedido' form.instance.id %}" id="form-editar-detalle">
+                        <div class="modal-body">
+                            {% csrf_token %}
+                            <input type="hidden" id="detalle_id" name="detalle_id">
+                            <div class="form-group">
+                                <label for="edit_producto">Producto</label>
+                                <select class="form-control select2-modal" id="edit_producto" name="producto" required disabled>
+                                    {% for producto in productos %}
+                                    <option value="{{ producto.id }}" data-precio="{{ producto.precio_compra }}">
+                                        {{ producto.nombre_producto }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_cantidad">Cantidad</label>
+                                <input type="number" class="form-control" id="edit_cantidad" name="cantidad" min="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_precio_unitario">Precio Unitario</label>
+                                <input type="number" class="form-control" id="edit_precio_unitario" name="precio_unitario" step="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_subtotal">Subtotal</label>
+                                <input type="text" class="form-control" id="edit_subtotal" readonly>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script>
+        $(document).ready(function() {
+            // Inicializar select2 para los campos de selección
+            $('#id_proveedor').select2({
+                theme: 'bootstrap4',
+                placeholder: 'Seleccione un proveedor'
+            });
+            
+            $('#id_estado_pedido').select2({
+                theme: 'bootstrap4',
+                minimumResultsForSearch: Infinity
+            });
+            
+            // Inicializar datepickers
+            $('#id_fecha_pedido, #id_fecha_entrega').datepicker({
+                format: 'yyyy-mm-dd',
+                autoclose: true,
+                todayHighlight: true
+            });
+            
+            // Inicializar select2 en modales
+            $('.select2-modal').select2({
+                theme: 'bootstrap4',
+                dropdownParent: $('.modal')
+            });
+            
+            // Calcular subtotal al cambiar cantidad o precio
+            function calcularSubtotal(cantidad, precio, subtotalField) {
+                var subtotal = cantidad * precio;
+                subtotalField.val(subtotal.toFixed(2));
+            }
+            
+            $('#cantidad, #precio_unitario').on('change keyup', function() {
+                var cantidad = parseFloat($('#cantidad').val()) || 0;
+                var precio = parseFloat($('#precio_unitario').val()) || 0;
+                calcularSubtotal(cantidad, precio, $('#subtotal'));
+            });
+            
+            $('#edit_cantidad, #edit_precio_unitario').on('change keyup', function() {
+                var cantidad = parseFloat($('#edit_cantidad').val()) || 0;
+                var precio = parseFloat($('#edit_precio_unitario').val()) || 0;
+                calcularSubtotal(cantidad, precio, $('#edit_subtotal'));
+            });
+            
+            // Establecer precio del producto seleccionado
+            $('#producto').on('change', function() {
+                var precio = $(this).find(':selected').data('precio') || 0;
+                $('#precio_unitario').val(precio.toFixed(2));
+                
+                var cantidad = parseFloat($('#cantidad').val()) || 0;
+                calcularSubtotal(cantidad, precio, $('#subtotal'));
+            });
+            
+            // Configurar modal de edición
+            $('.editar-detalle').on('click', function() {
+                var id = $(this).data('id');
+                var producto = $(this).data('producto');
+                var cantidad = $(this).data('cantidad');
+                var precio = $(this).data('precio');
+                
+                $('#detalle_id').val(id);
+                $('#edit_producto').val(producto).trigger('change');
+                $('#edit_cantidad').val(cantidad);
+                $('#edit_precio_unitario').val(precio.toFixed(2));
+                
+                calcularSubtotal(cantidad, precio, $('#edit_subtotal'));
+            });
+            
+            // Validación del formulario
+            $('#pedido-form').submit(function(e) {
+                var proveedor = $('#id_proveedor').val();
+                var fechaPedido = $('#id_fecha_pedido').val();
+                
+                if (!proveedor) {
+                    alert('Por favor, seleccione un proveedor.');
+                    e.preventDefault();
+                    return false;
+                }
+                
+                if (!fechaPedido) {
+                    alert('Por favor, ingrese la fecha del pedido.');
+                    e.preventDefault();
+                    return false;
+                }
+                
+                return true;
+            });
+        });
+    </script>
+{% endblock %} 

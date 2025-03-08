@@ -1,0 +1,101 @@
+{% extends "foro_machina/base_foro.html" %}
+{% load i18n %}
+{% load mptt_tags %}
+
+{% block title %}{% trans "Administración de Foros" %} - {% trans "Foro Campo Unido" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+        <h1 class="h2">{% trans "Administración de Foros" %}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'foro_machina:dashboard' %}" class="btn btn-outline-secondary mr-2">
+                <i class="fas fa-arrow-left"></i> {% trans "Volver al Foro" %}
+            </a>
+            <a href="{% url 'foro_machina:crear_foro' %}" class="btn btn-success">
+                <i class="fas fa-plus-circle"></i> {% trans "Crear Nuevo Foro" %}
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        <div class="messages mb-4">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">{% trans "Foros Disponibles" %}</h5>
+        </div>
+        <div class="card-body">
+            {% if forums %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>{% trans "Nombre" %}</th>
+                                <th>{% trans "Tipo" %}</th>
+                                <th>{% trans "Temas" %}</th>
+                                <th>{% trans "Mensajes" %}</th>
+                                <th>{% trans "Acciones" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% recursetree forums %}
+                                <tr>
+                                    <td style="padding-left: {{ node.level }}rem;">
+                                        {% if node.is_category %}
+                                            <span class="badge badge-secondary">{% trans "Categoría" %}</span>
+                                        {% elif node.is_forum %}
+                                            <span class="badge badge-info">{% trans "Foro" %}</span>
+                                        {% elif node.is_link %}
+                                            <span class="badge badge-warning">{% trans "Enlace" %}</span>
+                                        {% endif %}
+                                        <a href="{% url 'foro_machina:foro_detalle' node.pk %}">{{ node.name }}</a>
+                                    </td>
+                                    <td>
+                                        {% if node.is_category %}
+                                            {% trans "Categoría" %}
+                                        {% elif node.is_forum %}
+                                            {% trans "Foro" %}
+                                        {% elif node.is_link %}
+                                            {% trans "Enlace" %}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ node.topics_count }}</td>
+                                    <td>{{ node.posts_count }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{% url 'foro_machina:editar_foro' node.pk %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i> {% trans "Editar" %}
+                                            </a>
+                                            <a href="{% url 'foro_machina:eliminar_foro' node.pk %}" class="btn btn-sm btn-outline-danger">
+                                                <i class="fas fa-trash-alt"></i> {% trans "Eliminar" %}
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% if not node.is_leaf_node %}
+                                    {{ children }}
+                                {% endif %}
+                            {% endrecursetree %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <p>{% trans "No hay foros disponibles." %}</p>
+                    <a href="{% url 'foro_machina:crear_foro' %}" class="btn btn-primary mt-3">
+                        <i class="fas fa-plus-circle"></i> {% trans "Crear el primer foro" %}
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

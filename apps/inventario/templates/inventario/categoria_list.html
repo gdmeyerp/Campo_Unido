@@ -1,0 +1,115 @@
+{% extends "inventario/base.html" %}
+{% load static %}
+
+{% block title %}{{ titulo }} - Campo Unido{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ titulo }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group mr-2">
+                <a href="{% url 'inventario:crear_categoria' %}" class="btn btn-sm btn-outline-primary">
+                    <span data-feather="plus"></span> Nueva Categoría
+                </a>
+            </div>
+            <a href="{% url 'inventario:dashboard' %}" class="btn btn-sm btn-outline-secondary">
+                <span data-feather="arrow-left"></span> Volver al Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros y búsqueda -->
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="get" class="form-inline">
+                        <div class="form-group mb-2 mr-2">
+                            <input type="text" class="form-control" name="q" placeholder="Buscar por nombre" value="{{ request.GET.q }}">
+                        </div>
+                        <button type="submit" class="btn btn-primary mb-2">Buscar</button>
+                        {% if request.GET.q %}
+                            <a href="{% url 'inventario:lista_categorias' %}" class="btn btn-secondary mb-2 ml-2">Limpiar</a>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listado de categorías -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Categorías de Productos</h5>
+                </div>
+                <div class="card-body">
+                    {% if categorias %}
+                        <div class="table-responsive">
+                            <table class="table table-striped table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nombre</th>
+                                        <th>Categoría Padre</th>
+                                        <th>Descripción</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for categoria in categorias %}
+                                        <tr>
+                                            <td>{{ categoria.id }}</td>
+                                            <td>{{ categoria.nombre_categoria }}</td>
+                                            <td>
+                                                {% if categoria.categoria_padre %}
+                                                    {{ categoria.categoria_padre.nombre_categoria }}
+                                                {% else %}
+                                                    <span class="text-muted">Categoría principal</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if categoria.descripcion %}
+                                                    {{ categoria.descripcion|truncatechars:50 }}
+                                                {% else %}
+                                                    <span class="text-muted">Sin descripción</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group">
+                                                    <a href="{% url 'inventario:editar_categoria' categoria.id %}" class="btn btn-sm btn-outline-primary">
+                                                        <span data-feather="edit"></span> Editar
+                                                    </a>
+                                                    <a href="{% url 'inventario:eliminar_categoria' categoria.id %}" class="btn btn-sm btn-outline-danger">
+                                                        <span data-feather="trash-2"></span> Eliminar
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            No hay categorías de productos registradas. 
+                            <a href="{% url 'inventario:crear_categoria' %}" class="alert-link">Crear una nueva categoría</a>.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar íconos Feather
+        feather.replace();
+    });
+</script>
+{% endblock %} 

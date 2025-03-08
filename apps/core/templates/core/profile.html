@@ -1,0 +1,65 @@
+{% extends "core/dashboard.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Foto de Perfil</h5>
+                </div>
+                <div class="card-body text-center">
+                    {% if user.perfilusuario.foto_perfil %}
+                        <img src="{{ user.perfilusuario.foto_perfil.url }}" alt="{{ user.username }}" class="img-fluid rounded-circle mb-3" style="max-width: 200px; max-height: 200px;">
+                    {% else %}
+                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 200px; height: 200px; font-size: 72px;">
+                            {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                        </div>
+                    {% endif %}
+                    <a href="{% url 'core:editar_perfil' %}" class="btn btn-primary">Editar Perfil</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Información Personal</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Nombre:</div>
+                        <div class="col-md-8">{{ user.first_name }} {{ user.last_name }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Email:</div>
+                        <div class="col-md-8">{{ user.email }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Fecha de registro:</div>
+                        <div class="col-md-8">{{ user.date_joined|date:"d/m/Y" }}</div>
+                    </div>
+                    {% if user.perfilusuario.descripcion %}
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Descripción:</div>
+                        <div class="col-md-8">{{ user.perfilusuario.descripcion }}</div>
+                    </div>
+                    {% endif %}
+                    {% if user.perfilusuario.intereses %}
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Intereses:</div>
+                        <div class="col-md-8">{{ user.perfilusuario.intereses }}</div>
+                    </div>
+                    {% endif %}
+                    {% if user.perfilusuario.fecha_nacimiento %}
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Fecha de nacimiento:</div>
+                        <div class="col-md-8">{{ user.perfilusuario.fecha_nacimiento|date:"d/m/Y" }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,206 @@
+{% extends "inventario/base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Registrar Movimiento de Inventario - Campo Unido{% endblock %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <style>
+        .form-group.required .control-label:after {
+            content: "*";
+            color: red;
+            margin-left: 4px;
+        }
+        
+        .badge-entrada {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .badge-salida {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .badge-ajuste {
+            background-color: #ffc107;
+            color: black;
+        }
+    </style>
+{% endblock %}
+
+{% block inventario_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ titulo }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'inventario:lista_movimientos' %}" class="btn btn-sm btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver a la lista
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Detalles del Movimiento</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form.producto_inventario|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.tipo_movimiento|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            {{ form.cantidad_movimiento|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.referencia_documento|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            {{ form.descripcion_movimiento|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div id="stock-info" class="alert alert-info mt-3" style="display: none;">
+                        <h6>Información de Stock</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>Stock Actual:</strong> <span id="stock-actual"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Stock Mínimo:</strong> <span id="stock-minimo"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Stock Máximo:</strong> <span id="stock-maximo"></span>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-12">
+                                <strong>Stock Después del Movimiento:</strong> <span id="stock-despues" class="font-weight-bold"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group text-center mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Registrar Movimiento
+                        </button>
+                        <a href="{% url 'inventario:lista_movimientos' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script>
+        $(document).ready(function() {
+            // Inicializar select2 para los campos de selección
+            $('#id_producto_inventario').select2({
+                theme: 'bootstrap4',
+                placeholder: 'Seleccione un producto'
+            });
+            
+            $('#id_tipo_movimiento').select2({
+                theme: 'bootstrap4',
+                placeholder: 'Seleccione un tipo de movimiento',
+                minimumResultsForSearch: Infinity
+            });
+            
+            // Función para cargar información del producto
+            function cargarInfoProducto() {
+                var productoId = $('#id_producto_inventario').val();
+                if (productoId) {
+                    $.ajax({
+                        url: '{% url "inventario:api_producto_info" %}',
+                        data: {
+                            'producto_id': productoId
+                        },
+                        dataType: 'json',
+                        success: function(data) {
+                            $('#stock-actual').text(data.cantidad_disponible + ' ' + data.unidad_medida);
+                            $('#stock-minimo').text(data.stock_minimo + ' ' + data.unidad_medida);
+                            $('#stock-maximo').text(data.stock_maximo + ' ' + data.unidad_medida);
+                            $('#stock-info').show();
+                            calcularStockDespues();
+                        }
+                    });
+                } else {
+                    $('#stock-info').hide();
+                }
+            }
+            
+            // Función para calcular el stock después del movimiento
+            function calcularStockDespues() {
+                var stockActual = parseFloat($('#stock-actual').text());
+                var cantidad = parseFloat($('#id_cantidad_movimiento').val()) || 0;
+                var tipo = $('#id_tipo_movimiento').val();
+                var stockDespues = stockActual;
+                
+                if (tipo === 'ENTRADA') {
+                    stockDespues = stockActual + cantidad;
+                } else if (tipo === 'SALIDA') {
+                    stockDespues = stockActual - cantidad;
+                } else if (tipo === 'AJUSTE') {
+                    stockDespues = cantidad;
+                }
+                
+                $('#stock-despues').text(stockDespues.toFixed(2));
+                
+                // Cambiar color según el stock resultante
+                if (stockDespues < 0) {
+                    $('#stock-despues').removeClass('text-success text-warning').addClass('text-danger');
+                } else {
+                    var stockMinimo = parseFloat($('#stock-minimo').text());
+                    if (stockDespues <= stockMinimo) {
+                        $('#stock-despues').removeClass('text-success text-danger').addClass('text-warning');
+                    } else {
+                        $('#stock-despues').removeClass('text-warning text-danger').addClass('text-success');
+                    }
+                }
+            }
+            
+            // Eventos
+            $('#id_producto_inventario').change(cargarInfoProducto);
+            $('#id_cantidad_movimiento, #id_tipo_movimiento').change(calcularStockDespues);
+            
+            // Cargar información inicial si hay un producto seleccionado
+            if ($('#id_producto_inventario').val()) {
+                cargarInfoProducto();
+            }
+            
+            // Validación del formulario
+            $('form').submit(function(e) {
+                var stockDespues = parseFloat($('#stock-despues').text());
+                var tipo = $('#id_tipo_movimiento').val();
+                
+                if (tipo === 'SALIDA' && stockDespues < 0) {
+                    if (!confirm('¡Advertencia! Este movimiento dejará el stock en negativo. ¿Desea continuar?')) {
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+                
+                return true;
+            });
+        });
+    </script>
+{% endblock %} 

@@ -1,0 +1,13 @@
+{% if user.is_authenticated %}
+<li class="nav-item" data-aos="fade-left" data-aos-delay="250">
+    <a class="nav-link position-relative" href="{% url 'inventario:lista_notificaciones' %}">
+        <i class="fas fa-bell me-2"></i>Notificaciones
+        {% if notificaciones_count > 0 %}
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                {{ notificaciones_count }}
+                <span class="visually-hidden">notificaciones no leídas</span>
+            </span>
+        {% endif %}
+    </a>
+</li>
+{% endif %} 

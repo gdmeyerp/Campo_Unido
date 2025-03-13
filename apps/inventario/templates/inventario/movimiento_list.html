@@ -58,7 +58,7 @@
                     <option value="">Todos los usuarios</option>
                     {% for u in usuarios %}
                     <option value="{{ u.id }}" {% if request.GET.usuario == u.id|stringformat:"i" %}selected{% endif %}>
-                        {{ u.get_full_name|default:u.username }}
+                        {{ u.get_full_name|default:u.email }}
                     </option>
                     {% endfor %}
                 </select>
@@ -101,24 +101,24 @@
                 <tbody>
                     {% for movimiento in movimientos %}
                     <tr>
-                        <td>{{ movimiento.fecha|date:"d/m/Y H:i" }}</td>
+                        <td>{{ movimiento.fecha_movimiento|date:"d/m/Y H:i" }}</td>
                         <td>
-                            <a href="{% url 'inventario:detalle_producto' movimiento.producto.id %}">
-                                {{ movimiento.producto.nombre }}
+                            <a href="{% url 'inventario:detalle_producto' movimiento.producto_inventario.id %}">
+                                {{ movimiento.producto_inventario.nombre_producto }}
                             </a>
                         </td>
                         <td>
-                            <span class="badge {% if movimiento.tipo == 'ENTRADA' %}badge-entrada{% elif movimiento.tipo == 'SALIDA' %}badge-salida{% else %}badge-ajuste{% endif %}">
-                                {{ movimiento.get_tipo_display }}
+                            <span class="badge {% if movimiento.tipo_movimiento == 'ENTRADA' %}badge-entrada{% elif movimiento.tipo_movimiento == 'SALIDA' %}badge-salida{% else %}badge-ajuste{% endif %}">
+                                {{ movimiento.tipo_movimiento }}
                             </span>
                         </td>
-                        <td class="text-right">{{ movimiento.cantidad }} {{ movimiento.producto.unidad_medida.simbolo }}</td>
-                        <td>{{ movimiento.referencia|default:"-" }}</td>
-                        <td>{{ movimiento.usuario.get_full_name|default:movimiento.usuario.username }}</td>
+                        <td class="text-right">{{ movimiento.cantidad_movimiento }} {{ movimiento.producto_inventario.unidad_medida.simbolo }}</td>
+                        <td>{{ movimiento.referencia_documento|default:"-" }}</td>
+                        <td>{{ movimiento.usuario.get_full_name|default:movimiento.usuario.email }}</td>
                         <td>
-                            {% if movimiento.notas %}
-                            <span data-toggle="tooltip" title="{{ movimiento.notas }}">
-                                {{ movimiento.notas|truncatechars:30 }}
+                            {% if movimiento.descripcion_movimiento %}
+                            <span data-toggle="tooltip" title="{{ movimiento.descripcion_movimiento }}">
+                                {{ movimiento.descripcion_movimiento|truncatechars:30 }}
                             </span>
                             {% else %}
                             -

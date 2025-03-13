@@ -7,6 +7,9 @@ urlpatterns = [
     # Dashboard
     path('', views.dashboard_inventario, name='dashboard'),
     
+    # Herramienta de diagnóstico
+    path('diagnostico/', views.diagnostico_inventario, name='diagnostico_inventario'),
+    
     # Categorías de Productos
     path('categorias/', views.lista_categorias, name='lista_categorias'),
     path('categorias/crear/', views.crear_categoria, name='crear_categoria'),
@@ -35,6 +38,7 @@ urlpatterns = [
     path('proveedores/crear/', views.crear_proveedor, name='crear_proveedor'),
     path('proveedores/<int:pk>/', views.detalle_proveedor, name='detalle_proveedor'),
     path('proveedores/<int:pk>/editar/', views.editar_proveedor, name='editar_proveedor'),
+    path('proveedores/asignar-propietario/', views.asignar_propietario_proveedores, name='asignar_propietario_proveedores'),
     
     # Pedidos a Proveedores
     path('pedidos/', views.lista_pedidos, name='lista_pedidos'),
@@ -43,11 +47,16 @@ urlpatterns = [
     path('pedidos/<int:pk>/editar/', views.editar_pedido, name='editar_pedido'),
     path('pedidos/detalle/<int:pk>/eliminar/', views.eliminar_detalle_pedido, name='eliminar_detalle_pedido'),
     path('pedidos/<int:pedido_id>/editar-producto/', views.editar_producto_pedido, name='editar_producto_pedido'),
+    path('pedidos/<int:pedido_id>/agregar-producto/', views.agregar_producto_pedido, name='agregar_producto_pedido'),
+    path('pedidos/<int:pk>/recibir/', views.recibir_pedido, name='recibir_pedido'),
+    path('pedidos/<int:pk>/cancelar/', views.cancelar_pedido, name='cancelar_pedido'),
+    path('pedidos/asignar-propietario/', views.asignar_propietario_pedidos, name='asignar_propietario_pedidos'),
     
     # Almacenes
     path('almacenes/', views.lista_almacenes, name='lista_almacenes'),
     path('almacenes/crear/', views.crear_almacen, name='crear_almacen'),
     path('almacenes/<int:pk>/', views.detalle_almacen, name='detalle_almacen'),
+    path('almacenes/asignar-propietario/', views.asignar_propietario_almacenes, name='asignar_propietario_almacenes'),
     
     # Ubicaciones de Almacén
     path('almacenes/<int:almacen_id>/ubicaciones/crear/', views.crear_ubicacion, name='crear_ubicacion'),
@@ -69,4 +78,23 @@ urlpatterns = [
     path('api/producto-info/', views.api_producto_info, name='api_producto_info'),
     path('api/crear-categoria/', views.api_crear_categoria, name='api_crear_categoria'),
     path('api/crear-estado/', views.api_crear_estado, name='api_crear_estado'),
+    
+    # Imágenes de Productos
+    path('productos/<int:producto_id>/imagenes/', views.gestionar_imagenes, name='gestionar_imagenes'),
+    path('productos/<int:producto_id>/imagenes/subir/', views.subir_imagen, name='subir_imagen'),
+    path('productos/<int:producto_id>/imagenes/subir-multiples/', views.subir_imagenes_multiples, name='subir_imagenes_multiples'),
+    path('productos/imagenes/<int:imagen_id>/eliminar/', views.eliminar_imagen, name='eliminar_imagen'),
+    path('productos/imagenes/<int:imagen_id>/principal/', views.marcar_como_principal, name='marcar_como_principal'),
+
+    # URLs para Notificaciones
+    path('notificaciones/', views.lista_notificaciones, name='lista_notificaciones'),
+    path('notificaciones/<int:pk>/', views.detalle_notificacion, name='detalle_notificacion'),
+    path('notificaciones/<int:pk>/marcar-leida/', views.marcar_como_leida, name='marcar_notificacion_leida'),
+    path('notificaciones/marcar-todas-leidas/', views.marcar_todas_como_leidas, name='marcar_todas_leidas'),
+    path('notificaciones/<int:pk>/eliminar/', views.eliminar_notificacion, name='eliminar_notificacion'),
+    path('notificaciones/eliminar-todas/', views.eliminar_todas, name='eliminar_todas_notificaciones'),
+    path('api/notificaciones/contador/', views.obtener_contador_notificaciones, name='api_contador_notificaciones'),
+    path('api/notificaciones/recientes/', views.obtener_notificaciones_recientes, name='api_notificaciones_recientes'),
+    path('notificaciones/<int:notificacion_id>/marcar-leida/', views.marcar_notificacion_leida, name='marcar_notificacion_leida'),
+    path('notificaciones/generar-prueba/', views.generar_notificacion_prueba, name='generar_notificacion_prueba'),
 ] 

@@ -34,6 +34,13 @@ urlpatterns = [
     path('inventario/', include('apps.inventario.urls')),  # URLs del inventario
     path('db_explorer/', include('apps.db_explorer.urls')),  # URLs del explorador de BD
     path('ubicaciones/', include('apps.ubicaciones.urls')),  # URLs de ubicaciones
+    path('chat/', include('apps.chat_flotante.urls')),  # URLs del chat flotante
+    # Las siguientes URLs están comentadas porque las aplicaciones aún no existen o no están completas
+    # path('eventos/', include('apps.eventos.urls')),
+    # path('control-remoto/', include('apps.control_remoto.urls')),
+    # path('soporte/', include('apps.soporte.urls')),
+    # path('suscripciones/', include('apps.suscripciones.urls')),
+    # path('monitoreo/', include('apps.monitoreo.urls')),
 ]
 
 # Configuración para servir archivos estáticos y de medios en desarrollo

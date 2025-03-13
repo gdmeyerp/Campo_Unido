@@ -32,37 +32,50 @@
                 <div class="sidebar-sticky py-3">
                     <!-- Logo -->
                     <div class="text-center mb-3">
-                        <img src="{% static 'LogosPrincipales/LogoCampoUnido.png' %}" alt="Logo CampoUnido" class="logo" style="width: 75%; height: 100%;">
+                        <img src="{% static 'LogosPrincipales/LogoCampoUnido.png' %}" alt="Logo CampoUnido" class="logo" style="width: 60%; height: 100%;">
                     </div>
                     
 
                     
                     <!-- Menú principal -->
                     <ul class="nav flex-column">
-                        <li class="nav-item">
+                    <li class="nav-item">
                             <a class="nav-link {% if request.path == '/profile/' %}active{% endif %}" href="{% url 'core:profile' %}">
                                 <i class="fas fa-home"></i> Inicio
-                            </a>
-                        </li>
-                        <li class="nav-item">
+                        </a>
+                    </li>
+                    <li class="nav-item">
                             <a class="nav-link" href="#">
                                 <i class="fas fa-chart-line"></i> Mediciones
-                            </a>
-                        </li>
-                        <li class="nav-item">
+                        </a>
+                    </li>
+                    <li class="nav-item">
                             <a class="nav-link" href="#">
                                 <i class="fas fa-history"></i> Historial
                             </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
+                    </li>
+                    <li class="nav-item">
+                            <a class="nav-link {% if 'chat/dashboard' in request.path %}active{% endif %}" href="{% url 'chat_flotante:dashboard_chat' %}">
                                 <i class="fas fa-envelope"></i> Mensajes
-                                <span class="badge badge-pill badge-primary ml-2">2</span>
+                                {% if chat_flotante_unread > 0 %}
+                                <span class="badge badge-pill badge-primary ml-2">{{ chat_flotante_unread }}</span>
+                                {% endif %}
                             </a>
                         </li>
+
                         <li class="nav-item">
                             <a class="nav-link {% if 'inventario' in request.path %}active{% endif %}" href="{% url 'inventario:dashboard' %}">
                                 <i class="fas fa-box"></i> Productos
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'notificaciones' in request.path %}active{% endif %}" href="{% url 'inventario:lista_notificaciones' %}">
+                                <i class="fas fa-bell"></i> Notificaciones
+                                {% load notificaciones_tags %}
+                                {% notificaciones_no_leidas user as no_leidas_count %}
+                                {% if no_leidas_count > 0 %}
+                                <span class="badge badge-pill badge-danger">{{ no_leidas_count }}</span>
+                                {% endif %}
                             </a>
                         </li>
                         <li class="nav-item">
@@ -81,16 +94,16 @@
                             </a>
                             <!-- Submenú de Ubicaciones -->
                             <ul class="nav flex-column ml-3">
-                                <li class="nav-item">
+                        <li class="nav-item">
                                     <a class="nav-link small {% if 'mis_ubicaciones' in request.path %}active{% endif %}" href="{% url 'ubicaciones:mis_ubicaciones' %}">
                                         <i class="fas fa-map"></i> Mis Ubicaciones
-                                    </a>
-                                </li>
-                                <li class="nav-item">
+                            </a>
+                        </li>
+                        <li class="nav-item">
                                     <a class="nav-link small {% if 'buscar_cercanos' in request.path %}active{% endif %}" href="{% url 'ubicaciones:buscar_cercanos' %}">
                                         <i class="fas fa-search"></i> Buscar Cercanos
-                                    </a>
-                                </li>
+                            </a>
+                        </li>
                             </ul>
                         </li>
                         
@@ -157,9 +170,15 @@
 
                     <div class="d-flex align-items-center">
                         <div class="position-relative mr-3">
-                            <a href="#" class="text-dark">
+                            <a href="#" class="text-dark notification-bell">
                                 <i class="fas fa-bell fa-lg"></i>
-                                <span class="badge badge-pill badge-primary position-absolute" style="top: -8px; right: -8px;">4</span>
+                                {% load notificaciones_tags %}
+                                {% notificaciones_no_leidas user as no_leidas_count %}
+                                {% if no_leidas_count > 0 %}
+                                <span id="contador-notificaciones" class="badge badge-pill badge-danger position-absolute" style="top: -8px; right: -8px;">{{ no_leidas_count }}</span>
+                                {% else %}
+                                <span id="contador-notificaciones" class="badge badge-pill badge-danger position-absolute d-none" style="top: -8px; right: -8px;">0</span>
+                                {% endif %}
                             </a>
                         </div>
                         
@@ -187,79 +206,6 @@
                 <!-- Contenido de la página -->
                 {% block content %}
                 <!-- Dashboard por defecto -->
-                <div class="container-fluid px-0">
-                    <!-- Fila de métricas -->
-                    <div class="dashboard-stats">
-                        <div class="stat-card">
-                            <div class="title">Consumo Total</div>
-                            <div class="value">126 kWh</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="title">Productos</div>
-                            <div class="value">24</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="title">Ubicaciones</div>
-                            <div class="value">8</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="title">Estado</div>
-                            <div class="value">Activo</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Gráficos -->
-                    <div class="row">
-                        <div class="col-lg-8">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <h5 class="card-title mb-0">Ingresos por Sede en el Año 2021</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="chart-container">
-                                        <canvas id="ingresosSede"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Gráfico secundario para timeline -->
-                            <div class="card">
-                                <div class="card-header">
-                                    <h5 class="card-title mb-0">Actividad Semanal</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div style="height: 150px">
-                                        <canvas id="actividadSemanal"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-lg-4">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <h5 class="card-title mb-0">Productos</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="chart-container" style="height: 250px;">
-                                        <canvas id="productosChart"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="card">
-                                <div class="card-header">
-                                    <h5 class="card-title mb-0">Consumo Total en KWH</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="chart-container" style="height: 250px;">
-                                        <canvas id="consumoChart"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
                 {% endblock %}
             </main>
         </div>
@@ -277,7 +223,14 @@
     <!-- Chart.js (para gráficos) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    {% block js %}{% endblock %}
+    <!-- Script para notificaciones -->
+    <script src="{% static 'js/notifications.js' %}"></script>
+    
+    {% block js %}
+    <!-- Scripts adicionales específicos para el dashboard -->
+
+    {% block dashboard_js %}{% endblock %}
+    {% endblock %}
     
     <script>
         // Activar los tooltips
@@ -542,5 +495,12 @@
             }
         });
     </script>
+    
+    <!-- Inclusión del Chat Flotante -->
+    {% if chat_flotante_enabled %}
+        {% include 'chat_flotante/chat_flotante.html' %}
+    {% endif %}
+    
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -276,7 +276,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form method="post" action="">
+            <form method="post" action="{% url 'inventario:agregar_producto_pedido' pedido.id %}">
                 <div class="modal-body">
                     {% csrf_token %}
                     <input type="hidden" name="accion" value="agregar_producto">
@@ -296,12 +296,12 @@
                         <input type="number" class="form-control" id="cantidad" name="cantidad" min="1" value="1" required>
                     </div>
                     <div class="form-group">
-                        <label for="precio">Precio Unitario</label>
+                        <label for="precio_unitario">Precio Unitario</label>
                         <div class="input-group">
                             <div class="input-group-prepend">
                                 <span class="input-group-text">$</span>
                             </div>
-                            <input type="number" class="form-control" id="precio" name="precio" step="0.01" required>
+                            <input type="number" class="form-control" id="precio" name="precio_unitario" step="0.01" required>
                         </div>
                     </div>
                     <div class="form-group">

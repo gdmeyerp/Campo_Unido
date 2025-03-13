@@ -1,0 +1,43 @@
+{% extends 'inventario/base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Notificación{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Confirmar eliminación</h5>
+                </div>
+                <div class="card-body text-center">
+                    <i class="fas fa-exclamation-triangle text-danger fa-4x mb-3"></i>
+                    <h4 class="mb-3">¿Está seguro de que desea eliminar esta notificación?</h4>
+                    <p class="mb-4">
+                        <strong>Título:</strong> {{ notificacion.titulo }}
+                    </p>
+                    <p class="mb-4">
+                        <strong>Mensaje:</strong> {{ notificacion.mensaje|truncatechars:100 }}
+                    </p>
+                    <div class="alert alert-warning" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Esta acción no se puede deshacer.
+                    </div>
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-center">
+                            <a href="{% url 'inventario:lista_notificaciones' %}" class="btn btn-secondary me-2">
+                                <i class="fas fa-times me-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash me-1"></i> Eliminar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

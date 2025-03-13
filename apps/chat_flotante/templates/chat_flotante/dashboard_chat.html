@@ -1,0 +1,138 @@
+{% load static %}
+
+<div class="dashboard-chat-container">
+    <!-- Panel lateral izquierdo con lista de conversaciones -->
+    <div class="dashboard-chat-sidebar">
+        <div class="dashboard-chat-header">
+            <h5>Conversaciones</h5>
+            <div class="dashboard-chat-actions">
+                <button id="dashboard-new-chat" title="Nueva conversación">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <button id="dashboard-chat-search" title="Buscar en conversaciones">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Buscador de conversaciones -->
+        <div id="dashboard-chat-search-box" class="dashboard-chat-search-box" style="display: none;">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Buscar..." id="dashboard-chat-search-input">
+                <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" type="button" id="dashboard-chat-search-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Lista de conversaciones -->
+        <div id="dashboard-conversations-list" class="dashboard-conversations-list">
+            <div class="chat-loading">
+                <i class="fas fa-spinner fa-spin"></i> Cargando conversaciones...
+            </div>
+        </div>
+    </div>
+    
+    <!-- Panel de chat principal -->
+    <div class="dashboard-chat-main">
+        <!-- Estado inicial - Seleccionar conversación -->
+        <div id="dashboard-chat-empty" class="dashboard-chat-empty">
+            <div class="empty-state">
+                <i class="fas fa-comments fa-4x"></i>
+                <h4>Tus mensajes</h4>
+                <p>Selecciona una conversación o inicia una nueva para comenzar a chatear.</p>
+            </div>
+        </div>
+        
+        <!-- Panel de conversación activa (inicialmente oculto) -->
+        <div id="dashboard-chat-conversation" class="dashboard-chat-conversation" style="display: none;">
+            <!-- Cabecera de la conversación -->
+            <div class="dashboard-chat-conversation-header">
+                <div class="conversation-info">
+                    <div class="conversation-avatar"></div>
+                    <div class="conversation-name"></div>
+                </div>
+                <div class="conversation-actions">
+                    <button id="dashboard-chat-info" title="Información">
+                        <i class="fas fa-info-circle"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Contenedor de mensajes -->
+            <div id="dashboard-chat-messages" class="dashboard-chat-messages">
+                <div class="chat-loading">
+                    <i class="fas fa-spinner fa-spin"></i> Cargando mensajes...
+                </div>
+            </div>
+            
+            <!-- Formulario para enviar mensajes -->
+            <div class="dashboard-chat-input">
+                <form id="message-form" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="message-input-container">
+                        <div class="message-input-tools">
+                            <button type="button" id="dashboard-chat-emoji-button" class="btn-icon" title="Emoticones">
+                                <i class="far fa-smile"></i>
+                            </button>
+                            <label for="dashboard-chat-image-input" class="btn-icon" title="Enviar imagen">
+                                <i class="far fa-image"></i>
+                            </label>
+                            <input type="file" id="dashboard-chat-image-input" accept="image/*" style="display: none;">
+                        </div>
+                        <div class="input-group">
+                            <textarea class="form-control" placeholder="Escribe un mensaje..." id="dashboard-chat-message-input" rows="1"></textarea>
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" type="button" id="dashboard-chat-send-button">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="image-preview-container" style="display: none;">
+                        <div class="image-preview-wrapper">
+                            <img id="image-preview" src="" alt="Vista previa">
+                            <button type="button" id="remove-image-btn" class="btn-icon">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="emoji-picker-container" style="display: none;"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para nueva conversación -->
+<div class="modal fade" id="dashboard-new-chat-modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nueva conversación</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="dashboard-chat-user-search">Buscar usuario:</label>
+                    <input type="text" class="form-control" id="dashboard-chat-user-search" placeholder="Nombre de usuario...">
+                </div>
+                <div id="dashboard-chat-user-results" class="dashboard-chat-user-results">
+                    <!-- Aquí se mostrarán los resultados de búsqueda -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts del chat del dashboard -->
+<link rel="stylesheet" href="{% static 'chat_flotante/css/dashboard_chat.css' %}">
+<script src="{% static 'chat_flotante/js/dashboard_chat.js' %}"></script> 

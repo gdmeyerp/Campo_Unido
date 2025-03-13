@@ -94,6 +94,9 @@
                 {{ form.descripcion_producto|as_crispy_field }}
             </div>
 
+            <!-- Asegurarnos de que el campo propietario se incluya en el formulario -->
+            {{ form.propietario }}
+
             <div class="d-flex justify-content-end">
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save mr-2"></i>Guardar

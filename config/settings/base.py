@@ -16,8 +16,17 @@ sys.path.append(str(BASE_DIR))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
+# Permitir localhost y 127.0.0.1 para desarrollo local
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+
 # Custom user model
 AUTH_USER_MODEL = 'core.User'
+
+# Authentication backends
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'guardian.backends.ObjectPermissionBackend',
+)
 
 # Application definition
 DJANGO_APPS = [
@@ -44,6 +53,7 @@ PROJECT_APPS = [
     'apps.social_feed.apps.SocialFeedConfig',
     'apps.db_explorer.apps.DbExplorerConfig',
     'apps.ubicaciones.apps.UbicacionesConfig',
+    'apps.chat_flotante.apps.ChatFlotanteConfig',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + [
@@ -75,6 +85,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'machina.apps.forum_permission.middleware.ForumPermissionMiddleware',
+    'apps.inventario.middleware.ProductoAccesoMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -94,6 +105,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'machina.core.context_processors.metadata',
+                'apps.chat_flotante.context_processors.chat_flotante_processor',
                 # Desactivado temporalmente debido a problemas
                 # 'apps.marketplace.context_processors.cart_processor',
                 # 'apps.marketplace.context_processors.marketplace_context',
@@ -163,13 +175,11 @@ MACHINA_FORUM_NAME = 'Campo Unido Forum'
 MACHINA_ATTACHMENT_CACHE_NAME = 'machina_attachments'
 
 # Configuración de django-guardian
-AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
-    'guardian.backends.ObjectPermissionBackend',
-)
 GUARDIAN_RAISE_403 = True
 ANONYMOUS_USER_NAME = 'anonymous@example.com'
 
 # Configuración de crispy-forms
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
-CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap4' 
+CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap4'
+
+# Se eliminó la configuración de Channels 

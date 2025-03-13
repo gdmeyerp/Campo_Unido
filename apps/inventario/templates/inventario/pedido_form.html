@@ -184,7 +184,7 @@
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
-                    <form method="post" action="{% url 'inventario:agregar_producto_pedido' form.instance.id %}">
+                    <form method="post" action="{% url 'inventario:agregar_producto_pedido' pedido.id %}">
                         <div class="modal-body">
                             {% csrf_token %}
                             <div class="form-group">

@@ -1,6 +1,7 @@
 {% load static %}
 {# Comentado temporalmente para resolver problemas #}
 {# {% load marketplace_tags %} #}
+{% load notificaciones_tags %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -288,6 +289,7 @@
                                 <i class="fas fa-store me-2"></i>Tienda
                             </a>
                         </li>
+                        {% mostrar_menu_notificaciones user %}
                         <li class="nav-item" data-aos="fade-left" data-aos-delay="300">
                             <a class="nav-link" href="#">
                                 <i class="fas fa-shopping-cart me-2"></i>Carrito
@@ -506,6 +508,8 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <!-- Notificaciones -->
+    <script src="{% static 'js/notifications.js' %}"></script>
     <script>
         // Inicializar AOS
         AOS.init({

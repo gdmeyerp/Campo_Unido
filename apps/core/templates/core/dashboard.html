@@ -28,11 +28,11 @@
     <div class="container-fluid p-0">
         <div class="row no-gutters">
             <!-- Sidebar -->
-            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block sidebar">
+            <nav id="sidebar" class="col-md-2 col-lg-2 d-md-block sidebar">
                 <div class="sidebar-sticky py-3">
                     <!-- Logo -->
                     <div class="text-center mb-3">
-                        <img src="{% static 'LogosPrincipales/LogoCampoUnido.png' %}" alt="Logo CampoUnido" class="logo" style="width: 60%; height: 100%;">
+                        <img src="{% static 'images/LogoCampoUnido.png' %}" alt="Logo CampoUnido" class="logo" style="width: 50%; height: 100%;">
                     </div>
                     
 
@@ -45,16 +45,116 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="fas fa-chart-line"></i> Mediciones
+                        <a class="nav-link dropdown-toggle" href="#monitoreoDropdown" data-toggle="collapse" aria-expanded="false" aria-controls="monitoreoDropdown">
+                          <i class="fas fa-chart-line"></i> Monitoreo
                         </a>
-                    </li>
-                    <li class="nav-item">
-                            <a class="nav-link" href="#">
+                        <div class="collapse" id="monitoreoDropdown">
+                          <ul class="nav flex-column ml-3">
+                            <li class="nav-item">
+                              <a class="nav-link small" href="#">
+                                <i class="fas fa-chart-line"></i> Mediciones
+                              </a>
+                            </li>
+                            <li class="nav-item">
+                              <a class="nav-link small" href="#">
                                 <i class="fas fa-history"></i> Historial
+                              </a>
+                            </li>
+                          </ul>
+                        </div>
+                      </li>
+                      
+         <!-- Enlace al Marketplace -->
+                        <li class="nav-item">
+                            <a class="nav-link dropdown-toggle {% if 'marketplace' in request.path %}active{% endif %}" href="#marketplaceDropdown"  data-toggle="collapse" aria-expanded="false" aria-controls="marketplaceDropdown">
+                              <i class="fas fa-store"></i> Marketplace
                             </a>
-                    </li>
-                    <li class="nav-item">
+                            <div class="collapse" id="marketplaceDropdown">
+                              <ul class="nav flex-column ml-3">
+                                <li class="nav-item">
+                                    <a class="nav-link {% if 'marketplace' in request.path %}active{% endif %}" href="{% url 'marketplace:home' %}">
+                                        <i class="fas fa-store"></i> Inicio
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                  <a class="nav-link small {% if 'lista_productos' in request.path %}active{% endif %}" href="{% url 'marketplace:lista_productos' %}">
+                                    <i class="fas fa-shopping-bag mr-2"></i> Ver todos los productos
+                                  </a>
+                                </li>
+                                <li class="nav-item">
+                                  <a class="nav-link small {% if 'mi_tienda' in request.path %}active{% endif %}" href="{% url 'marketplace:mi_tienda' %}">
+                                    <i class="fas fa-store mr-2"></i> Mi tienda
+                                  </a>
+                                </li>
+                                <li class="nav-item">
+                                  <a class="nav-link small {% if 'ver_carrito' in request.path %}active{% endif %}" href="{% url 'marketplace:ver_carrito' %}">
+                                    <i class="fas fa-shopping-cart mr-2"></i> Ver carrito
+                                  </a>
+                                </li>
+                                <li class="nav-item">
+                                  <a class="nav-link small {% if 'ver_lista_deseos' in request.path %}active{% endif %}" href="{% url 'marketplace:ver_lista_deseos' %}">
+                                    <i class="fas fa-heart mr-2"></i> Lista de deseos
+                                  </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#">
+                                        <i class="fas fa-shopping-cart"></i> Órdenes
+                                    </a>
+                                </li>
+                              </ul>
+                            </div>
+                          </li>
+                          
+                        
+                          <li class="nav-item">
+                            <a class="nav-link dropdown-toggle {% if 'inventario' in request.path or 'clientes' in request.path %}active{% endif %}" href="#gestionDropdown" data-toggle="collapse" aria-expanded="false" aria-controls="gestionDropdown">
+                              <i class="fas fa-cogs"></i> Gestión
+                            </a>
+                            <div class="collapse" id="gestionDropdown">
+                              <ul class="nav flex-column ml-3">
+                                <li class="nav-item">
+                                  <a class="nav-link small {% if 'inventario' in request.path %}active{% endif %}" href="{% url 'inventario:dashboard' %}">
+                                    <i class="fas fa-box"></i> Inventario
+                                  </a>
+                                </li>
+                                <li class="nav-item">
+                                  <a class="nav-link small {% if 'clientes' in request.path %}active{% endif %}" href="#">
+                                    <i class="fas fa-users"></i> Clientes
+                                  </a>
+                                </li>
+                                                        <!-- Monitorización (como en el mockup) -->
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.path == '/dashboard/' %}active{% endif %}" href="{% url 'core:monitorizacion' %}">
+                                        <i class="fas fa-chart-bar"></i> Monitorización
+                                    </a>
+                                </li>
+                              </ul>
+                            </div>
+                          </li>
+                          
+
+
+                        <li class="nav-item">
+                            <a class="nav-link dropdown-toggle {% if 'ubicaciones' in request.path %}active{% endif %}" href="#ubicacionesDropdown" data-toggle="collapse" aria-expanded="false" aria-controls="ubicacionesDropdown">
+                              <i class="fas fa-map-marker-alt"></i> Ubicaciones
+                            </a>
+                            <div class="collapse" id="ubicacionesDropdown">
+                              <ul class="nav flex-column ml-3">
+                                <li class="nav-item">
+                                  <a class="nav-link small {% if 'mis_ubicaciones' in request.path %}active{% endif %}" href="{% url 'ubicaciones:mis_ubicaciones' %}">
+                                    <i class="fas fa-map"></i> Mis Ubicaciones
+                                  </a>
+                                </li>
+                                <li class="nav-item">
+                                  <a class="nav-link small {% if 'buscar_cercanos' in request.path %}active{% endif %}" href="{% url 'ubicaciones:buscar_cercanos' %}">
+                                    <i class="fas fa-search"></i> Buscar Cercanos
+                                  </a>
+                                </li>
+                              </ul>
+                            </div>
+                          </li>
+
+                        <li class="nav-item">
                             <a class="nav-link {% if 'chat/dashboard' in request.path %}active{% endif %}" href="{% url 'chat_flotante:dashboard_chat' %}">
                                 <i class="fas fa-envelope"></i> Mensajes
                                 {% if chat_flotante_unread > 0 %}
@@ -62,12 +162,14 @@
                                 {% endif %}
                             </a>
                         </li>
-
+                        <!-- Foro -->
                         <li class="nav-item">
-                            <a class="nav-link {% if 'inventario' in request.path %}active{% endif %}" href="{% url 'inventario:dashboard' %}">
-                                <i class="fas fa-box"></i> Productos
+                            <a class="nav-link" href="/foro/">
+                                <i class="fas fa-comments"></i> Foro
                             </a>
                         </li>
+                        
+
                         <li class="nav-item">
                             <a class="nav-link {% if 'notificaciones' in request.path %}active{% endif %}" href="{% url 'inventario:lista_notificaciones' %}">
                                 <i class="fas fa-bell"></i> Notificaciones
@@ -78,49 +180,7 @@
                                 {% endif %}
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="fas fa-shopping-cart"></i> Órdenes
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="fas fa-users"></i> Clientes
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if 'ubicaciones' in request.path %}active{% endif %}" href="{% url 'ubicaciones:lista_paises' %}">
-                                <i class="fas fa-map-marker-alt"></i> Ubicaciones
-                            </a>
-                            <!-- Submenú de Ubicaciones -->
-                            <ul class="nav flex-column ml-3">
-                        <li class="nav-item">
-                                    <a class="nav-link small {% if 'mis_ubicaciones' in request.path %}active{% endif %}" href="{% url 'ubicaciones:mis_ubicaciones' %}">
-                                        <i class="fas fa-map"></i> Mis Ubicaciones
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                                    <a class="nav-link small {% if 'buscar_cercanos' in request.path %}active{% endif %}" href="{% url 'ubicaciones:buscar_cercanos' %}">
-                                        <i class="fas fa-search"></i> Buscar Cercanos
-                            </a>
-                        </li>
-                            </ul>
-                        </li>
-                        
-                        <!-- Monitorización (como en el mockup) -->
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.path == '/dashboard/' %}active{% endif %}" href="{% url 'core:dashboard' %}">
-                                <i class="fas fa-chart-bar"></i> Monitorización
-                            </a>
-                        </li>
-                        
-                        <!-- Foro -->
-                        <li class="nav-item">
-                            <a class="nav-link" href="/foro/">
-                                <i class="fas fa-comments"></i> Foro
-                            </a>
-                        </li>
-                        
+
                         <!-- Ayuda y contacto (como en el mockup) -->
                         <li class="nav-item mt-3">
                             <a class="nav-link" href="#">
@@ -149,7 +209,7 @@
             </nav>
 
             <!-- Contenido principal -->
-            <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-md-4">
+            <main role="main" class="col-md-10 ml-sm-auto col-lg-10 px-md-4">
                 <!-- Barra superior (Búsqueda y Perfil) -->
                 <div class="d-flex justify-content-between align-items-center py-3 mb-4 border-bottom">
                     <div class="welcome-section">
@@ -205,7 +265,7 @@
                 
                 <!-- Contenido de la página -->
                 {% block content %}
-                <!-- Dashboard por defecto -->
+
                 {% endblock %}
             </main>
         </div>
@@ -229,273 +289,12 @@
     {% block js %}
     <!-- Scripts adicionales específicos para el dashboard -->
 
-    {% block dashboard_js %}{% endblock %}
+    {% block dashboard_js %}
+
+    {% endblock %}
     {% endblock %}
     
-    <script>
-        // Activar los tooltips
-        $(function () {
-            $('[data-toggle="tooltip"]').tooltip();
-            
-            // Marcar el elemento activo del menú
-            $('.nav-link').each(function() {
-                var path = window.location.pathname;
-                var href = $(this).attr('href');
-                if (href && path.startsWith(href) && href !== '/') {
-                    $(this).addClass('active');
-                }
-            });
-            
-            // Configuración de gráficos
-            if (document.getElementById('ingresosSede')) {
-                // Gráfico de líneas - Ingresos por Sede
-                var ctxIngresos = document.getElementById('ingresosSede').getContext('2d');
-                var ingresosChart = new Chart(ctxIngresos, {
-                    type: 'line',
-                    data: {
-                        labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-                        datasets: [
-                            {
-                                label: 'Sede 1751',
-                                data: [0.8, 0.7, 0.9, 0.7, 0.8, 1.0, 0.7, 0.8, 1.0, 0.8, 0.9, 1.0],
-                                borderColor: '#4CAF50',
-                                tension: 0.4,
-                                fill: false
-                            },
-                            {
-                                label: 'Sede 1121',
-                                data: [0.7, 0.8, 0.7, 0.8, 0.9, 0.7, 0.9, 1.0, 0.8, 0.9, 0.7, 0.9],
-                                borderColor: '#FF9800',
-                                tension: 0.4,
-                                fill: false
-                            },
-                            {
-                                label: 'Sede 3992',
-                                data: [0.6, 0.5, 0.7, 0.6, 0.7, 0.9, 0.7, 0.8, 0.7, 0.6, 0.8, 0.7],
-                                borderColor: '#9C27B0',
-                                tension: 0.4,
-                                fill: false
-                            },
-                            {
-                                label: 'Sede 3233',
-                                data: [0.9, 0.8, 0.7, 0.7, 0.8, 0.7, 0.8, 0.7, 0.7, 0.8, 0.7, 0.6],
-                                borderColor: '#F44336',
-                                tension: 0.4,
-                                fill: false
-                            },
-                            {
-                                label: 'Sede 8239',
-                                data: [0.7, 0.6, 0.7, 0.7, 0.9, 0.7, 0.8, 0.7, 0.7, 0.8, 0.7, 0.8],
-                                borderColor: '#2196F3',
-                                tension: 0.4,
-                                fill: false
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 1.2,
-                                grid: {
-                                    drawBorder: false
-                                }
-                            },
-                            x: {
-                                grid: {
-                                    display: false
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    boxWidth: 15
-                                }
-                            }
-                        }
-                    }
-                });
-                
-                // Gráfico de actividad semanal
-                var ctxActividad = document.getElementById('actividadSemanal').getContext('2d');
-                var actividadChart = new Chart(ctxActividad, {
-                    type: 'line',
-                    data: {
-                        labels: ['03 Wed', '04 Thu', '05 Fri', '06 Sat', '07 Sun', '08 Mon', '09 Tue', '10 Wed', '11 Thu', '12 Fri', '13 Sat', '14 Sun', '15 Mon', '16 Tue'],
-                        datasets: [
-                            {
-                                label: 'Actividad',
-                                data: [40, 45, 42, 40, 35, 40, 42, 45, 35, 30, 25, 30, 35, 40],
-                                borderColor: '#4CAF50',
-                                backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                                fill: true,
-                                tension: 0.4
-                            },
-                            {
-                                label: 'Promedio',
-                                data: [30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30],
-                                borderColor: '#ccc',
-                                borderDash: [5, 5],
-                                fill: false
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: false,
-                                min: 10,
-                                max: 50,
-                                grid: {
-                                    drawBorder: false
-                                }
-                            },
-                            x: {
-                                grid: {
-                                    display: false
-                                },
-                                ticks: {
-                                    display: false
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        }
-                    }
-                });
-                
-                // Gráfico de productos
-                var ctxProductos = document.getElementById('productosChart').getContext('2d');
-                var productosChart = new Chart(ctxProductos, {
-                    type: 'line',
-                    data: {
-                        labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
-                        datasets: [
-                            {
-                                label: 'Producto A',
-                                data: [12, 15, 13, 14, 16, 15],
-                                borderColor: '#2196F3',
-                                tension: 0.4,
-                                fill: false
-                            },
-                            {
-                                label: 'Producto B',
-                                data: [8, 9, 11, 10, 12, 11],
-                                borderColor: '#F44336',
-                                tension: 0.4,
-                                fill: false
-                            },
-                            {
-                                label: 'Producto C',
-                                data: [5, 7, 6, 8, 7, 9],
-                                borderColor: '#FFC107',
-                                tension: 0.4,
-                                fill: false
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: {
-                                    drawBorder: false
-                                }
-                            },
-                            x: {
-                                grid: {
-                                    display: false
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    boxWidth: 12,
-                                    font: {
-                                        size: 10
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-                
-                // Gráfico de consumo
-                var ctxConsumo = document.getElementById('consumoChart').getContext('2d');
-                var consumoChart = new Chart(ctxConsumo, {
-                    type: 'line',
-                    data: {
-                        labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
-                        datasets: [
-                            {
-                                label: 'Sede A',
-                                data: [40, 45, 42, 50, 48, 55],
-                                borderColor: '#4CAF50',
-                                tension: 0.4,
-                                fill: false
-                            },
-                            {
-                                label: 'Sede B',
-                                data: [30, 35, 32, 38, 36, 40],
-                                borderColor: '#2196F3',
-                                tension: 0.4,
-                                fill: false
-                            },
-                            {
-                                label: 'Sede C',
-                                data: [20, 22, 25, 24, 28, 30],
-                                borderColor: '#FF9800',
-                                tension: 0.4,
-                                fill: false
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: {
-                                    drawBorder: false
-                                }
-                            },
-                            x: {
-                                grid: {
-                                    display: false
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    boxWidth: 12,
-                                    font: {
-                                        size: 10
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-        });
-    </script>
-    
+
     <!-- Inclusión del Chat Flotante -->
     {% if chat_flotante_enabled %}
         {% include 'chat_flotante/chat_flotante.html' %}

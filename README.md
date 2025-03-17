@@ -72,31 +72,12 @@ pip install -r requirements.txt
 python manage.py migrate
 ```
 
-5. Crear un superusuario:
-```bash
-python manage.py createsuperuser
-```
 
 6. Ejecutar el servidor de desarrollo:
 ```bash
 python manage.py runserver
 ```
 
-## Configuración de Producción
-
-Para el entorno de producción, asegúrese de:
-
-1. Configurar las variables de entorno necesarias (ver config/settings/production.py)
-2. Usar un servidor web como Nginx
-3. Configurar un servidor de aplicaciones como Gunicorn
-4. Usar una base de datos PostgreSQL
-5. Configurar SSL/TLS para HTTPS
-
-## Contribuir
-
-1. Crear una rama para la nueva funcionalidad
-2. Realizar los cambios
-3. Enviar un pull request
 
 ## Licencia
 

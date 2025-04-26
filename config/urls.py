@@ -31,8 +31,13 @@ urlpatterns = [
     # path('marketplace/', include('apps.marketplace.urls')),  # URLs del marketplace
     path('foro/', include('apps.foro_machina.urls')),  # URLs del foro
     path('social/', include('apps.social_feed.urls')),  # URLs del feed social
-    path('inventario/', include('apps.inventario.urls')),  # URLs del inventario
-    path('db_explorer/', include('apps.db_explorer.urls')),  # URLs del explorador de BD
+    
+    # Comentado temporalmente para el despliegue (depende de xlwt)
+    # path('inventario/', include('apps.inventario.urls')),  # URLs del inventario
+    
+    # Comentado temporalmente para el despliegue (depende de pandas)
+    # path('db_explorer/', include('apps.db_explorer.urls')),  # URLs del explorador de BD
+    
     path('ubicaciones/', include('apps.ubicaciones.urls')),  # URLs de ubicaciones
     path('chat/', include('apps.chat_flotante.urls')),  # URLs del chat flotante
     # Las siguientes URLs están comentadas porque las aplicaciones aún no existen o no están completas

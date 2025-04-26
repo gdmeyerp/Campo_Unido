@@ -22,11 +22,12 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
 # Custom user model
 AUTH_USER_MODEL = 'core.User'
 
-# Authentication backends
-AUTHENTICATION_BACKENDS = (
+# Authentication backends - Corregido para Guardian
+AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'guardian.backends.ObjectPermissionBackend',
-)
+    'apps.core.backends.EmailBackend',  # Backend personalizado para email
+]
 
 # Application definition
 DJANGO_APPS = [

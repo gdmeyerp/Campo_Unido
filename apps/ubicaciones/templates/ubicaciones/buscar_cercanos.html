@@ -34,53 +34,58 @@
                     <h5 class="mb-0">Filtros de Búsqueda</h5>
                 </div>
                 <div class="card-body">
-                    <form method="get" action="" class="mb-4">
+                    <form method="get" id="search-form" class="mb-4">
                         <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label for="distancia">Distancia máxima (km)</label>
-                                    <input type="number" class="form-control" id="distancia" name="distancia" value="{{ distancia }}" min="1" max="100">
+                            <div class="col-md-3 mb-3">
+                                <label for="distancia">Radio máximo (km):</label>
+                                <input type="number" name="distancia" id="distancia" class="form-control" value="{{ distancia }}" min="1" max="1000">
                             </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label for="tipo">Tipo de Usuario</label>
-                                    <select class="form-control" id="tipo" name="tipo">
-                                    <option value="">Todos</option>
-                                        <option value="agricultor" {% if tipo_usuario == 'agricultor' %}selected{% endif %}>Agricultor</option>
-                                        <option value="ganadero" {% if tipo_usuario == 'ganadero' %}selected{% endif %}>Ganadero</option>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label for="categoria">Filtrar por Tipo de Producto:</label>
+                                <select name="categoria" id="categoria" class="form-control">
+                                    <option value="">Todos los tipos</option>
+                                    {% for categoria in categorias %}
+                                    <option value="{{ categoria.id }}" {% if categoria_seleccionada == categoria.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ categoria.nombre }}
+                                    </option>
+                                    {% endfor %}
                                 </select>
                             </div>
-                        </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>&nbsp;</label>
-                                    <button type="submit" class="btn btn-primary btn-block">
-                                        <span data-feather="search"></span> Buscar
-                                </button>
-                                </div>
+                            
+                            <div class="col-md-2 mb-3 align-self-end">
+                                <button type="submit" class="btn btn-primary w-100">Buscar</button>
+                            </div>
+                            
+                            <div class="col-md-2 mb-3 align-self-end">
+                                <a href="{% url 'ubicaciones:buscar_cercanos' %}" class="btn btn-secondary w-100">Limpiar</a>
                             </div>
                         </div>
                     </form>
+
+                    <div class="alert alert-info mb-4" id="debug-info">
+                        Encontrados: {{ ubicaciones|length }} ubicaciones cercanas con productos
+                    </div>
 
                     <div class="row">
                         <div class="col-md-12">
                             <h5>Resultados de la búsqueda</h5>
                             {% if ubicaciones or mis_ubicaciones %}
-                        <div class="table-responsive">
+                                <div class="table-responsive">
                                     <table class="table table-striped table-sm">
-                                <thead>
-                                    <tr>
+                                        <thead>
+                                            <tr>
                                                 <th>Usuario</th>
                                                 <th>Nombre de la ubicación</th>
-                                        <th>Dirección</th>
+                                                <th>Dirección</th>
                                                 <th>Ciudad</th>
                                                 <th>Estado/Provincia</th>
                                                 <th>País</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                                                <th>Distancia</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
                                             {% if ubicacion_principal %}
                                                 <tr class="table-primary">
                                                     <td><strong>Tú (Principal)</strong></td>
@@ -89,9 +94,9 @@
                                                     <td>{{ ubicacion_principal.ciudad.nombre }}</td>
                                                     <td>{{ ubicacion_principal.ciudad.estado.nombre }}</td>
                                                     <td>{{ ubicacion_principal.ciudad.estado.pais.nombre }}</td>
+                                                    <td>0 km</td>
                                                     <td>
-                                                        <button 
-                                                            class="btn btn-sm btn-primary mostrar-en-mapa"
+                                                        <button class="btn btn-sm btn-primary mostrar-en-mapa"
                                                             data-lat="{{ ubicacion_principal.latitud }}"
                                                             data-lng="{{ ubicacion_principal.longitud }}"
                                                             data-nombre="{{ ubicacion_principal.nombre }}"
@@ -102,51 +107,33 @@
                                                 </tr>
                                             {% endif %}
                                             
-                                            {% for ubicacion in mis_ubicaciones %}
-                                                <tr class="table-success">
-                                                    <td><strong>Tú</strong></td>
-                                                    <td>{{ ubicacion.nombre }}</td>
-                                                    <td>{{ ubicacion.direccion }}</td>
-                                                    <td>{{ ubicacion.ciudad.nombre }}</td>
-                                                    <td>{{ ubicacion.ciudad.estado.nombre }}</td>
-                                                    <td>{{ ubicacion.ciudad.estado.pais.nombre }}</td>
+                                            {% for ubicacion_data in ubicaciones %}
+                                                <tr>
+                                                    <td>{{ ubicacion_data.ubicacion.usuario.username }}</td>
+                                                    <td>{{ ubicacion_data.ubicacion.nombre }}</td>
+                                                    <td>{{ ubicacion_data.ubicacion.direccion }}</td>
+                                                    <td>{{ ubicacion_data.ubicacion.ciudad.nombre }}</td>
+                                                    <td>{{ ubicacion_data.ubicacion.ciudad.estado.nombre }}</td>
+                                                    <td>{{ ubicacion_data.ubicacion.ciudad.estado.pais.nombre }}</td>
+                                                    <td>{% if ubicacion_data.distancia %}{{ ubicacion_data.distancia|floatformat:1 }} km{% else %}-{% endif %}</td>
                                                     <td>
-                                                        <button 
-                                                            class="btn btn-sm btn-success mostrar-en-mapa"
-                                                            data-lat="{{ ubicacion.latitud }}"
-                                                            data-lng="{{ ubicacion.longitud }}"
-                                                            data-nombre="{{ ubicacion.nombre }}"
-                                                            data-usuario="Tu ubicación">
+                                                        <button class="btn btn-sm btn-info mostrar-en-mapa"
+                                                            data-lat="{{ ubicacion_data.ubicacion.latitud }}"
+                                                            data-lng="{{ ubicacion_data.ubicacion.longitud }}"
+                                                            data-nombre="{{ ubicacion_data.ubicacion.nombre }}"
+                                                            data-usuario="{{ ubicacion_data.ubicacion.usuario.username }}">
                                                             <span data-feather="map-pin"></span> Ver en mapa
                                                         </button>
+                                                        {% if ubicacion_data.productos %}
+                                                            <span class="badge badge-success ml-2">{{ ubicacion_data.productos|length }} productos</span>
+                                                        {% endif %}
                                                     </td>
                                                 </tr>
                                             {% endfor %}
-                                            
-                                            {% for ubicacion in ubicaciones %}
-                                                <tr>
-                                                    <td>{{ ubicacion.usuario.username }}</td>
-                                                    <td>{{ ubicacion.nombre }}</td>
-                                                    <td>{{ ubicacion.direccion }}</td>
-                                                    <td>{{ ubicacion.ciudad.nombre }}</td>
-                                                    <td>{{ ubicacion.ciudad.estado.nombre }}</td>
-                                                    <td>{{ ubicacion.ciudad.estado.pais.nombre }}</td>
-                                                    <td>
-                                                        <button 
-                                                            class="btn btn-sm btn-info mostrar-en-mapa"
-                                                            data-lat="{{ ubicacion.latitud }}"
-                                                            data-lng="{{ ubicacion.longitud }}"
-                                                            data-nombre="{{ ubicacion.nombre }}"
-                                                            data-usuario="{{ ubicacion.usuario.username }}">
-                                                            <span data-feather="map-pin"></span> Ver en mapa
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
                                 <div class="alert alert-secondary">
                                     No se encontraron resultados. Prueba a ajustar los filtros de búsqueda.
                                 </div>
@@ -188,6 +175,30 @@
         background-color: red;
         border-radius: 50%;
         border: 2px solid white;
+    }
+    /* Estilos para el popup de productos */
+    .leaflet-popup-content {
+        max-width: 250px;
+    }
+    .leaflet-popup-content img {
+        display: block;
+        margin: 5px 0;
+        border-radius: 4px;
+    }
+    .leaflet-popup-content ul {
+        list-style: none;
+        padding-left: 0;
+        margin-bottom: 0;
+    }
+    .leaflet-popup-content li {
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    .leaflet-popup-content li:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
     }
 </style>
 {% endblock %}
@@ -278,21 +289,35 @@
         {% endfor %}
         
         // Añadir marcadores para todas las ubicaciones de otros usuarios
-        {% for ubicacion in ubicaciones %}
-            {% if ubicacion.latitud and ubicacion.longitud %}
+        {% for ubicacion_data in ubicaciones %}
+            {% if ubicacion_data.ubicacion.latitud and ubicacion_data.ubicacion.longitud %}
                 var marker = L.marker(
-                    [{{ ubicacion.latitud }}, {{ ubicacion.longitud }}],
+                    [{{ ubicacion_data.ubicacion.latitud }}, {{ ubicacion_data.ubicacion.longitud }}],
                     { icon: otraUbicacionIcon }
                 ).addTo(map);
                 
-                marker.bindPopup(
-                    "<b>{{ ubicacion.nombre }}</b><br>" +
-                    "Usuario: {{ ubicacion.usuario.username }}<br>" +
-                    "{{ ubicacion.direccion }}<br>" +
-                    "{{ ubicacion.ciudad.nombre }}, {{ ubicacion.ciudad.estado.nombre }}, {{ ubicacion.ciudad.estado.pais.nombre }}"
-                );
+                var popupContent = '<b>' + '{{ ubicacion_data.ubicacion.nombre }}' + '</b><br>' +
+                    'Usuario: ' + '{{ ubicacion_data.ubicacion.usuario.username }}' + '<br>' +
+                    '{{ ubicacion_data.ubicacion.direccion }}' + '<br>' +
+                    '{{ ubicacion_data.ubicacion.ciudad.nombre }}, {{ ubicacion_data.ubicacion.ciudad.estado.nombre }}, {{ ubicacion_data.ubicacion.ciudad.estado.pais.nombre }}';
+
+                {% if ubicacion_data.productos %}
+                    popupContent += '<hr><b>Productos disponibles:</b><ul>';
+                    {% for producto in ubicacion_data.productos %}
+                        popupContent += '<li>' + '{{ producto.nombre }}' + ' - $' + '{{ producto.precio|floatformat:2 }}' + '<br>';
+                        {% if producto.imagen_url %}
+                            popupContent += '<img src="' + '{{ producto.imagen_url }}' + '" style="max-width: 100px; height: auto;"><br>';
+                        {% endif %}
+                        popupContent += 'Categoría: ' + '{{ producto.categoria }}' + '<br>';
+                        popupContent += 'Stock: ' + '{{ producto.stock }}' + '<br>';
+                        popupContent += '<a href="/marketplace/producto/' + '{{ producto.id }}' + '/" class="btn btn-primary btn-sm mt-1">Ver detalles</a></li>';
+                    {% endfor %}
+                    popupContent += '</ul>';
+                {% endif %}
+
+                marker.bindPopup(popupContent);
             {% endif %}
-            {% endfor %}
+        {% endfor %}
         
         // Eventos para botones "Ver en mapa"
         document.querySelectorAll('.mostrar-en-mapa').forEach(function(boton) {
@@ -356,4 +381,8 @@
     }
 });
 </script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'ubicaciones/js/locations.js' %}"></script>
 {% endblock %} 

@@ -1,0 +1,109 @@
+{% extends 'inventario/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+    {% if form.instance.id %}Editar Proveedor{% else %}Nuevo Proveedor{% endif %} - Campo Unido
+{% endblock %}
+
+{% block inventario_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        {% if form.instance.id %}
+            Editar Proveedor: {{ form.instance.nombre_proveedor }}
+        {% else %}
+            Nuevo Proveedor
+        {% endif %}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'inventario:lista_proveedores' %}" class="btn btn-sm btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver a la lista
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-truck mr-2"></i> 
+                {% if form.instance.id %}
+                    Editar información del proveedor
+                {% else %}
+                    Ingresar información del proveedor
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            {{ form.nombre_proveedor|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            {{ form.direccion|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form.telefono|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.email|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="form-group text-center mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 
+                            {% if form.instance.id %}
+                                Guardar Cambios
+                            {% else %}
+                                Crear Proveedor
+                            {% endif %}
+                        </button>
+                        <a href="{% url 'inventario:lista_proveedores' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script>
+        $(document).ready(function() {
+            // Validación de email
+            $('#id_email').on('change', function() {
+                var email = $(this).val();
+                var emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+                
+                if (email && !emailRegex.test(email)) {
+                    alert('Por favor, ingrese un correo electrónico válido.');
+                    $(this).val('');
+                    $(this).focus();
+                }
+            });
+            
+            // Validación de teléfono
+            $('#id_telefono').on('change', function() {
+                var telefono = $(this).val();
+                var telefonoRegex = /^[0-9+\-\s()]{7,15}$/;
+                
+                if (telefono && !telefonoRegex.test(telefono)) {
+                    alert('Por favor, ingrese un número de teléfono válido.');
+                    $(this).focus();
+                }
+            });
+        });
+    </script>
+{% endblock %} 

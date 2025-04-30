@@ -1,0 +1,564 @@
+{% extends "marketplace/base.html" %}
+{% load static %}
+
+{% block title %}{{ producto.nombre_producto }}{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item"><a href="{% url 'marketplace:producto_lista' %}">Productos</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'marketplace:categoria_detalle_by_id' producto.categoria_producto_id_id.categoria_producto_id %}">{{ producto.categoria_producto_id_id.nombre_categoria }}</a></li>
+    <li class="breadcrumb-item active">{{ producto.nombre_producto }}</li>
+{% endblock %}
+
+{% block marketplace_content %}
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Acciones de página -->
+            <div class="col-12 mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1>{{ producto.nombre_producto }}</h1>
+                    <div>
+                        <a href="{% url 'marketplace:producto_lista' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver
+                        </a>
+                        {% if user.is_authenticated and user == producto.vendedor_id_id %}
+                            <a href="{% url 'marketplace:producto_editar' producto.slug %}" class="btn btn-outline-primary ml-2">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contenido principal -->
+            <div class="col-md-6">
+                <!-- Galería de imágenes -->
+                <div class="product-gallery mb-4">
+                    <div class="main-image mb-3">
+                        {% if producto.imagen_principal %}
+                            <img src="{{ producto.imagen_principal.url }}" alt="{{ producto.nombre_producto }}" class="img-fluid rounded">
+                        {% elif imagenes_adicionales.exists %}
+                            <img src="{{ imagenes_adicionales.first.imagen.url }}" alt="{{ producto.nombre_producto }}" class="img-fluid rounded">
+                        {% else %}
+                            <img src="{% static 'img/no-image.png' %}" alt="Sin imagen" class="img-fluid rounded">
+                        {% endif %}
+                    </div>
+                    
+                    {% if imagenes_adicionales.exists %}
+                        <div class="thumbnails d-flex flex-wrap">
+                            {% for img in imagenes_adicionales %}
+                                <div class="thumbnail-item mr-2 mb-2">
+                                    <img src="{{ img.imagen.url }}" alt="Imagen {{ forloop.counter }}" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <!-- Información del producto -->
+                <div class="product-info card mb-4">
+                    <div class="card-body">
+                        <h4>Detalles del producto</h4>
+                        <p class="text-muted">{{ producto.descripcion }}</p>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h3 class="text-primary font-weight-bold">${{ producto.precio_base }}</h3>
+                                {% if producto.descuento_activo %}
+                                    <span class="badge badge-success">{{ producto.porcentaje_descuento }}% Descuento</span>
+                                    <span class="text-muted"><del>${{ producto.precio_actual }}</del></span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="stock-info">
+                                {% if producto.stock_actual > 10 %}
+                                    <span class="badge badge-success">En stock ({{ producto.stock_actual }})</span>
+                                {% elif producto.stock_actual > 0 %}
+                                    <span class="badge badge-warning">Pocas unidades ({{ producto.stock_actual }})</span>
+                                {% else %}
+                                    <span class="badge badge-danger">Agotado</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="seller-info mb-3">
+                            <p class="mb-1">Vendedor: 
+                                <a href="{% url 'marketplace:vendedor_perfil' producto.vendedor_id_id.username %}">
+                                    {{ producto.vendedor_id_id.get_full_name|default:producto.vendedor_id_id.username }}
+                                </a>
+                            </p>
+                            <p class="mb-1">Categoría: 
+                                <a href="{% url 'marketplace:categoria_detalle_by_id' producto.categoria_producto_id_id.categoria_producto_id %}">
+                                    {{ producto.categoria_producto_id_id.nombre_categoria }}
+                                </a>
+                            </p>
+                            <p class="mb-0">Disponible desde: {{ producto.fecha_creacion|date:"d/m/Y" }}</p>
+                        </div>
+                        
+                        {% if producto.disponibilidad and producto.stock_actual > 0 %}
+                            <div class="d-grid gap-2">
+                                <button id="btn-agregar-carrito" class="btn btn-primary btn-lg" data-producto-id="{{ producto.producto_id }}">
+                                    <i class="fas fa-shopping-cart"></i> Agregar al carrito
+                                </button>
+                                <button id="btn-toggle-lista-deseos" class="btn btn-outline-danger" data-producto-id="{{ producto.producto_id }}">
+                                    <i class="fas fa-heart"></i> Añadir a favoritos
+                                </button>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                Este producto no está disponible actualmente para la compra.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Especificaciones y detalles -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="specs-tab" data-toggle="tab" href="#specs" role="tab">Especificaciones</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="reviews-tab" data-toggle="tab" href="#reviews" role="tab">Valoraciones ({{ valoraciones.count }})</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="related-tab" data-toggle="tab" href="#related" role="tab">Productos relacionados</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content">
+                            <!-- Especificaciones -->
+                            <div class="tab-pane fade show active" id="specs" role="tabpanel">
+                                <h5>Características del producto</h5>
+                                <table class="table table-striped">
+                                    <tbody>
+                                        <tr>
+                                            <th scope="row">Estado</th>
+                                            <td>{{ producto.estado_producto_id_id.nombre_estado }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Unidad de Medida</th>
+                                            <td>{{ producto.unidad_medida_id_id.nombre_unidad }}</td>
+                                        </tr>
+                                        {% if producto.ubicacion_id_id %}
+                                        <tr>
+                                            <th scope="row">Ubicación</th>
+                                            <td>{{ producto.ubicacion_id_id.nombre_ubicacion }}</td>
+                                        </tr>
+                                        {% endif %}
+                                        {% if producto.especificaciones %}
+                                            {% for key, value in producto.especificaciones.items %}
+                                            <tr>
+                                                <th scope="row">{{ key }}</th>
+                                                <td>{{ value }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Valoraciones -->
+                            <div class="tab-pane fade" id="reviews" role="tabpanel">
+                                <div class="reviews-summary mb-4">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-4 text-center">
+                                            <h2 class="display-4 font-weight-bold">{{ estadisticas_valoraciones.promedio|floatformat:1 }}</h2>
+                                            <div class="star-rating">
+                                                {% for i in "12345" %}
+                                                    {% if forloop.counter <= estadisticas_valoraciones.promedio|add:"0.5"|floatformat:"0" %}
+                                                        <i class="fas fa-star text-warning"></i>
+                                                    {% else %}
+                                                        <i class="far fa-star text-warning"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                            <p class="text-muted">{{ valoraciones.count }} valoración{{ valoraciones.count|pluralize:"es" }}</p>
+                                        </div>
+                                        <div class="col-md-8">
+                                            {% for i in "54321" %}
+                                                {% with count=estadisticas_valoraciones.distribución|get_item:i percent=estadisticas_valoraciones.distribución_porcentaje|get_item:i %}
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <div class="mr-3">{{ i }} <i class="fas fa-star text-warning"></i></div>
+                                                    <div class="progress flex-grow-1" style="height: 10px;">
+                                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ percent }}%"></div>
+                                                    </div>
+                                                    <div class="ml-3 text-muted small">{{ percent }}% ({{ count }})</div>
+                                                </div>
+                                                {% endwith %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <hr>
+                                
+                                <!-- Escribir valoración -->
+                                {% if user.is_authenticated and ha_comprado and not ha_valorado %}
+                                <div class="write-review mb-4">
+                                    <h5>Escribe tu valoración</h5>
+                                    <form method="post" action="{% url 'marketplace:valoracion_crear' producto.producto_id %}">
+                                        {% csrf_token %}
+                                        <div class="form-group">
+                                            <label for="puntuacion">Puntuación</label>
+                                            <select class="form-control" id="puntuacion" name="puntuacion" required>
+                                                <option value="">Selecciona una puntuación</option>
+                                                <option value="5">5 - Excelente</option>
+                                                <option value="4">4 - Muy bueno</option>
+                                                <option value="3">3 - Bueno</option>
+                                                <option value="2">2 - Regular</option>
+                                                <option value="1">1 - Malo</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="titulo">Título</label>
+                                            <input type="text" class="form-control" id="titulo" name="titulo" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="comentario">Comentario</label>
+                                            <textarea class="form-control" id="comentario" name="comentario" rows="3" required></textarea>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Enviar valoración</button>
+                                    </form>
+                                </div>
+                                {% elif user.is_authenticated and not ha_comprado %}
+                                <div class="alert alert-info">
+                                    Debes comprar este producto para poder dejar una valoración.
+                                </div>
+                                {% elif not user.is_authenticated %}
+                                <div class="alert alert-info">
+                                    <a href="{% url 'core:login' %}?next={{ request.path }}">Inicia sesión</a> para dejar una valoración.
+                                </div>
+                                {% endif %}
+                                
+                                <hr>
+                                
+                                <!-- Lista de valoraciones -->
+                                <div class="reviews-list">
+                                    <h5>Valoraciones de usuarios</h5>
+                                    {% if valoraciones %}
+                                        {% for valoracion in valoraciones %}
+                                        <div class="card mb-3">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <div>
+                                                        <h5 class="card-title mb-0">{{ valoracion.titulo }}</h5>
+                                                        <div class="star-rating small">
+                                                            {% for i in "12345" %}
+                                                                {% if forloop.counter <= valoracion.puntuacion %}
+                                                                    <i class="fas fa-star text-warning"></i>
+                                                                {% else %}
+                                                                    <i class="far fa-star text-warning"></i>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        </div>
+                                                    </div>
+                                                    <span class="text-muted small">{{ valoracion.fecha_valoracion|date:"d/m/Y" }}</span>
+                                                </div>
+                                                
+                                                <p class="card-text">{{ valoracion.comentario }}</p>
+                                                
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div class="reviewer">
+                                                        <small class="text-muted">Por: {{ valoracion.usuario_id.get_full_name|default:valoracion.usuario_id.username }}</small>
+                                                    </div>
+                                                    <div class="review-actions">
+                                                        <button class="btn btn-sm btn-outline-secondary btn-util-valoracion" data-valoracion-id="{{ valoracion.valoracion_id }}">
+                                                            <i class="fas fa-thumbs-up"></i> Útil ({{ valoracion.utilidad }})
+                                                        </button>
+                                                        
+                                                        {% if user.is_authenticated and user == valoracion.usuario_id %}
+                                                            <a href="{% url 'marketplace:valoracion_editar' valoracion.valoracion_id %}" class="btn btn-sm btn-outline-primary">
+                                                                <i class="fas fa-edit"></i> Editar
+                                                            </a>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Respuesta del vendedor (si existe) -->
+                                                {% for respuesta in valoracion.respuestavloracion_set.all %}
+                                                    <div class="seller-response mt-3 p-3 bg-light rounded">
+                                                        <h6 class="mb-2">Respuesta del vendedor</h6>
+                                                        <p class="mb-1">{{ respuesta.respuesta }}</p>
+                                                        <small class="text-muted">{{ respuesta.fecha_respuesta|date:"d/m/Y" }}</small>
+                                                    </div>
+                                                {% endfor %}
+                                                
+                                                <!-- Formulario para responder (solo visible para el vendedor) -->
+                                                {% if user.is_authenticated and user == producto.vendedor_id_id and not valoracion.respuestavloracion_set.exists %}
+                                                    <div class="seller-reply-form mt-3">
+                                                        <button class="btn btn-sm btn-outline-info toggle-reply-form">
+                                                            <i class="fas fa-reply"></i> Responder a esta valoración
+                                                        </button>
+                                                        <form method="post" action="{% url 'marketplace:valoracion_responder' valoracion.valoracion_id %}" class="reply-form d-none mt-2">
+                                                            {% csrf_token %}
+                                                            <div class="form-group">
+                                                                <textarea class="form-control" name="respuesta" rows="2" required></textarea>
+                                                            </div>
+                                                            <button type="submit" class="btn btn-sm btn-primary">Enviar respuesta</button>
+                                                        </form>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                        
+                                        <!-- Paginación -->
+                                        {% if is_paginated %}
+                                        <nav aria-label="Paginación de valoraciones">
+                                            <ul class="pagination justify-content-center">
+                                                {% if page_obj.has_previous %}
+                                                    <li class="page-item">
+                                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}#reviews">Anterior</a>
+                                                    </li>
+                                                {% endif %}
+                                                
+                                                {% for i in paginator.page_range %}
+                                                    <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+                                                        <a class="page-link" href="?page={{ i }}#reviews">{{ i }}</a>
+                                                    </li>
+                                                {% endfor %}
+                                                
+                                                {% if page_obj.has_next %}
+                                                    <li class="page-item">
+                                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}#reviews">Siguiente</a>
+                                                    </li>
+                                                {% endif %}
+                                            </ul>
+                                        </nav>
+                                        {% endif %}
+                                    {% else %}
+                                        <div class="alert alert-info">
+                                            No hay valoraciones para este producto todavía. ¡Sé el primero en valorarlo!
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Productos relacionados -->
+                            <div class="tab-pane fade" id="related" role="tabpanel">
+                                <h5>Productos similares</h5>
+                                <div class="row">
+                                    {% for prod in productos_relacionados %}
+                                        <div class="col-md-4 mb-4">
+                                            <div class="card h-100">
+                                                <div class="card-img-top product-card-img-container">
+                                                    {% if prod.imagen_principal %}
+                                                        <img src="{{ prod.imagen_principal.url }}" class="card-img-top" alt="{{ prod.nombre_producto }}">
+                                                    {% else %}
+                                                        <img src="{% static 'img/no-image.png' %}" class="card-img-top" alt="Sin imagen">
+                                                    {% endif %}
+                                                </div>
+                                                <div class="card-body">
+                                                    <h5 class="card-title">{{ prod.nombre_producto }}</h5>
+                                                    <p class="card-text text-muted">{{ prod.descripcion|truncatechars:100 }}</p>
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <span class="font-weight-bold">${{ prod.precio_base }}</span>
+                                                        <a href="{{ prod.get_absolute_url }}" class="btn btn-sm btn-outline-primary">Ver detalles</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% empty %}
+                                        <div class="col-12">
+                                            <div class="alert alert-info">
+                                                No se encontraron productos relacionados.
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block marketplace_js %}
+<script>
+    $(document).ready(function() {
+        // Agregar al carrito
+        $('#btn-agregar-carrito').click(function() {
+            const productoId = $(this).data('producto-id');
+            
+            $.ajax({
+                url: '{% url "marketplace:api_carrito_agregar" %}',
+                type: 'POST',
+                data: {
+                    'producto_id': productoId,
+                    'cantidad': 1,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        // Actualizar contador de carrito
+                        $('#cart-counter').text(response.cart_count).removeClass('d-none');
+                        
+                        // Mostrar alerta de éxito
+                        const alert = `
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <strong>¡Producto agregado!</strong> Se añadió correctamente al carrito.
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        `;
+                        $('.marketplace-container').prepend(alert);
+                    } else {
+                        // Mostrar alerta de error
+                        const alert = `
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <strong>Error:</strong> ${response.message}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        `;
+                        $('.marketplace-container').prepend(alert);
+                    }
+                },
+                error: function() {
+                    // Mostrar alerta de error
+                    const alert = `
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <strong>Error:</strong> Ocurrió un problema al intentar añadir el producto al carrito.
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    `;
+                    $('.marketplace-container').prepend(alert);
+                }
+            });
+        });
+        
+        // Toggle lista de deseos
+        $('#btn-toggle-lista-deseos').click(function() {
+            const productoId = $(this).data('producto-id');
+            
+            $.ajax({
+                url: '{% url "marketplace:api_lista_deseos_toggle" %}',
+                type: 'POST',
+                data: {
+                    'producto_id': productoId,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        // Cambiar estado del botón
+                        if (response.added) {
+                            $('#btn-toggle-lista-deseos').addClass('active').html('<i class="fas fa-heart"></i> Añadido a favoritos');
+                        } else {
+                            $('#btn-toggle-lista-deseos').removeClass('active').html('<i class="far fa-heart"></i> Añadir a favoritos');
+                        }
+                        
+                        // Mostrar alerta de éxito
+                        const alert = `
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <strong>${response.added ? '¡Añadido a favoritos!' : '¡Eliminado de favoritos!'}</strong> ${response.message}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        `;
+                        $('.marketplace-container').prepend(alert);
+                    } else {
+                        // Mostrar alerta de error
+                        const alert = `
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <strong>Error:</strong> ${response.message}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        `;
+                        $('.marketplace-container').prepend(alert);
+                    }
+                },
+                error: function() {
+                    // Mostrar alerta de error
+                    const alert = `
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <strong>Error:</strong> Ocurrió un problema al intentar actualizar tu lista de favoritos.
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    `;
+                    $('.marketplace-container').prepend(alert);
+                }
+            });
+        });
+        
+        // Marcar como útil una valoración
+        $('.btn-util-valoracion').click(function() {
+            const valoracionId = $(this).data('valoracion-id');
+            const btn = $(this);
+            
+            $.ajax({
+                url: '{% url "marketplace:api_valoracion_util" %}',
+                type: 'POST',
+                data: {
+                    'valoracion_id': valoracionId,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        // Actualizar contador
+                        btn.html(`<i class="fas fa-thumbs-up"></i> Útil (${response.utilidad})`);
+                        
+                        if (response.added) {
+                            btn.addClass('active');
+                        } else {
+                            btn.removeClass('active');
+                        }
+                    } else {
+                        // Mostrar alerta de error
+                        const alert = `
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <strong>Error:</strong> ${response.message}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        `;
+                        $('.marketplace-container').prepend(alert);
+                    }
+                },
+                error: function() {
+                    // Mostrar alerta de error
+                    const alert = `
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <strong>Error:</strong> Ocurrió un problema al intentar marcar la valoración como útil.
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    `;
+                    $('.marketplace-container').prepend(alert);
+                }
+            });
+        });
+        
+        // Toggle formulario de respuesta
+        $('.toggle-reply-form').click(function() {
+            $(this).next('.reply-form').toggleClass('d-none');
+        });
+        
+        // Galería de imágenes
+        $('.thumbnail-item img').click(function() {
+            const newSrc = $(this).attr('src');
+            $('.main-image img').attr('src', newSrc);
+        });
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,84 @@
+{% extends 'social_feed/base.html' %}
+{% load static %}
+
+{% block feed_content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Editar publicación</h5>
+    </div>
+    <div class="card-body">
+        <form action="{% url 'social_feed:editar_post' post_id=post.id %}" method="post">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+            <div class="alert alert-danger">
+                <strong>Por favor corrige los siguientes errores:</strong>
+                {{ form.errors }}
+            </div>
+            {% endif %}
+            
+            <div class="mb-3">
+                <label for="{{ form.contenido.id_for_label }}" class="form-label">Contenido</label>
+                {{ form.contenido }}
+                {% if form.contenido.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ form.contenido.errors }}
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if post.multimedia.exists %}
+            <div class="mb-3">
+                <label class="form-label">Archivos multimedia</label>
+                <div class="post-images">
+                    {% for media in post.multimedia.all %}
+                        {% if media.tipo == 'imagen' %}
+                        <div class="mb-2">
+                            <img src="{{ media.archivo.url }}" alt="{{ media.titulo|default:'Imagen' }}" class="img-fluid rounded" style="max-height: 200px;">
+                            <p class="small text-muted mt-1">{{ media.titulo|default:media.archivo.name }}</p>
+                        </div>
+                        {% elif media.tipo == 'video' %}
+                        <div class="mb-2">
+                            <video controls class="img-fluid rounded" style="max-height: 200px;">
+                                <source src="{{ media.archivo.url }}" type="video/mp4">
+                                Tu navegador no soporta la reproducción de videos.
+                            </video>
+                            <p class="small text-muted mt-1">{{ media.titulo|default:media.archivo.name }}</p>
+                        </div>
+                        {% else %}
+                        <div class="mb-2">
+                            <a href="{{ media.archivo.url }}" class="btn btn-sm btn-outline-secondary" target="_blank">
+                                <i class="fas fa-file me-1"></i> {{ media.titulo|default:media.archivo.name }}
+                            </a>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <p class="small text-muted mt-2">
+                    <i class="fas fa-info-circle me-1"></i> Para modificar los archivos multimedia, debes crear una nueva publicación.
+                </p>
+            </div>
+            {% endif %}
+            
+            <div class="mb-3 form-check">
+                {{ form.es_publico }}
+                <label class="form-check-label" for="{{ form.es_publico.id_for_label }}">
+                    Publicación pública
+                </label>
+                <small class="form-text text-muted d-block">
+                    Si no está marcado, solo tú podrás ver esta publicación.
+                </small>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'social_feed:detalle_post' post_id=post.id %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-1"></i> Guardar cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,204 @@
+{% extends "foro_machina/base_foro.html" %}
+{% load i18n %}
+{% load mptt_tags %}
+
+{% block title %}{% trans "Foro Campo Unido" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+        <h1 class="h2">{% trans "Foro Campo Unido" %}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            {% if user.is_authenticated %}
+            <a href="{% url 'foro_machina:crear_foro' %}" class="btn btn-success mr-2" style="font-weight: bold; font-size: 1.1rem; padding: 8px 16px;">
+                <i class="fas fa-plus-circle"></i> {% trans "Crear Foro" %}
+            </a>
+            <a href="{% url 'foro_machina:admin_foros' %}" class="btn btn-outline-primary mr-2" style="font-weight: bold;">
+                <i class="fas fa-list"></i> {% trans "Ver Todos los Foros" %}
+            </a>
+            {% endif %}
+            <form class="search-form form-inline" action="{% url 'foro_machina:buscar' %}" method="get">
+                <div class="input-group">
+                    <input type="text" name="q" class="form-control" placeholder="{% trans 'Buscar en el foro...' %}" aria-label="{% trans 'Buscar' %}">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="submit" data-toggle="tooltip" title="{% trans 'Buscar' %}">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if messages %}
+        <div class="messages mb-4">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if user.is_staff or user.is_superuser %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-light border-primary">
+                <div class="card-body">
+                    <h4 class="card-title text-primary">{% trans "Administración del Foro" %}</h4>
+                    <p class="card-text">{% trans "Como administrador, tienes acceso a funciones adicionales de gestión." %}</p>
+                    <div class="d-flex flex-wrap">
+                        <a href="{% url 'admin:forum_forum_changelist' %}" class="btn btn-outline-secondary btn-lg mb-2 mr-2">
+                            <i class="fas fa-cog fa-lg"></i> {% trans "Panel de Administración Django" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{% trans "Foros disponibles" %}</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if forums %}
+                        <div class="list-group list-group-flush">
+                            {% recursetree forums %}
+                                <div class="list-group-item forum-item">
+                                    <div class="d-flex w-100 justify-content-between align-items-center">
+                                        <div>
+                                            <h5 class="mb-1">
+                                                {% if node.is_category %}
+                                                    <span class="badge badge-secondary">{% trans "Categoría" %}</span>
+                                                {% elif node.is_forum %}
+                                                    <span class="badge badge-info">{% trans "Foro" %}</span>
+                                                {% elif node.is_link %}
+                                                    <span class="badge badge-warning">{% trans "Enlace" %}</span>
+                                                {% endif %}
+                                                <a href="{% url 'foro_machina:foro_detalle' node.pk %}">{{ node.name }}</a>
+                                            </h5>
+                                            <p class="mb-1">{{ node.description.rendered|safe }}</p>
+                                            {% if not node.is_category %}
+                                                <small class="text-muted">
+                                                    {% trans "Temas:" %} {{ node.topics_count }} | 
+                                                    {% trans "Mensajes:" %} {{ node.posts_count }}
+                                                </small>
+                                            {% endif %}
+                                        </div>
+                                        {% if node.image %}
+                                            <img src="{{ node.image.url }}" alt="{{ node.name }}" class="forum-icon">
+                                        {% else %}
+                                            <i class="fas fa-comments forum-icon-fa"></i>
+                                        {% endif %}
+                                    </div>
+                                    {% if not node.is_leaf_node %}
+                                        <div class="children mt-3 ml-4">
+                                            {{ children }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endrecursetree %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info m-3">
+                            <p>{% trans "No hay foros disponibles." %}</p>
+                            {% if user.is_authenticated %}
+                                <div class="text-center mt-4">
+                                    <p class="lead">{% trans "¡Sé el primero en crear un foro!" %}</p>
+                                    <a href="{% url 'foro_machina:crear_foro' %}" class="btn btn-primary btn-lg" style="font-size: 1.2rem; padding: 10px 20px;">
+                                        <i class="fas fa-plus-circle fa-lg mr-2"></i> {% trans "Crear el primer foro" %}
+                                    </a>
+                                </div>
+                            {% else %}
+                                <p>{% trans "Inicia sesión para crear un foro." %}</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">{% trans "Temas recientes" %}</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_topics %}
+                        <div class="list-group list-group-flush">
+                            {% for topic in recent_topics %}
+                                <a href="{% url 'foro_machina:tema_detalle' topic.pk %}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <div class="d-flex align-items-center">
+                                            <div class="mr-2">
+                                                {% if topic.poster.perfilusuario.foto_perfil %}
+                                                    <img src="{{ topic.poster.perfilusuario.foto_perfil.url }}" alt="{{ topic.poster.username }}" class="rounded-circle" width="32" height="32">
+                                                {% else %}
+                                                    <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 14px;">
+                                                        {{ topic.poster.username|first|upper }}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <h6 class="mb-1">{{ topic.subject }}</h6>
+                                        </div>
+                                        <small>{{ topic.last_post_on|date:"d/m/Y" }}</small>
+                                    </div>
+                                    <small class="text-muted">
+                                        {% trans "En:" %} {{ topic.forum.name }} | 
+                                        {% trans "Por:" %} {{ topic.poster.username }} | 
+                                        {% trans "Respuestas:" %} {{ topic.posts_count|add:"-1" }}
+                                    </small>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info m-3">
+                            {% trans "No hay temas recientes." %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">{% trans "Mensajes recientes" %}</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_posts %}
+                        <div class="list-group list-group-flush">
+                            {% for post in recent_posts %}
+                                <a href="{% url 'foro_machina:tema_detalle' post.topic.pk %}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <div class="d-flex align-items-center">
+                                            <div class="mr-2">
+                                                {% if post.poster.perfilusuario.foto_perfil %}
+                                                    <img src="{{ post.poster.perfilusuario.foto_perfil.url }}" alt="{{ post.poster.username }}" class="rounded-circle" width="32" height="32">
+                                                {% else %}
+                                                    <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 14px;">
+                                                        {{ post.poster.username|first|upper }}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <h6 class="mb-1">{{ post.topic.subject }}</h6>
+                                        </div>
+                                        <small>{{ post.created|date:"d/m/Y H:i" }}</small>
+                                    </div>
+                                    <p class="mb-1">{{ post.content.rendered|striptags|truncatechars:100 }}</p>
+                                    <small class="text-muted">{% trans "Por:" %} {{ post.poster.username }}</small>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info m-3">
+                            {% trans "No hay mensajes recientes." %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

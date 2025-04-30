@@ -1,0 +1,58 @@
+/* Estilos generales */
+.jumbotron {
+    background-color: #f8f9fa;
+    border-radius: 1rem;
+}
+
+/* Estilos para las tarjetas */
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+/* Estilos para botones */
+.btn-group {
+    width: 100%;
+}
+
+.btn-group .btn {
+    flex: 1;
+}
+
+/* Estilos para badges */
+.badge {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.6rem;
+}
+
+/* Estilos para precios */
+.precio-original {
+    text-decoration: line-through;
+    color: #6c757d;
+}
+
+.precio-descuento {
+    color: #28a745;
+    font-weight: bold;
+}
+
+/* Estilos para ratings */
+.rating {
+    color: #ffc107;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .card-img-top {
+        height: 150px;
+    }
+} 

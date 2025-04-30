@@ -1,0 +1,465 @@
+{% extends 'inventario/base.html' %}
+{% load static %}
+
+{% block title %}Pedido #{{ pedido.id }} - Campo Unido{% endblock %}
+
+{% block inventario_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Pedido #{{ pedido.id }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'inventario:lista_pedidos' %}" class="btn btn-sm btn-secondary mr-2">
+            <i class="fas fa-arrow-left"></i> Volver a la lista
+        </a>
+        <a href="{% url 'inventario:editar_pedido' pedido.id %}" class="btn btn-sm btn-primary mr-2">
+            <i class="fas fa-edit"></i> Editar
+        </a>
+        {% if pedido.estado_pedido == 'PENDIENTE' or pedido.estado_pedido == 'PARCIAL' %}
+        <a href="{% url 'inventario:recibir_pedido' pedido.id %}" class="btn btn-sm btn-success mr-2">
+            <i class="fas fa-check"></i> Recibir
+        </a>
+        {% endif %}
+        {% if pedido.estado_pedido == 'PENDIENTE' %}
+        <a href="{% url 'inventario:cancelar_pedido' pedido.id %}" class="btn btn-sm btn-danger" onclick="return confirm('¿Está seguro de cancelar este pedido?')">
+            <i class="fas fa-times"></i> Cancelar
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <!-- Información del Pedido -->
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-info-circle mr-2"></i> Información del Pedido
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div class="bg-light rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                        <i class="fas fa-clipboard-list fa-3x text-primary"></i>
+                    </div>
+                    <h4 class="mt-3">Pedido #{{ pedido.id }}</h4>
+                    <p class="text-muted">
+                        <span class="badge {% if pedido.estado_pedido == 'PENDIENTE' %}badge-warning{% elif pedido.estado_pedido == 'PARCIAL' %}badge-info{% elif pedido.estado_pedido == 'RECIBIDO' %}badge-success{% else %}badge-danger{% endif %}">
+                            {{ pedido.get_estado_pedido_display }}
+                        </span>
+                    </p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-muted">Fecha de Pedido</h6>
+                    <p>{{ pedido.fecha_pedido|date:"d/m/Y" }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-muted">Fecha de Entrega</h6>
+                    <p>{{ pedido.fecha_entrega|date:"d/m/Y"|default:"No especificada" }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-muted">Total del Pedido</h6>
+                    <p class="font-weight-bold">{{ total|floatformat:2 }}</p>
+                </div>
+                
+                {% if pedido.notas %}
+                <div class="mb-3">
+                    <h6 class="text-muted">Notas</h6>
+                    <p>{{ pedido.notas }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Información del Proveedor -->
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-truck mr-2"></i> Información del Proveedor
+            </div>
+            <div class="card-body">
+                <h5>
+                    <a href="{% url 'inventario:detalle_proveedor' pedido.proveedor.id %}">
+                        {{ pedido.proveedor.nombre_proveedor }}
+                    </a>
+                </h5>
+                
+                <div class="mb-3 mt-4">
+                    <h6 class="text-muted">Dirección</h6>
+                    <p>{{ pedido.proveedor.direccion }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-muted">Teléfono</h6>
+                    <p>
+                        <a href="tel:{{ pedido.proveedor.telefono }}">
+                            <i class="fas fa-phone mr-2"></i> {{ pedido.proveedor.telefono }}
+                        </a>
+                    </p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-muted">Email</h6>
+                    <p>
+                        <a href="mailto:{{ pedido.proveedor.email }}">
+                            <i class="fas fa-envelope mr-2"></i> {{ pedido.proveedor.email }}
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Acciones -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-cogs mr-2"></i> Acciones
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <a href="{% url 'inventario:editar_pedido' pedido.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1"><i class="fas fa-edit mr-2"></i> Editar Pedido</h6>
+                            <small><i class="fas fa-chevron-right"></i></small>
+                        </div>
+                        <p class="mb-1 text-muted">Modificar la información del pedido</p>
+                    </a>
+                    
+                    <button type="button" class="list-group-item list-group-item-action" data-toggle="modal" data-target="#agregarProductoModal">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1"><i class="fas fa-plus mr-2"></i> Agregar Producto</h6>
+                            <small><i class="fas fa-chevron-right"></i></small>
+                        </div>
+                        <p class="mb-1 text-muted">Añadir un nuevo producto al pedido</p>
+                    </button>
+                    
+                    {% if pedido.estado_pedido == 'PENDIENTE' or pedido.estado_pedido == 'PARCIAL' %}
+                    <a href="{% url 'inventario:recibir_pedido' pedido.id %}" class="list-group-item list-group-item-action list-group-item-success">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1"><i class="fas fa-check mr-2"></i> Recibir Pedido</h6>
+                            <small><i class="fas fa-chevron-right"></i></small>
+                        </div>
+                        <p class="mb-1 text-muted">Registrar la recepción de los productos</p>
+                    </a>
+                    {% endif %}
+                    
+                    {% if pedido.estado_pedido == 'PENDIENTE' %}
+                    <a href="{% url 'inventario:cancelar_pedido' pedido.id %}" class="list-group-item list-group-item-action list-group-item-danger" onclick="return confirm('¿Está seguro de cancelar este pedido?')">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1"><i class="fas fa-times mr-2"></i> Cancelar Pedido</h6>
+                            <small><i class="fas fa-chevron-right"></i></small>
+                        </div>
+                        <p class="mb-1 text-muted">Cancelar el pedido completo</p>
+                    </a>
+                    {% endif %}
+                    
+                    <a href="#" class="list-group-item list-group-item-action" onclick="window.print(); return false;">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1"><i class="fas fa-print mr-2"></i> Imprimir Pedido</h6>
+                            <small><i class="fas fa-chevron-right"></i></small>
+                        </div>
+                        <p class="mb-1 text-muted">Generar una versión imprimible del pedido</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Productos del Pedido -->
+<div class="card mt-4">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-box mr-2"></i> Productos del Pedido</span>
+            <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#agregarProductoModal">
+                <i class="fas fa-plus"></i> Agregar Producto
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if detalles %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th class="text-center">Cantidad</th>
+                        <th class="text-right">Precio Unitario</th>
+                        <th class="text-right">Subtotal</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for detalle in detalles %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'inventario:detalle_producto' detalle.producto_inventario.id %}">
+                                {{ detalle.producto_inventario.nombre_producto }}
+                            </a>
+                        </td>
+                        <td class="text-center">{{ detalle.cantidad }}</td>
+                        <td class="text-right">{{ detalle.precio_unitario|floatformat:2 }}</td>
+                        <td class="text-right">{{ detalle.subtotal|floatformat:2 }}</td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-primary editar-detalle" 
+                                        data-id="{{ detalle.id }}"
+                                        data-producto="{{ detalle.producto_inventario.id }}"
+                                        data-cantidad="{{ detalle.cantidad }}"
+                                        data-precio="{{ detalle.precio_unitario }}"
+                                        data-toggle="modal" data-target="#editarProductoModal">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <a href="{% url 'inventario:eliminar_detalle_pedido' detalle.id %}" class="btn btn-danger" onclick="return confirm('¿Está seguro de eliminar este producto del pedido?')">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" class="text-right font-weight-bold">Total:</td>
+                        <td class="text-right font-weight-bold">{{ total|floatformat:2 }}</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle mr-2"></i> No hay productos agregados a este pedido.
+        </div>
+        <div class="text-center">
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#agregarProductoModal">
+                <i class="fas fa-plus"></i> Agregar Producto
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Historial de Cambios -->
+{% if historial %}
+<div class="card mt-4">
+    <div class="card-header">
+        <i class="fas fa-history mr-2"></i> Historial de Cambios
+    </div>
+    <div class="card-body">
+        <div class="timeline">
+            {% for evento in historial %}
+            <div class="timeline-item">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                    <h5 class="timeline-title">{{ evento.tipo_evento }}</h5>
+                    <p class="timeline-text">{{ evento.descripcion }}</p>
+                    <p class="text-muted">
+                        <small>{{ evento.fecha|date:"d/m/Y H:i" }} - {{ evento.usuario.get_full_name|default:evento.usuario.username }}</small>
+                    </p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal para Agregar Producto -->
+<div class="modal fade" id="agregarProductoModal" tabindex="-1" role="dialog" aria-labelledby="agregarProductoModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="agregarProductoModalLabel">Agregar Producto al Pedido</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="{% url 'inventario:agregar_producto_pedido' pedido.id %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" name="accion" value="agregar_producto">
+                    <div class="form-group">
+                        <label for="producto">Producto</label>
+                        <select class="form-control select2-modal" id="producto" name="producto" required>
+                            <option value="">Seleccione un producto</option>
+                            {% for producto in productos %}
+                            <option value="{{ producto.id }}" data-precio="{{ producto.precio_compra }}">
+                                {{ producto.nombre_producto }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="cantidad">Cantidad</label>
+                        <input type="number" class="form-control" id="cantidad" name="cantidad" min="1" value="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="precio_unitario">Precio Unitario</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">$</span>
+                            </div>
+                            <input type="number" class="form-control" id="precio" name="precio_unitario" step="0.01" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Subtotal</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">$</span>
+                            </div>
+                            <input type="text" class="form-control" id="subtotal" readonly>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Agregar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Editar Producto -->
+<div class="modal fade" id="editarProductoModal" tabindex="-1" role="dialog" aria-labelledby="editarProductoModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editarProductoModalLabel">Editar Producto del Pedido</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="{% url 'inventario:editar_producto_pedido' pedido.id %}" id="form-editar-detalle">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" id="detalle_id" name="detalle_id">
+                    <div class="form-group">
+                        <label for="edit_producto">Producto</label>
+                        <select class="form-control select2-modal" id="edit_producto" name="producto" required disabled>
+                            {% for producto in productos %}
+                            <option value="{{ producto.id }}" data-precio="{{ producto.precio_compra }}">
+                                {{ producto.nombre_producto }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_cantidad">Cantidad</label>
+                        <input type="number" class="form-control" id="edit_cantidad" name="cantidad" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_precio_unitario">Precio Unitario</label>
+                        <input type="number" class="form-control" id="edit_precio_unitario" name="precio_unitario" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_subtotal">Subtotal</label>
+                        <input type="text" class="form-control" id="edit_subtotal" readonly>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <style>
+        /* Estilos para la línea de tiempo */
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .timeline-marker {
+            position: absolute;
+            left: -30px;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background-color: #007bff;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 2px #007bff;
+        }
+        
+        .timeline-content {
+            position: relative;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .timeline:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -23px;
+            height: 100%;
+            width: 2px;
+            background-color: #e9ecef;
+        }
+    </style>
+    <script>
+        $(document).ready(function() {
+            // Inicializar select2 en modales
+            $('.select2-modal').select2({
+                theme: 'bootstrap4',
+                dropdownParent: $('.modal')
+            });
+            
+            // Calcular subtotal al cambiar cantidad o precio
+            function calcularSubtotal(cantidad, precio, subtotalField) {
+                var subtotal = cantidad * precio;
+                subtotalField.val(subtotal.toFixed(2));
+            }
+            
+            $('#cantidad, #precio').on('change keyup', function() {
+                var cantidad = parseFloat($('#cantidad').val()) || 0;
+                var precio = parseFloat($('#precio').val()) || 0;
+                calcularSubtotal(cantidad, precio, $('#subtotal'));
+            });
+            
+            $('#edit_cantidad, #edit_precio_unitario').on('change keyup', function() {
+                var cantidad = parseFloat($('#edit_cantidad').val()) || 0;
+                var precio = parseFloat($('#edit_precio_unitario').val()) || 0;
+                calcularSubtotal(cantidad, precio, $('#edit_subtotal'));
+            });
+            
+            // Establecer precio del producto seleccionado
+            $('#producto').on('change', function() {
+                var precio = $(this).find(':selected').data('precio') || 0;
+                $('#precio').val(precio.toFixed(2));
+                
+                var cantidad = parseFloat($('#cantidad').val()) || 0;
+                calcularSubtotal(cantidad, precio, $('#subtotal'));
+            });
+            
+            // Configurar modal de edición
+            $('.editar-detalle').on('click', function() {
+                var id = $(this).data('id');
+                var producto = $(this).data('producto');
+                var cantidad = $(this).data('cantidad');
+                var precio = $(this).data('precio');
+                
+                $('#detalle_id').val(id);
+                $('#edit_producto').val(producto).trigger('change');
+                $('#edit_cantidad').val(cantidad);
+                $('#edit_precio_unitario').val(precio.toFixed(2));
+                
+                calcularSubtotal(cantidad, precio, $('#edit_subtotal'));
+            });
+        });
+    </script>
+{% endblock %} 

@@ -37,18 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'core',
-    'ubicaciones',
-    'marketplace',
-    'soporte',
-    'foro',
-    'hidroponia',
-    'control_remoto',
-    'suscripciones',
-    'eventos',
-    'inventario',
-    'logistica',
-    'monitoreo',
+    'apps.core',
+    'apps.marketplace',
+    'apps.inventario',
 ]
 
 MIDDLEWARE = [
@@ -61,7 +52,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'Campo_Unido.urls'
+ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
     {

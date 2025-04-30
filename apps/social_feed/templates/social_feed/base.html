@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Feed Social{% endblock %}
+
+{% block extra_css %}
+<style>
+    .post-card {
+        margin-bottom: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .post-header {
+        padding: 15px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .post-content {
+        padding: 15px;
+    }
+    
+    .post-footer {
+        padding: 10px 15px;
+        border-top: 1px solid #f0f0f0;
+        background-color: #f9f9f9;
+    }
+    
+    .post-actions {
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .post-action {
+        cursor: pointer;
+        padding: 5px 10px;
+        border-radius: 5px;
+        transition: background-color 0.2s;
+    }
+    
+    .post-action:hover {
+        background-color: #f0f0f0;
+    }
+    
+    .post-images {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    
+    .post-image {
+        width: 100%;
+        max-width: 200px;
+        height: auto;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    
+    .comment-section {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #f0f0f0;
+    }
+    
+    .comment {
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+    }
+    
+    .comment-form {
+        margin-top: 15px;
+    }
+    
+    .liked {
+        color: #dc3545;
+    }
+    
+    .modal-image {
+        max-width: 100%;
+        max-height: 80vh;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-3">
+            {% block sidebar %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Menú</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'social_feed:feed' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'feed' %}active{% endif %}">
+                        <i class="fas fa-home me-2"></i> Inicio
+                    </a>
+                    {% if request.user.username %}
+                    <a href="{% url 'social_feed:perfil' username=request.user.username %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'perfil' and usuario_perfil.username == request.user.username %}active{% endif %}">
+                        <i class="fas fa-user me-2"></i> Mi Perfil
+                    </a>
+                    {% else %}
+                    <a href="{% url 'social_feed:feed' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user me-2"></i> Mi Perfil
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'social_feed:crear_post' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'crear_post' %}active{% endif %}">
+                        <i class="fas fa-plus-circle me-2"></i> Nueva Publicación
+                    </a>
+                </div>
+            </div>
+            {% endblock %}
+        </div>
+        
+        <div class="col-md-9">
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+            
+            {% block feed_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal para mostrar imágenes -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">Imagen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img src="" class="modal-image" id="modalImage" alt="Imagen ampliada">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Función para mostrar imagen en modal
+    function showImageInModal(imageUrl) {
+        document.getElementById('modalImage').src = imageUrl;
+        var imageModal = new bootstrap.Modal(document.getElementById('imageModal'));
+        imageModal.show();
+    }
+    
+    // Inicializar tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Configurar los eventos para las imágenes
+        document.querySelectorAll('.post-image').forEach(function(img) {
+            img.addEventListener('click', function() {
+                showImageInModal(this.src);
+            });
+        });
+        
+        // Configurar los eventos para los likes
+        document.querySelectorAll('.like-button').forEach(function(button) {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                var postId = this.getAttribute('data-post-id');
+                var likeCount = document.getElementById('like-count-' + postId);
+                var likeIcon = this.querySelector('i');
+                
+                fetch('/social/post/' + postId + '/like/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.action === 'like') {
+                            likeIcon.classList.add('liked');
+                        } else {
+                            likeIcon.classList.remove('liked');
+                        }
+                        likeCount.textContent = data.total_likes;
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        });
+        
+        // Función para obtener el valor de una cookie
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>
+{% endblock %} 

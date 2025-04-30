@@ -1,0 +1,26 @@
+{% extends 'core/dashboard.html' %}
+{% load static %}
+
+{% block title %}Chat - Campo Unido{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'chat_flotante/css/dashboard_chat.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2 class="section-title">Mensajes</h2>
+            <p class="text-muted">Chatea con otros usuarios de Campo Unido</p>
+        </div>
+    </div>
+    
+    <!-- Dashboard Chat Component -->
+    {% include 'chat_flotante/dashboard_chat.html' %}
+</div>
+{% endblock %}
+
+{% block js %}
+<script src="{% static 'chat_flotante/js/dashboard_chat.js' %}"></script>
+{% endblock %} 

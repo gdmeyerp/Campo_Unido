@@ -1,0 +1,280 @@
+{% extends "inventario/base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if form.instance.id %}Editar{% else %}Crear{% endif %} Producto{% endblock %}
+
+{% block inventario_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h2">{% if form.instance.id %}Editar{% else %}Crear{% endif %} Producto</h1>
+    <div>
+        <a href="{% if form.instance.id %}{% url 'inventario:detalle_producto' form.instance.id %}{% else %}{% url 'inventario:lista_productos' %}{% endif %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left mr-2"></i>Volver
+        </a>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">{% if form.instance.id %}Editar{% else %}Crear{% endif %} Producto</h6>
+    </div>
+    <div class="card-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form.nombre_producto|as_crispy_field }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <div class="form-group">
+                        <label for="{{ form.categoria_producto.id_for_label }}">Categoría *</label>
+                        <div class="input-group">
+                            {{ form.categoria_producto }}
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#modalNuevaCategoria">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% if form.categoria_producto.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.categoria_producto.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    {{ form.cantidad_disponible|as_crispy_field }}
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    {{ form.stock_minimo|as_crispy_field }}
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    {{ form.precio_compra|as_crispy_field }}
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    {{ form.precio_venta|as_crispy_field }}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="form-group">
+                        <label for="{{ form.estado_producto.id_for_label }}">Estado *</label>
+                        <div class="input-group">
+                            {{ form.estado_producto }}
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#modalNuevoEstado">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% if form.estado_producto.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.estado_producto.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                {{ form.descripcion_producto|as_crispy_field }}
+            </div>
+
+            <!-- Asegurarnos de que el campo propietario se incluya en el formulario -->
+            {{ form.propietario }}
+
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save mr-2"></i>Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal para crear nueva categoría -->
+<div class="modal fade" id="modalNuevaCategoria" tabindex="-1" role="dialog" aria-labelledby="modalNuevaCategoriaLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalNuevaCategoriaLabel">Nueva Categoría</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="formNuevaCategoria">
+                    <div class="form-group">
+                        <label for="nombre_categoria">Nombre de la categoría *</label>
+                        <input type="text" class="form-control" id="nombre_categoria" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="categoria_padre">Categoría padre</label>
+                        <select class="form-control" id="categoria_padre">
+                            <option value="">Ninguna (categoría principal)</option>
+                            {% for categoria in categorias %}
+                                <option value="{{ categoria.id }}">{{ categoria.nombre_categoria }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="descripcion_categoria">Descripción</label>
+                        <textarea class="form-control" id="descripcion_categoria" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="guardarCategoria">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para crear nuevo estado -->
+<div class="modal fade" id="modalNuevoEstado" tabindex="-1" role="dialog" aria-labelledby="modalNuevoEstadoLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalNuevoEstadoLabel">Nuevo Estado</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="formNuevoEstado">
+                    <div class="form-group">
+                        <label for="nombre_estado">Nombre del estado *</label>
+                        <input type="text" class="form-control" id="nombre_estado" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="guardarEstado">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+    $(document).ready(function() {
+        // Asegurarse de que los select tengan la clase form-control
+        $('#id_categoria_producto, #id_estado_producto').addClass('form-control');
+        
+        // Función para agregar nueva categoría
+        $('#guardarCategoria').click(function() {
+            var nombre = $('#nombre_categoria').val();
+            var padre = $('#categoria_padre').val();
+            var descripcion = $('#descripcion_categoria').val();
+            
+            if (!nombre) {
+                alert('El nombre de la categoría es obligatorio');
+                return;
+            }
+            
+            // Enviar datos al servidor usando fetch
+            fetch('{% url "inventario:api_crear_categoria" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+                },
+                body: JSON.stringify({
+                    nombre_categoria: nombre,
+                    categoria_padre: padre || null,
+                    descripcion: descripcion
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Añadir la nueva categoría al select
+                    var select = $('#id_categoria_producto');
+                    var option = new Option(data.categoria.nombre, data.categoria.id, true, true);
+                    select.append(option).trigger('change');
+                    
+                    // Cerrar el modal
+                    $('#modalNuevaCategoria').modal('hide');
+                    
+                    // Limpiar el formulario
+                    $('#nombre_categoria').val('');
+                    $('#categoria_padre').val('');
+                    $('#descripcion_categoria').val('');
+                    
+                    // Mostrar mensaje de éxito
+                    alert('Categoría creada correctamente');
+                } else {
+                    alert('Error al crear la categoría: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al crear la categoría');
+            });
+        });
+        
+        // Función para agregar nuevo estado
+        $('#guardarEstado').click(function() {
+            var nombre = $('#nombre_estado').val();
+            
+            if (!nombre) {
+                alert('El nombre del estado es obligatorio');
+                return;
+            }
+            
+            // Enviar datos al servidor usando fetch
+            fetch('{% url "inventario:api_crear_estado" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+                },
+                body: JSON.stringify({
+                    nombre_estado: nombre
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Añadir el nuevo estado al select
+                    var select = $('#id_estado_producto');
+                    var option = new Option(data.estado.nombre, data.estado.id, true, true);
+                    select.append(option).trigger('change');
+                    
+                    // Cerrar el modal
+                    $('#modalNuevoEstado').modal('hide');
+                    
+                    // Limpiar el formulario
+                    $('#nombre_estado').val('');
+                    
+                    // Mostrar mensaje de éxito
+                    alert('Estado creado correctamente');
+                } else {
+                    alert('Error al crear el estado: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al crear el estado');
+            });
+        });
+    });
+</script>
+{% endblock %} 

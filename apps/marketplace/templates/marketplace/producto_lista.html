@@ -1,0 +1,501 @@
+{% extends "marketplace/base.html" %}
+{% load static %}
+
+{% block page_title %}
+    {% if categoria %}
+        {{ categoria.nombre_categoria }}
+    {% elif query %}
+        Resultados de búsqueda: "{{ query }}"
+    {% else %}
+        Todos los productos
+    {% endif %}
+{% endblock %}
+
+{% block breadcrumb_items %}
+    {% if categoria %}
+        {% if categoria.categoria_padre_id %}
+            <li class="breadcrumb-item"><a href="{% url 'marketplace:categoria_detalle_by_id' categoria.categoria_padre_id.categoria_producto_id %}">{{ categoria.categoria_padre_id.nombre_categoria }}</a></li>
+        {% endif %}
+        <li class="breadcrumb-item active">{{ categoria.nombre_categoria }}</li>
+    {% elif query %}
+        <li class="breadcrumb-item active">Resultados de búsqueda</li>
+    {% else %}
+        <li class="breadcrumb-item active">Todos los productos</li>
+    {% endif %}
+{% endblock %}
+
+{% block page_actions %}
+<div class="dropdown">
+    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <i class="fas fa-sort"></i> Ordenar por
+    </button>
+    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="sortDropdown">
+        <a class="dropdown-item {% if orden == 'precio_asc' %}active{% endif %}" href="?{% if query %}query={{ query }}&{% endif %}{% if categoria_id %}categoria={{ categoria_id }}&{% endif %}ordenar=precio_asc">Precio: Menor a Mayor</a>
+        <a class="dropdown-item {% if orden == 'precio_desc' %}active{% endif %}" href="?{% if query %}query={{ query }}&{% endif %}{% if categoria_id %}categoria={{ categoria_id }}&{% endif %}ordenar=precio_desc">Precio: Mayor a Menor</a>
+        <a class="dropdown-item {% if orden == 'nombre_asc' %}active{% endif %}" href="?{% if query %}query={{ query }}&{% endif %}{% if categoria_id %}categoria={{ categoria_id }}&{% endif %}ordenar=nombre_asc">Nombre: A-Z</a>
+        <a class="dropdown-item {% if orden == 'nombre_desc' %}active{% endif %}" href="?{% if query %}query={{ query }}&{% endif %}{% if categoria_id %}categoria={{ categoria_id }}&{% endif %}ordenar=nombre_desc">Nombre: Z-A</a>
+        <a class="dropdown-item {% if orden == 'fecha_desc' %}active{% endif %}" href="?{% if query %}query={{ query }}&{% endif %}{% if categoria_id %}categoria={{ categoria_id }}&{% endif %}ordenar=fecha_desc">Los más recientes</a>
+        <a class="dropdown-item {% if orden == 'valoracion_desc' %}active{% endif %}" href="?{% if query %}query={{ query }}&{% endif %}{% if categoria_id %}categoria={{ categoria_id }}&{% endif %}ordenar=valoracion_desc">Mejor valorados</a>
+    </div>
+</div>
+<button class="btn btn-sm btn-outline-secondary ml-2" id="toggleViewBtn" title="Cambiar vista">
+    <i class="fas fa-th" id="viewIcon"></i>
+</button>
+{% endblock %}
+
+{% block marketplace_content %}
+{% if categoria %}
+    {% if categoria.descripcion %}
+    <div class="mb-4">
+        <p>{{ categoria.descripcion }}</p>
+    </div>
+    {% endif %}
+    
+    {% if categoria.get_subcategorias %}
+    <div class="mb-4">
+        <h5>Subcategorías</h5>
+        <div class="row">
+            {% for subcategoria in categoria.get_subcategorias %}
+                <div class="col-6 col-md-4 col-lg-3 mb-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <a href="{% url 'marketplace:categoria_detalle_by_id' subcategoria.categoria_producto_id %}">
+                            {% if subcategoria.imagen %}
+                                <img src="{{ subcategoria.imagen.url }}" class="card-img-top" alt="{{ subcategoria.nombre_categoria }}" style="height: 120px; object-fit: cover;">
+                            {% else %}
+                                <img src="{% static 'marketplace/img/default-category.jpg' %}" class="card-img-top" alt="{{ subcategoria.nombre_categoria }}" style="height: 120px; object-fit: cover;">
+                            {% endif %}
+                        </a>
+                        <div class="card-body text-center">
+                            <h6 class="card-title">{{ subcategoria.nombre_categoria }}</h6>
+                            <p class="card-text small text-muted">{{ subcategoria.contar_productos }} productos</p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <hr class="my-4">
+    </div>
+    {% endif %}
+{% endif %}
+
+{% if query %}
+<div class="alert alert-info mb-4">
+    Mostrando resultados para: <strong>{{ query }}</strong> ({{ productos.count }} productos encontrados)
+</div>
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <span class="text-muted">{{ productos.count }} productos</span>
+    </div>
+    <div>
+        <span class="text-muted mr-2">Ver:</span>
+        <div class="btn-group btn-group-sm" role="group">
+            <button type="button" class="btn btn-outline-secondary active" data-view="grid"><i class="fas fa-th"></i></button>
+            <button type="button" class="btn btn-outline-secondary" data-view="list"><i class="fas fa-list"></i></button>
+        </div>
+    </div>
+</div>
+
+<!-- Vista de cuadrícula (predeterminada) -->
+<div class="row" id="gridView">
+    {% for producto in productos %}
+        <div class="col-6 col-md-4 col-lg-3 mb-4">
+            <div class="card h-100 border-0 shadow-sm producto-card">
+                <div class="position-relative">
+                    <a href="{% url 'marketplace:producto_detalle' producto.slug %}">
+                        {% if producto.imagen_principal %}
+                            <img src="{{ producto.imagen_principal.url }}" class="card-img-top" alt="{{ producto.nombre_producto }}">
+                        {% else %}
+                            <img src="{% static 'marketplace/img/default-product.jpg' %}" class="card-img-top" alt="{{ producto.nombre_producto }}">
+                        {% endif %}
+                    </a>
+                    {% if producto.es_organico %}
+                        <span class="badge badge-success position-absolute" style="top: 10px; right: 10px;">Orgánico</span>
+                    {% endif %}
+                    {% if producto.obtener_descuento > 0 %}
+                        <span class="badge badge-danger position-absolute" style="top: 10px; left: 10px;">{{ producto.obtener_descuento }}% OFF</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <a href="{% url 'marketplace:producto_detalle' producto.slug %}" class="text-dark">{{ producto.nombre_producto }}</a>
+                    </h5>
+                    <p class="card-text small text-muted">{{ producto.categoria_producto.nombre_categoria }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            {% if producto.obtener_descuento > 0 %}
+                                <span class="text-muted small"><del>${{ producto.precio_base }}</del></span>
+                                <span class="font-weight-bold text-success">${{ producto.precio_actual }}</span>
+                            {% else %}
+                                <span class="font-weight-bold">${{ producto.precio_actual }}</span>
+                            {% endif %}
+                            <span class="small text-muted">/ {{ producto.unidad_medida.simbolo }}</span>
+                        </div>
+                        <div class="rating small">
+                            <span class="text-warning">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= producto.obtener_valoracion_promedio|floatformat:"0" %}
+                                        <i class="fas fa-star"></i>
+                                    {% elif forloop.counter <= producto.obtener_valoracion_promedio|add:"0.5"|floatformat:"0" %}
+                                        <i class="fas fa-star-half-alt"></i>
+                                    {% else %}
+                                        <i class="far fa-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </span>
+                            <span class="text-muted">({{ producto.valoracionproducto_set.count }})</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-top-0">
+                    <div class="btn-group btn-block">
+                        <button type="button" class="btn btn-sm btn-outline-primary add-to-cart" data-product-id="{{ producto.id }}">
+                            <i class="fas fa-shopping-cart"></i> Añadir
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary add-to-wishlist" data-product-id="{{ producto.id }}">
+                            <i class="far fa-heart"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No se encontraron productos.
+                {% if query or filtros_activos %}
+                    <a href="{% if categoria %}{% url 'marketplace:categoria_detalle_by_id' categoria.categoria_producto_id %}{% else %}{% url 'marketplace:producto_lista' %}{% endif %}" class="btn btn-sm btn-outline-secondary ml-3">Limpiar filtros</a>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Vista de lista (oculta por defecto) -->
+<div class="d-none" id="listView">
+    {% for producto in productos %}
+        <div class="card mb-3 border-0 shadow-sm producto-lista-item">
+            <div class="row no-gutters">
+                <div class="col-md-3">
+                    <div class="position-relative h-100">
+                        <a href="{% url 'marketplace:producto_detalle' producto.slug %}">
+                            {% if producto.imagen_principal %}
+                                <img src="{{ producto.imagen_principal.url }}" class="img-fluid rounded-start h-100" alt="{{ producto.nombre_producto }}" style="object-fit: cover;">
+                            {% else %}
+                                <img src="{% static 'marketplace/img/default-product.jpg' %}" class="img-fluid rounded-start h-100" alt="{{ producto.nombre_producto }}" style="object-fit: cover;">
+                            {% endif %}
+                        </a>
+                        {% if producto.es_organico %}
+                            <span class="badge badge-success position-absolute" style="top: 10px; right: 10px;">Orgánico</span>
+                        {% endif %}
+                        {% if producto.obtener_descuento > 0 %}
+                            <span class="badge badge-danger position-absolute" style="top: 10px; left: 10px;">{{ producto.obtener_descuento }}% OFF</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-9">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h5 class="card-title">
+                                    <a href="{% url 'marketplace:producto_detalle' producto.slug %}" class="text-dark">{{ producto.nombre_producto }}</a>
+                                </h5>
+                                <p class="card-text small text-muted">{{ producto.categoria_producto.nombre_categoria }}</p>
+                                <p class="card-text">{{ producto.descripcion|truncatewords:20 }}</p>
+                                <div class="rating small mb-2">
+                                    <span class="text-warning">
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= producto.obtener_valoracion_promedio|floatformat:"0" %}
+                                                <i class="fas fa-star"></i>
+                                            {% elif forloop.counter <= producto.obtener_valoracion_promedio|add:"0.5"|floatformat:"0" %}
+                                                <i class="fas fa-star-half-alt"></i>
+                                            {% else %}
+                                                <i class="far fa-star"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </span>
+                                    <span class="text-muted">({{ producto.valoracionproducto_set.count }})</span>
+                                </div>
+                                {% if producto.stock_actual > 0 %}
+                                    <span class="badge badge-success">En stock</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">Agotado</span>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 text-md-right">
+                                <div class="mb-3">
+                                    {% if producto.obtener_descuento > 0 %}
+                                        <p class="text-muted mb-0"><del>${{ producto.precio_base }}</del></p>
+                                        <h4 class="text-success">${{ producto.precio_actual }}</h4>
+                                    {% else %}
+                                        <h4>${{ producto.precio_actual }}</h4>
+                                    {% endif %}
+                                    <span class="small text-muted">/ {{ producto.unidad_medida.simbolo }}</span>
+                                </div>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-outline-primary add-to-cart" data-product-id="{{ producto.id }}">
+                                        <i class="fas fa-shopping-cart"></i> Añadir
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary add-to-wishlist" data-product-id="{{ producto.id }}">
+                                        <i class="far fa-heart"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="alert alert-info">
+            No se encontraron productos.
+            {% if query or filtros_activos %}
+                <a href="{% if categoria %}{% url 'marketplace:categoria_detalle_by_id' categoria.categoria_producto_id %}{% else %}{% url 'marketplace:producto_lista' %}{% endif %}" class="btn btn-sm btn-outline-secondary ml-3">Limpiar filtros</a>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+
+{% if is_paginated %}
+<nav aria-label="Paginación" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% if query %}&query={{ query }}{% endif %}{% if categoria_id %}&categoria={{ categoria_id }}{% endif %}{% if orden %}&ordenar={{ orden }}{% endif %}" aria-label="Primero">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&query={{ query }}{% endif %}{% if categoria_id %}&categoria={{ categoria_id }}{% endif %}{% if orden %}&ordenar={{ orden }}{% endif %}" aria-label="Anterior">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+        {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Primero">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                </a>
+            </li>
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Anterior">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+        {% endif %}
+        
+        {% for i in paginator.page_range %}
+            {% if page_obj.number == i %}
+                <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+            {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ i }}{% if query %}&query={{ query }}{% endif %}{% if categoria_id %}&categoria={{ categoria_id }}{% endif %}{% if orden %}&ordenar={{ orden }}{% endif %}">{{ i }}</a>
+                </li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&query={{ query }}{% endif %}{% if categoria_id %}&categoria={{ categoria_id }}{% endif %}{% if orden %}&ordenar={{ orden }}{% endif %}" aria-label="Siguiente">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ paginator.num_pages }}{% if query %}&query={{ query }}{% endif %}{% if categoria_id %}&categoria={{ categoria_id }}{% endif %}{% if orden %}&ordenar={{ orden }}{% endif %}" aria-label="Último">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+            </li>
+        {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Siguiente">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Último">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
+
+{% block sidebar_filters %}
+<div class="card mt-3">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Filtros</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" action="{% if categoria %}{% url 'marketplace:categoria_detalle_by_id' categoria.categoria_producto_id %}{% else %}{% url 'marketplace:producto_lista' %}{% endif %}">
+            {% if query %}<input type="hidden" name="query" value="{{ query }}">{% endif %}
+            {% if categoria_id %}<input type="hidden" name="categoria" value="{{ categoria_id }}">{% endif %}
+            {% if orden %}<input type="hidden" name="ordenar" value="{{ orden }}">{% endif %}
+            
+            <div class="form-group">
+                <label for="precio_min">Precio mínimo</label>
+                <input type="number" class="form-control" id="precio_min" name="precio_min" value="{{ filtros.precio_min }}" min="0" step="0.01">
+            </div>
+            
+            <div class="form-group">
+                <label for="precio_max">Precio máximo</label>
+                <input type="number" class="form-control" id="precio_max" name="precio_max" value="{{ filtros.precio_max }}" min="0" step="0.01">
+            </div>
+            
+            <div class="form-group">
+                <label>Estado</label>
+                {% for estado in estados %}
+                <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="estado_{{ estado.id }}" name="estado" value="{{ estado.id }}" {% if estado.id in filtros.estados %}checked{% endif %}>
+                    <label class="custom-control-label" for="estado_{{ estado.id }}">{{ estado.nombre_estado }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="form-check mb-3">
+                <input type="checkbox" class="form-check-input" id="organico" name="organico" value="1" {% if filtros.organico %}checked{% endif %}>
+                <label class="form-check-label" for="organico">Solo productos orgánicos</label>
+            </div>
+            
+            <div class="form-check mb-3">
+                <input type="checkbox" class="form-check-input" id="promocion" name="promocion" value="1" {% if filtros.promocion %}checked{% endif %}>
+                <label class="form-check-label" for="promocion">Solo productos en promoción</label>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-block">Aplicar filtros</button>
+            
+            {% if filtros_activos %}
+            <a href="{% if categoria %}{% url 'marketplace:categoria_detalle_by_id' categoria.categoria_producto_id %}{% else %}{% url 'marketplace:producto_lista' %}{% endif %}" class="btn btn-outline-secondary btn-block mt-2">Limpiar filtros</a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block marketplace_js %}
+<script>
+    // Cambiar entre vistas de cuadrícula y lista
+    document.querySelectorAll('[data-view]').forEach(button => {
+        button.addEventListener('click', function() {
+            const viewType = this.getAttribute('data-view');
+            const gridView = document.getElementById('gridView');
+            const listView = document.getElementById('listView');
+            
+            // Actualizar botones
+            document.querySelectorAll('[data-view]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            this.classList.add('active');
+            
+            // Mostrar la vista seleccionada
+            if (viewType === 'grid') {
+                gridView.classList.remove('d-none');
+                listView.classList.add('d-none');
+                localStorage.setItem('marketplace_view', 'grid');
+            } else {
+                gridView.classList.add('d-none');
+                listView.classList.remove('d-none');
+                localStorage.setItem('marketplace_view', 'list');
+            }
+        });
+    });
+    
+    // Cargar la vista preferida del usuario desde localStorage
+    document.addEventListener('DOMContentLoaded', function() {
+        const savedView = localStorage.getItem('marketplace_view');
+        if (savedView === 'list') {
+            document.querySelector('[data-view="list"]').click();
+        }
+    });
+    
+    // Código para manejar la adición de productos al carrito
+    document.querySelectorAll('.add-to-cart').forEach(button => {
+        button.addEventListener('click', function() {
+            const productId = this.getAttribute('data-product-id');
+            fetch('/marketplace/api/carrito/agregar/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    product_id: productId,
+                    quantity: 1
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Actualizar contador de carrito
+                    const cartCounter = document.getElementById('cart-counter');
+                    if (cartCounter) {
+                        cartCounter.textContent = data.cart_count;
+                        cartCounter.classList.remove('d-none');
+                    }
+                    
+                    // Mostrar notificación
+                    alert('Producto añadido al carrito');
+                } else {
+                    alert(data.error || 'Error al añadir al carrito');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al añadir al carrito');
+            });
+        });
+    });
+    
+    // Código para manejar la adición de productos a la lista de deseos
+    document.querySelectorAll('.add-to-wishlist').forEach(button => {
+        button.addEventListener('click', function() {
+            const productId = this.getAttribute('data-product-id');
+            fetch('/marketplace/api/lista-deseos/agregar/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    product_id: productId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.innerHTML = '<i class="fas fa-heart"></i>';
+                    this.classList.remove('btn-outline-secondary');
+                    this.classList.add('btn-danger');
+                    
+                    // Mostrar notificación
+                    alert('Producto añadido a favoritos');
+                } else {
+                    alert(data.error || 'Error al añadir a favoritos');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al añadir a favoritos');
+            });
+        });
+    });
+    
+    // Función auxiliar para obtener CSRF token de las cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %} 

@@ -1,0 +1,226 @@
+{% extends 'inventario/base.html' %}
+{% load static %}
+
+{% block title %}Movimientos de Inventario - Campo Unido{% endblock %}
+
+{% block inventario_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Movimientos de Inventario</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'inventario:registrar_movimiento' %}" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus"></i> Registrar Movimiento
+        </a>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="fas fa-filter mr-2"></i> Filtros
+    </div>
+    <div class="card-body">
+        <form method="get" class="row">
+            <div class="col-md-3 mb-3">
+                <label for="producto">Producto</label>
+                <select class="form-control select2" id="producto" name="producto">
+                    <option value="">Todos los productos</option>
+                    {% for p in productos %}
+                    <option value="{{ p.id }}" {% if request.GET.producto == p.id|stringformat:"i" %}selected{% endif %}>
+                        {{ p.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label for="tipo">Tipo de Movimiento</label>
+                <select class="form-control" id="tipo" name="tipo">
+                    <option value="">Todos los tipos</option>
+                    <option value="ENTRADA" {% if request.GET.tipo == 'ENTRADA' %}selected{% endif %}>Entrada</option>
+                    <option value="SALIDA" {% if request.GET.tipo == 'SALIDA' %}selected{% endif %}>Salida</option>
+                    <option value="AJUSTE" {% if request.GET.tipo == 'AJUSTE' %}selected{% endif %}>Ajuste</option>
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label for="fecha_desde">Fecha Desde</label>
+                <input type="text" class="form-control datepicker" id="fecha_desde" name="fecha_desde" value="{{ request.GET.fecha_desde|default:'' }}" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label for="fecha_hasta">Fecha Hasta</label>
+                <input type="text" class="form-control datepicker" id="fecha_hasta" name="fecha_hasta" value="{{ request.GET.fecha_hasta|default:'' }}" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label for="referencia">Referencia</label>
+                <input type="text" class="form-control" id="referencia" name="referencia" value="{{ request.GET.referencia|default:'' }}" placeholder="Número de referencia">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label for="usuario">Usuario</label>
+                <select class="form-control select2" id="usuario" name="usuario">
+                    <option value="">Todos los usuarios</option>
+                    {% for u in usuarios %}
+                    <option value="{{ u.id }}" {% if request.GET.usuario == u.id|stringformat:"i" %}selected{% endif %}>
+                        {{ u.get_full_name|default:u.email }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Filtrar
+                </button>
+                <a href="{% url 'inventario:lista_movimientos' %}" class="btn btn-secondary">
+                    <i class="fas fa-undo"></i> Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabla de Movimientos -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-exchange-alt mr-2"></i> Movimientos</span>
+            <span class="badge badge-primary">{{ page_obj.paginator.count }} movimientos</span>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if movimientos %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Producto</th>
+                        <th>Tipo</th>
+                        <th class="text-right">Cantidad</th>
+                        <th>Referencia</th>
+                        <th>Usuario</th>
+                        <th>Notas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for movimiento in movimientos %}
+                    <tr>
+                        <td>{{ movimiento.fecha_movimiento|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            <a href="{% url 'inventario:detalle_producto' movimiento.producto_inventario.id %}">
+                                {{ movimiento.producto_inventario.nombre_producto }}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="badge {% if movimiento.tipo_movimiento == 'ENTRADA' %}badge-entrada{% elif movimiento.tipo_movimiento == 'SALIDA' %}badge-salida{% else %}badge-ajuste{% endif %}">
+                                {{ movimiento.tipo_movimiento }}
+                            </span>
+                        </td>
+                        <td class="text-right">{{ movimiento.cantidad_movimiento }} {{ movimiento.producto_inventario.unidad_medida.simbolo }}</td>
+                        <td>{{ movimiento.referencia_documento|default:"-" }}</td>
+                        <td>{{ movimiento.usuario.get_full_name|default:movimiento.usuario.email }}</td>
+                        <td>
+                            {% if movimiento.descripcion_movimiento %}
+                            <span data-toggle="tooltip" title="{{ movimiento.descripcion_movimiento }}">
+                                {{ movimiento.descripcion_movimiento|truncatechars:30 }}
+                            </span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginación -->
+        {% if is_paginated %}
+        <nav aria-label="Paginación de movimientos">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Primera">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Anterior">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Primera">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Anterior">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                    </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Siguiente">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Última">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Siguiente">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Última">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle mr-2"></i> No se encontraron movimientos con los criterios de búsqueda especificados.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script>
+        $(document).ready(function() {
+            // Inicializar select2 para los campos de selección
+            $('#producto, #usuario').select2({
+                theme: 'bootstrap4'
+            });
+            
+            // Inicializar datepickers
+            $('.datepicker').datepicker({
+                format: 'yyyy-mm-dd',
+                autoclose: true,
+                todayHighlight: true
+            });
+        });
+    </script>
+{% endblock %} 

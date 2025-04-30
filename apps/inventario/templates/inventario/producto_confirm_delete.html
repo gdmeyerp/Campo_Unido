@@ -1,0 +1,116 @@
+{% extends 'inventario/base.html' %}
+{% load static %}
+
+{% block title %}Confirmar Eliminación - {{ producto.nombre }}{% endblock %}
+
+{% block inventario_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Confirmar Eliminación</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'inventario:detalle_producto' producto.id %}" class="btn btn-sm btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al Producto
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <i class="fas fa-exclamation-triangle mr-2"></i> ¿Está seguro de eliminar este producto?
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <p><strong>¡Advertencia!</strong> Esta acción no se puede deshacer. Al eliminar este producto, se eliminarán también todos los registros relacionados, como movimientos de inventario, ubicaciones y fechas de caducidad.</p>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        Información del Producto
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 text-center">
+                                {% if producto.imagen %}
+                                <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" class="img-fluid rounded" style="max-height: 100px;">
+                                {% else %}
+                                <div class="text-center p-3 bg-light rounded">
+                                    <i class="fas fa-box fa-3x text-secondary"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-9">
+                                <h5>{{ producto.nombre }}</h5>
+                                <p class="text-muted">Código: {{ producto.codigo }}</p>
+                                <p>Categoría: {{ producto.categoria.nombre }}</p>
+                                <p>Stock Actual: {{ producto.cantidad_disponible }} {{ producto.unidad_medida.simbolo }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        Datos Relacionados
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 text-center">
+                                <div class="border rounded p-3">
+                                    <h3 class="text-danger">{{ movimientos_count }}</h3>
+                                    <p>Movimientos de Inventario</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <div class="border rounded p-3">
+                                    <h3 class="text-danger">{{ ubicaciones_count }}</h3>
+                                    <p>Ubicaciones en Almacén</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <div class="border rounded p-3">
+                                    <h3 class="text-danger">{{ caducidades_count }}</h3>
+                                    <p>Registros de Caducidad</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="confirmacion">Para confirmar, escriba el nombre del producto:</label>
+                        <input type="text" class="form-control" id="confirmacion" name="confirmacion" placeholder="Escriba: {{ producto.nombre }}" required>
+                    </div>
+                    <div class="form-group text-center">
+                        <button type="submit" class="btn btn-danger" onclick="return validarConfirmacion()">
+                            <i class="fas fa-trash"></i> Eliminar Permanentemente
+                        </button>
+                        <a href="{% url 'inventario:detalle_producto' producto.id %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script>
+        function validarConfirmacion() {
+            var confirmacion = document.getElementById('confirmacion').value;
+            var nombreProducto = "{{ producto.nombre }}";
+            
+            if (confirmacion !== nombreProducto) {
+                alert("El nombre del producto no coincide. Por favor, escriba exactamente: " + nombreProducto);
+                return false;
+            }
+            
+            return confirm("¿Está completamente seguro de eliminar este producto y todos sus datos relacionados?");
+        }
+    </script>
+{% endblock %} 

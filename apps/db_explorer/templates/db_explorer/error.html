@@ -1,0 +1,16 @@
+{% extends 'db_explorer/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block db_explorer_content %}
+<div class="alert alert-danger">
+    <h3 class="alert-heading">{{ error_title }}</h3>
+    <p>{{ error_message }}</p>
+    <hr>
+    <p class="mb-0">
+        <a href="{% url 'db_explorer:index' %}" class="btn btn-outline-danger">
+            <i class="fas fa-arrow-left"></i> Volver al Explorador de Base de Datos
+        </a>
+    </p>
+</div>
+{% endblock %} 

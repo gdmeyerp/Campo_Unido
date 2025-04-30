@@ -1,0 +1,305 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Mi Dashboard{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Dashboard CSS -->
+    <link rel="stylesheet" href="{% static 'css/dashboard-style1.css' %}">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    
+    {% block css %}{% endblock %}
+    
+    <script src="{% static 'javascript/script.js' %}" defer></script>
+</head>
+
+<body>
+    <!-- Layout principal -->
+    <div class="container-fluid p-0">
+        <div class="row no-gutters">
+            <!-- Sidebar -->
+            <nav id="sidebar" class="col-md-2 col-lg-2 d-md-block sidebar">
+                <div class="sidebar-sticky py-3">
+                    <!-- Logo -->
+                    <div class="text-center mb-3">
+                        <img src="{% static 'images/LogoCampoUnido.png' %}" alt="Logo CampoUnido" class="logo" style="width: 50%; height: 100%;">
+                    </div>
+                    
+
+                    
+                    <!-- Menú principal -->
+                    <ul class="nav flex-column">
+                    <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/profile/' %}active{% endif %}" href="{% url 'core:profile' %}">
+                                <i class="fas fa-home"></i> Inicio
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link dropdown-toggle" href="#monitoreoDropdown" data-toggle="collapse" aria-expanded="false" aria-controls="monitoreoDropdown">
+                          <i class="fas fa-chart-line"></i> Monitoreo
+                        </a>
+                        <div class="collapse" id="monitoreoDropdown">
+                          <ul class="nav flex-column ml-3">
+                            <li class="nav-item">
+                              <a class="nav-link small" href="#">
+                                <i class="fas fa-chart-line"></i> Mediciones
+                              </a>
+                            </li>
+                            <li class="nav-item">
+                              <a class="nav-link small" href="#">
+                                <i class="fas fa-history"></i> Historial
+                              </a>
+                            </li>
+                          </ul>
+                        </div>
+                      </li>
+                      
+         <!-- Enlace al Marketplace -->
+                        <li class="nav-item">
+                            <a class="nav-link dropdown-toggle {% if 'marketplace' in request.path %}active{% endif %}" href="#marketplaceDropdown"  data-toggle="collapse" aria-expanded="false" aria-controls="marketplaceDropdown">
+                              <i class="fas fa-store"></i> Marketplace
+                            </a>
+                            <div class="collapse" id="marketplaceDropdown">
+                              <ul class="nav flex-column ml-3">
+                                <li class="nav-item">
+                                    <a class="nav-link {% if 'marketplace' in request.path %}active{% endif %}" href="{% url 'marketplace:home' %}">
+                                        <i class="fas fa-store"></i> Inicio
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                  <a class="nav-link small {% if 'lista_productos' in request.path %}active{% endif %}" href="{% url 'marketplace:lista_productos' %}">
+                                    <i class="fas fa-shopping-bag mr-2"></i> Ver todos los productos
+                                  </a>
+                                </li>
+                                <li class="nav-item">
+                                  <a class="nav-link small {% if 'mi_tienda' in request.path %}active{% endif %}" href="{% url 'marketplace:mi_tienda' %}">
+                                    <i class="fas fa-store mr-2"></i> Mi tienda
+                                  </a>
+                                </li>
+                                <li class="nav-item">
+                                  <a class="nav-link small {% if 'ver_carrito' in request.path %}active{% endif %}" href="{% url 'marketplace:ver_carrito' %}">
+                                    <i class="fas fa-shopping-cart mr-2"></i> Ver carrito
+                                  </a>
+                                </li>
+                                <li class="nav-item">
+                                  <a class="nav-link small {% if 'ver_lista_deseos' in request.path %}active{% endif %}" href="{% url 'marketplace:ver_lista_deseos' %}">
+                                    <i class="fas fa-heart mr-2"></i> Lista de deseos
+                                  </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#">
+                                        <i class="fas fa-shopping-cart"></i> Órdenes
+                                    </a>
+                                </li>
+                              </ul>
+                            </div>
+                          </li>
+                          
+                        
+                          <li class="nav-item">
+                            <a class="nav-link dropdown-toggle {% if 'inventario' in request.path or 'clientes' in request.path %}active{% endif %}" href="#gestionDropdown" data-toggle="collapse" aria-expanded="false" aria-controls="gestionDropdown">
+                              <i class="fas fa-cogs"></i> Gestión
+                            </a>
+                            <div class="collapse" id="gestionDropdown">
+                              <ul class="nav flex-column ml-3">
+                                <li class="nav-item">
+                                  <a class="nav-link small {% if 'inventario' in request.path %}active{% endif %}" href="{% url 'inventario:dashboard' %}">
+                                    <i class="fas fa-box"></i> Inventario
+                                  </a>
+                                </li>
+                                <li class="nav-item">
+                                  <a class="nav-link small {% if 'clientes' in request.path %}active{% endif %}" href="#">
+                                    <i class="fas fa-users"></i> Clientes
+                                  </a>
+                                </li>
+                                                        <!-- Monitorización (como en el mockup) -->
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.path == '/dashboard/' %}active{% endif %}" href="{% url 'core:monitorizacion' %}">
+                                        <i class="fas fa-chart-bar"></i> Monitorización
+                                    </a>
+                                </li>
+                              </ul>
+                            </div>
+                          </li>
+                          
+
+
+                        <li class="nav-item">
+                            <a class="nav-link dropdown-toggle {% if 'ubicaciones' in request.path %}active{% endif %}" href="#ubicacionesDropdown" data-toggle="collapse" aria-expanded="false" aria-controls="ubicacionesDropdown">
+                              <i class="fas fa-map-marker-alt"></i> Ubicaciones
+                            </a>
+                            <div class="collapse" id="ubicacionesDropdown">
+                              <ul class="nav flex-column ml-3">
+                                <li class="nav-item">
+                                  <a class="nav-link small {% if 'mis_ubicaciones' in request.path %}active{% endif %}" href="{% url 'ubicaciones:mis_ubicaciones' %}">
+                                    <i class="fas fa-map"></i> Mis Ubicaciones
+                                  </a>
+                                </li>
+                                <li class="nav-item">
+                                  <a class="nav-link small {% if 'buscar_cercanos' in request.path %}active{% endif %}" href="{% url 'ubicaciones:buscar_cercanos' %}">
+                                    <i class="fas fa-search"></i> Buscar Cercanos
+                                  </a>
+                                </li>
+                              </ul>
+                            </div>
+                          </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'chat/dashboard' in request.path %}active{% endif %}" href="{% url 'chat_flotante:dashboard_chat' %}">
+                                <i class="fas fa-envelope"></i> Mensajes
+                                {% if chat_flotante_unread > 0 %}
+                                <span class="badge badge-pill badge-primary ml-2">{{ chat_flotante_unread }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        <!-- Foro -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="/foro/">
+                                <i class="fas fa-comments"></i> Foro
+                            </a>
+                        </li>
+                        
+
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'notificaciones' in request.path %}active{% endif %}" href="{% url 'inventario:lista_notificaciones' %}">
+                                <i class="fas fa-bell"></i> Notificaciones
+                                {% load notificaciones_tags %}
+                                {% notificaciones_no_leidas user as no_leidas_count %}
+                                {% if no_leidas_count > 0 %}
+                                <span class="badge badge-pill badge-danger">{{ no_leidas_count }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+
+                        <!-- Ayuda y contacto (como en el mockup) -->
+                        <li class="nav-item mt-3">
+                            <a class="nav-link" href="#">
+                                <i class="fas fa-question-circle"></i> Ayuda
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                <i class="fas fa-envelope"></i> Contacto
+                            </a>
+                        </li>
+                        
+                        <!-- Configuración y Logout -->
+                        <li class="nav-item mt-3">
+                            <a class="nav-link" href="{% url 'core:editar_perfil' %}">
+                                <i class="fas fa-cog"></i> Configuración
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'core:logout' %}">
+                                <i class="fas fa-sign-out-alt"></i> Log out
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Contenido principal -->
+            <main role="main" class="col-md-10 ml-sm-auto col-lg-10 px-md-4">
+                <!-- Barra superior (Búsqueda y Perfil) -->
+                <div class="d-flex justify-content-between align-items-center py-3 mb-4 border-bottom">
+                    <div class="welcome-section">
+                        <h5>Bienvenido, {{ user.first_name }} {{ user.last_name }}</h5>
+                        <p>Aquí están todos tus registros para tu sistema de hidroponía y marketplace</p>
+                    </div>
+                    <div class="search-container">
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Búsqueda" aria-label="Búsqueda">
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary" type="button">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                                        <!-- Bienvenida al usuario -->
+
+                    <div class="d-flex align-items-center">
+                        <div class="position-relative mr-3">
+                            <a href="#" class="text-dark notification-bell">
+                                <i class="fas fa-bell fa-lg"></i>
+                                {% load notificaciones_tags %}
+                                {% notificaciones_no_leidas user as no_leidas_count %}
+                                {% if no_leidas_count > 0 %}
+                                <span id="contador-notificaciones" class="badge badge-pill badge-danger position-absolute" style="top: -8px; right: -8px;">{{ no_leidas_count }}</span>
+                                {% else %}
+                                <span id="contador-notificaciones" class="badge badge-pill badge-danger position-absolute d-none" style="top: -8px; right: -8px;">0</span>
+                                {% endif %}
+                            </a>
+                        </div>
+                        
+                        <div class="user-profile">
+                            {% if user.perfilusuario.foto_perfil %}
+                                <img src="{{ user.perfilusuario.foto_perfil.url }}" alt="{{ user.username }}" class="rounded-circle">
+                            {% else %}
+                                <img src="{% static 'img/default-profile.png' %}" alt="{{ user.username }}" class="rounded-circle">
+                            {% endif %}
+                            <div class="dropdown">
+                                <a class="dropdown-toggle text-dark text-decoration-none" href="#" role="button" id="userDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    {{ user.first_name }} {{ user.last_name }}
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
+                                    <a class="dropdown-item" href="{% url 'core:profile' %}">Mi perfil</a>
+                                    <a class="dropdown-item" href="{% url 'core:configuracion' %}">Configuración</a>
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item" href="{% url 'core:logout' %}">Cerrar sesión</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Contenido de la página -->
+                {% block content %}
+
+                {% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+    
+    <!-- Chart.js (para gráficos) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Script para notificaciones -->
+    <script src="{% static 'js/notifications.js' %}"></script>
+    
+    {% block js %}
+    <!-- Scripts adicionales específicos para el dashboard -->
+
+    {% block dashboard_js %}
+
+    {% endblock %}
+    {% endblock %}
+    
+
+    <!-- Inclusión del Chat Flotante -->
+    {% if chat_flotante_enabled %}
+        {% include 'chat_flotante/chat_flotante.html' %}
+    {% endif %}
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,42 @@
+{% extends 'inventario/base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Todas las Notificaciones Leídas{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Confirmar eliminación masiva</h5>
+                </div>
+                <div class="card-body text-center">
+                    <i class="fas fa-trash text-danger fa-4x mb-3"></i>
+                    <h4 class="mb-3">¿Está seguro de que desea eliminar todas las notificaciones leídas?</h4>
+                    
+                    <div class="alert alert-warning" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Esta acción eliminará <strong>todas</strong> las notificaciones que ya haya leído.
+                        Las notificaciones no leídas no se verán afectadas.
+                        <br>
+                        Esta acción no se puede deshacer.
+                    </div>
+                    
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-center">
+                            <a href="{% url 'inventario:lista_notificaciones' %}" class="btn btn-secondary me-2">
+                                <i class="fas fa-times me-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash me-1"></i> Eliminar todas las notificaciones leídas
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

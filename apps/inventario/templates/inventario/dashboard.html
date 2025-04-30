@@ -1,0 +1,233 @@
+{% extends 'inventario/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard de Inventario - Campo Unido{% endblock %}
+
+{% block inventario_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Dashboard de Inventario</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group mr-2">
+            <a href="{% url 'inventario:crear_producto' %}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-plus"></i> Nuevo Producto
+            </a>
+            <a href="{% url 'inventario:registrar_movimiento' %}" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-exchange-alt"></i> Registrar Movimiento
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Tarjetas de Resumen -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card card-dashboard">
+            <div class="card-body text-center">
+                <h5 class="card-title">Total Productos</h5>
+                <p class="card-text display-4">{{ total_productos }}</p>
+                <a href="{% url 'inventario:lista_productos' %}" class="btn btn-sm btn-primary">Ver Productos</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-dashboard">
+            <div class="card-body text-center">
+                <h5 class="card-title">Stock Bajo</h5>
+                <p class="card-text display-4">{{ productos_stock_bajo }}</p>
+                <a href="{% url 'inventario:lista_productos' %}?stock=bajo" class="btn btn-sm btn-warning">Ver Alertas</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-dashboard">
+            <div class="card-body text-center">
+                <h5 class="card-title">Movimientos Hoy</h5>
+                <p class="card-text display-4">{{ movimientos_hoy }}</p>
+                <a href="{% url 'inventario:lista_movimientos' %}" class="btn btn-sm btn-info">Ver Movimientos</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-dashboard">
+            <div class="card-body text-center">
+                <h5 class="card-title">Pedidos Pendientes</h5>
+                <p class="card-text display-4">{{ pedidos_pendientes }}</p>
+                <a href="{% url 'inventario:lista_pedidos' %}?estado=pendiente" class="btn btn-sm btn-secondary">Ver Pedidos</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Productos Más Vendidos -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card card-dashboard">
+            <div class="card-header">
+                <i class="fas fa-chart-bar mr-2"></i> Productos Más Vendidos (Últimos 30 días)
+            </div>
+            <div class="card-body">
+                {% if productos_mas_vendidos %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Categoría</th>
+                                <th class="text-right">Cantidad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for producto in productos_mas_vendidos %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'inventario:detalle_producto' producto.id %}">
+                                        {{ producto.nombre }}
+                                    </a>
+                                </td>
+                                <td>{{ producto.categoria.nombre }}</td>
+                                <td class="text-right">{{ producto.cantidad_vendida }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No hay datos de ventas en los últimos 30 días.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Alertas Recientes -->
+    <div class="col-md-6">
+        <div class="card card-dashboard">
+            <div class="card-header">
+                <i class="fas fa-exclamation-triangle mr-2"></i> Alertas Recientes
+            </div>
+            <div class="card-body">
+                {% if alertas_recientes %}
+                <div class="list-group">
+                    {% for alerta in alertas_recientes %}
+                    <div class="list-group-item list-group-item-action flex-column align-items-start {% if alerta.tipo == 'STOCK' %}alert-stock-bajo{% elif alerta.tipo == 'CADUCIDAD' %}alert-caducidad{% endif %}">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">
+                                <a href="{% url 'inventario:detalle_producto' alerta.producto.id %}">
+                                    {{ alerta.producto.nombre }}
+                                </a>
+                            </h5>
+                            <small>{{ alerta.fecha_creacion|date:"d/m/Y" }}</small>
+                        </div>
+                        <p class="mb-1">{{ alerta.mensaje }}</p>
+                        <small>
+                            {% if alerta.tipo == 'STOCK' %}
+                            Stock actual: {{ alerta.producto.cantidad_disponible }} {{ alerta.producto.unidad_medida.simbolo }}
+                            {% elif alerta.tipo == 'CADUCIDAD' %}
+                            Fecha caducidad: {{ alerta.caducidad.fecha_caducidad|date:"d/m/Y" }}
+                            {% endif %}
+                        </small>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No hay alertas recientes.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Últimos Movimientos y Productos por Caducar -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card card-dashboard">
+            <div class="card-header">
+                <i class="fas fa-exchange-alt mr-2"></i> Últimos Movimientos
+            </div>
+            <div class="card-body">
+                {% if ultimos_movimientos %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Producto</th>
+                                <th>Tipo</th>
+                                <th class="text-right">Cantidad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for movimiento in ultimos_movimientos %}
+                            <tr>
+                                <td>{{ movimiento.fecha|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    <a href="{% url 'inventario:detalle_producto' movimiento.producto.id %}">
+                                        {{ movimiento.producto.nombre }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge {% if movimiento.tipo == 'ENTRADA' %}badge-entrada{% elif movimiento.tipo == 'SALIDA' %}badge-salida{% else %}badge-ajuste{% endif %}">
+                                        {{ movimiento.get_tipo_display }}
+                                    </span>
+                                </td>
+                                <td class="text-right">{{ movimiento.cantidad }} {{ movimiento.producto.unidad_medida.simbolo }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No hay movimientos registrados.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card card-dashboard">
+            <div class="card-header">
+                <i class="fas fa-calendar-times mr-2"></i> Productos por Caducar
+            </div>
+            <div class="card-body">
+                {% if productos_por_caducar %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Ubicación</th>
+                                <th>Fecha Caducidad</th>
+                                <th class="text-right">Días Restantes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for caducidad in productos_por_caducar %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'inventario:detalle_producto' caducidad.producto.id %}">
+                                        {{ caducidad.producto.nombre }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if caducidad.ubicacion %}
+                                    {{ caducidad.ubicacion.almacen.nombre }} - {{ caducidad.ubicacion.nombre }}
+                                    {% else %}
+                                    No especificada
+                                    {% endif %}
+                                </td>
+                                <td>{{ caducidad.fecha_caducidad|date:"d/m/Y" }}</td>
+                                <td class="text-right {% if caducidad.dias_restantes <= 7 %}text-danger{% elif caducidad.dias_restantes <= 30 %}text-warning{% endif %}">
+                                    {{ caducidad.dias_restantes }} días
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No hay productos próximos a caducar.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

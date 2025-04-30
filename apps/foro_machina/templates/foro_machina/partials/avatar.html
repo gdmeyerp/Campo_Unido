@@ -1,0 +1,7 @@
+{% if profile.user.avatar %}
+    <img class="avatar rounded-circle" src="{{ profile.user.avatar.url }}" alt="{{ profile.user.username }}" width="{{ size|default:'64' }}" height="{{ size|default:'64' }}">
+{% elif show_placeholder %}
+    <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: {{ size|default:'64' }}px; height: {{ size|default:'64' }}px;">
+        {{ profile.user.username|first|upper }}
+    </div>
+{% endif %} 

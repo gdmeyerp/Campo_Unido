@@ -1,0 +1,237 @@
+{% extends "marketplace/base.html" %}
+{% load static %}
+
+{% block page_title %}Agregar Producto de Inventario al Marketplace{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item active">Agregar Producto al Marketplace</li>
+{% endblock %}
+
+{% block marketplace_content %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0"><i class="fas fa-exchange-alt mr-2"></i> Convertir Producto de Inventario a Marketplace</h4>
+    </div>
+    <div class="card-body">
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <p class="lead mb-4">Seleccione un producto del inventario para publicarlo en el marketplace.</p>
+        
+        <form method="post" enctype="multipart/form-data" id="inventarioForm">
+            {% csrf_token %}
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="{{ form.producto_inventario.id_for_label }}">
+                            {{ form.producto_inventario.label }}
+                        </label>
+                        {{ form.producto_inventario }}
+                        {% if form.producto_inventario.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.producto_inventario.errors }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Seleccione un producto de su inventario</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.cantidad_a_vender.id_for_label }}">
+                            {{ form.cantidad_a_vender.label }}
+                        </label>
+                        {{ form.cantidad_a_vender }}
+                        {% if form.cantidad_a_vender.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.cantidad_a_vender.errors }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted" id="stock-disponible">
+                            Cantidad disponible: <span id="cantidad-disponible">-</span>
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.precio_base.id_for_label }}">
+                            {{ form.precio_base.label }}
+                        </label>
+                        {{ form.precio_base }}
+                        {% if form.precio_base.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.precio_base.errors }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">{{ form.precio_base.help_text }}</small>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="{{ form.imagen_principal.id_for_label }}">
+                            {{ form.imagen_principal.label }}
+                        </label>
+                        {{ form.imagen_principal }}
+                        {% if form.imagen_principal.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.imagen_principal.errors }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Seleccione una imagen principal para el producto</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.imagen_adicional1.id_for_label }}">
+                            {{ form.imagen_adicional1.label }}
+                        </label>
+                        {{ form.imagen_adicional1 }}
+                        {% if form.imagen_adicional1.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.imagen_adicional1.errors }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Imagen adicional opcional</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.imagen_adicional2.id_for_label }}">
+                            {{ form.imagen_adicional2.label }}
+                        </label>
+                        {{ form.imagen_adicional2 }}
+                        {% if form.imagen_adicional2.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.imagen_adicional2.errors }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Imagen adicional opcional</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.imagen_adicional3.id_for_label }}">
+                            {{ form.imagen_adicional3.label }}
+                        </label>
+                        {{ form.imagen_adicional3 }}
+                        {% if form.imagen_adicional3.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.imagen_adicional3.errors }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Imagen adicional opcional</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.descripcion.id_for_label }}">
+                            {{ form.descripcion.label }}
+                        </label>
+                        {{ form.descripcion }}
+                        {% if form.descripcion.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.descripcion.errors }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Añada información adicional para los compradores</small>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group form-check">
+                                {{ form.destacado }}
+                                <label class="form-check-label" for="{{ form.destacado.id_for_label }}">
+                                    {{ form.destacado.label }}
+                                </label>
+                                {% if form.destacado.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.destacado.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group form-check">
+                                {{ form.es_organico }}
+                                <label class="form-check-label" for="{{ form.es_organico.id_for_label }}">
+                                    {{ form.es_organico.label }}
+                                </label>
+                                {% if form.es_organico.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.es_organico.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save mr-2"></i> Guardar y Publicar
+                </button>
+                <a href="{% url 'marketplace:index' %}" class="btn btn-secondary ml-2">
+                    <i class="fas fa-times mr-2"></i> Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block marketplace_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const productoSelect = document.getElementById('{{ form.producto_inventario.id_for_label }}');
+        const cantidadInput = document.getElementById('{{ form.cantidad_a_vender.id_for_label }}');
+        const precioInput = document.getElementById('{{ form.precio_base.id_for_label }}');
+        const cantidadDisponibleSpan = document.getElementById('cantidad-disponible');
+        
+        // Función para obtener información del producto seleccionado
+        function actualizarInfoProducto() {
+            if (productoSelect.value) {
+                fetch(`/marketplace/api/producto-inventario/${productoSelect.value}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Actualizar cantidad disponible
+                            cantidadDisponibleSpan.textContent = data.cantidad_disponible;
+                            
+                            // Establecer valor máximo para cantidad
+                            cantidadInput.max = data.cantidad_disponible;
+                            
+                            // Sugerir precio de venta
+                            if (!precioInput.value) {
+                                precioInput.value = data.precio_venta;
+                            }
+                            
+                            // Si la cantidad es mayor que la disponible, ajustarla
+                            if (parseInt(cantidadInput.value) > data.cantidad_disponible) {
+                                cantidadInput.value = data.cantidad_disponible;
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+            } else {
+                cantidadDisponibleSpan.textContent = '-';
+            }
+        }
+        
+        // Actualizar información al cambiar de producto
+        productoSelect.addEventListener('change', actualizarInfoProducto);
+        
+        // Actualizar información inicial si hay un producto seleccionado
+        if (productoSelect.value) {
+            actualizarInfoProducto();
+        }
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,184 @@
+{% extends "core/dashboard.html" %}
+{% load static %}
+
+{% block title %}Detalles del Producto: {{ producto.nombre_producto }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">Detalles del Producto</h1>
+        <div>
+            {% if perms.inventario.change_productoinventario %}
+            <a href="{% url 'inventario:editar_producto' producto.id %}" class="btn btn-warning">
+                <i class="fas fa-edit mr-2"></i>Editar
+            </a>
+            {% endif %}
+            <a href="{% url 'inventario:gestionar_imagenes' producto_id=producto.id %}" class="btn btn-info">
+                <i class="fas fa-images mr-2"></i>Gestionar Imágenes
+            </a>
+            <a href="{% url 'inventario:lista_productos' %}" class="btn btn-secondary ml-2">
+                <i class="fas fa-arrow-left mr-2"></i>Volver a la Lista
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        {% with imagen_principal=producto.imagenes.filter.first %}
+        <!-- Imágenes del producto -->
+        {% if producto.imagenes.exists %}
+        <div class="col-md-4 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Imagen Principal</h6>
+                    <a href="{% url 'inventario:gestionar_imagenes' producto_id=producto.id %}" class="btn btn-sm btn-outline-primary">
+                        Ver todas ({{ producto.imagenes.count }})
+                    </a>
+                </div>
+                <div class="card-body text-center">
+                    {% with imagen_principal=producto.imagenes.filter.first %}
+                        {% if imagen_principal %}
+                            <img src="{{ imagen_principal.imagen.url }}" class="img-fluid" style="max-height: 300px;" alt="{{ producto.nombre_producto }}">
+                            {% if imagen_principal.titulo %}
+                                <p class="mt-2 text-muted">{{ imagen_principal.titulo }}</p>
+                            {% endif %}
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-image fa-5x text-muted mb-3"></i>
+                                <p>No hay imágenes disponibles</p>
+                                <a href="{% url 'inventario:subir_imagen' producto_id=producto.id %}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-upload"></i> Subir imagen
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+        <!-- Información del producto -->
+        <div class="col-md-8 mb-4">
+        {% else %}
+        <!-- Información del producto -->
+        <div class="col-md-6 mb-4">
+        {% endif %}
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Información General</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered">
+                        <tr>
+                            <th class="w-25">Nombre:</th>
+                            <td>{{ producto.nombre_producto }}</td>
+                        </tr>
+                        <tr>
+                            <th>Categoría:</th>
+                            <td>{{ producto.categoria_producto.nombre_categoria }}</td>
+                        </tr>
+                        <tr>
+                            <th>Cantidad Disponible:</th>
+                            <td>
+                                <span class="{% if producto.cantidad_disponible <= producto.stock_minimo %}text-danger font-weight-bold{% endif %}">
+                                    {{ producto.cantidad_disponible }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Stock Mínimo:</th>
+                            <td>{{ producto.stock_minimo }}</td>
+                        </tr>
+                        <tr>
+                            <th>Precio de Compra:</th>
+                            <td>${{ producto.precio_compra }}</td>
+                        </tr>
+                        <tr>
+                            <th>Precio de Venta:</th>
+                            <td>${{ producto.precio_venta }}</td>
+                        </tr>
+                        <tr>
+                            <th>Estado:</th>
+                            <td>{{ producto.estado_producto.nombre_estado }}</td>
+                        </tr>
+                        <tr>
+                            <th>Descripción:</th>
+                            <td>{{ producto.descripcion_producto|default:"Sin descripción" }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones rápidas -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Acciones Rápidas</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if perms.inventario.add_movimientoinventario %}
+                        <div class="col-6 mb-3">
+                            <a href="{% url 'inventario:registrar_movimiento' %}?producto={{ producto.id }}&tipo=ENTRADA" class="btn btn-success btn-block">
+                                <i class="fas fa-plus-circle mr-2"></i>Registrar Entrada
+                            </a>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <a href="{% url 'inventario:registrar_movimiento' %}?producto={{ producto.id }}&tipo=SALIDA" class="btn btn-danger btn-block">
+                                <i class="fas fa-minus-circle mr-2"></i>Registrar Salida
+                            </a>
+                        </div>
+                        {% endif %}
+                        {% if perms.inventario.add_caducidadproducto %}
+                        <div class="col-12 mb-3">
+                            <a href="{% url 'inventario:registrar_caducidad' producto.id %}" class="btn btn-warning btn-block">
+                                <i class="fas fa-calendar-alt mr-2"></i>Registrar Caducidad
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historial de movimientos -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Historial de Movimientos</h6>
+        </div>
+        <div class="card-body">
+            {% if movimientos %}
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Cantidad</th>
+                            <th>Usuario</th>
+                            <th>Descripción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for movimiento in movimientos %}
+                        <tr>
+                            <td>{{ movimiento.fecha_movimiento|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <span class="badge {% if movimiento.tipo_movimiento == 'ENTRADA' %}badge-success{% else %}badge-danger{% endif %}">
+                                    {{ movimiento.tipo_movimiento }}
+                                </span>
+                            </td>
+                            <td>{{ movimiento.cantidad_movimiento }}</td>
+                            <td>{{ movimiento.usuario.username }}</td>
+                            <td>{{ movimiento.descripcion_movimiento|default:"" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-center">No hay movimientos registrados para este producto.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

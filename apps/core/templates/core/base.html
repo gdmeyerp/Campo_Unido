@@ -1,0 +1,841 @@
+{% load static %}
+{# Comentado temporalmente para resolver problemas #}
+{# {% load marketplace_tags %} #}
+{% load notificaciones_tags %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CampoUnido{% endblock %}</title>
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Swiper -->
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
+    <!-- AOS Animations -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+        :root {
+            --primary-color: #2ecc71;
+            --secondary-color: #27ae60;
+            --accent-color: #f1c40f;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            padding: 1rem 0;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-brand img.logo {
+            height: 10%;
+            width: 10%;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link {
+            color: var(--dark-color) !important;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            margin: 0 0.2rem;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--primary-color) !important;
+            background: rgba(46, 204, 113, 0.1);
+        }
+
+        .hero-section {
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .swiper {
+            width: 100%;
+            height: 100vh;
+        }
+
+        .swiper-slide {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .hero-content {
+            text-align: center;
+            color: white;
+            z-index: 2;
+            padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero-content h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .hero-content p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--dark-color);
+            margin-bottom: 3rem;
+            position: relative;
+            padding-bottom: 1rem;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: var(--primary-color);
+            border-radius: 2px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
+
+        .testimonial-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 1rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .impact-card {
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .impact-card:hover {
+            transform: scale(1.05);
+        }
+
+        .impact-card h3 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        footer {
+            background: var(--dark-color);
+            color: white;
+            padding: 3rem 0;
+        }
+
+        /* Animaciones AOS personalizadas */
+        [data-aos] {
+            pointer-events: none;
+        }
+        [data-aos].aos-animate {
+            pointer-events: auto;
+        }
+
+        /* Swiper personalizado */
+        .swiper-button-next,
+        .swiper-button-prev {
+            color: white !important;
+            background: rgba(255,255,255,0.2);
+            width: 50px !important;
+            height: 50px !important;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .swiper-button-next:hover,
+        .swiper-button-prev:hover {
+            background: rgba(255,255,255,0.4);
+        }
+
+        .swiper-pagination-bullet {
+            width: 12px;
+            height: 12px;
+            background: white;
+            opacity: 0.5;
+        }
+
+        .swiper-pagination-bullet-active {
+            opacity: 1;
+            background: var(--primary-color);
+        }
+
+        /* Estilos del Marketplace */
+        .product-card {
+            border: none;
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .product-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
+
+        .product-card .card-img-top {
+            transition: all 0.3s ease;
+        }
+
+        .product-card:hover .card-img-top {
+            transform: scale(1.05);
+        }
+
+        .product-card .card-body {
+            padding: 1.5rem;
+        }
+
+        .product-card .card-title {
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--dark-color);
+        }
+
+        .product-card .card-text {
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .product-card .btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        #marketplace {
+            background-color: var(--light-color);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'core:index' %}" data-aos="fade-right">
+                <img src="{% static 'LogosPrincipales/LogoCampoUnido.png' %}" alt="Logo CampoUnido" class="logo">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item" data-aos="fade-left" data-aos-delay="100">
+                            <a class="nav-link" href="{% url 'core:dashboard' %}">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item" data-aos="fade-left" data-aos-delay="200">
+                            <a class="nav-link" href="#">
+                                <i class="fas fa-store me-2"></i>Tienda
+                            </a>
+                        </li>
+                        {% mostrar_menu_notificaciones user %}
+                        <li class="nav-item" data-aos="fade-left" data-aos-delay="300">
+                            <a class="nav-link" href="#">
+                                <i class="fas fa-shopping-cart me-2"></i>Carrito
+                            </a>
+                        </li>
+                        <li class="nav-item dropdown" data-aos="fade-left" data-aos-delay="400">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle me-2"></i>{% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user.email }}{% endif %}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{% url 'core:profile' %}">Mi Perfil</a></li>
+                                <li><a class="dropdown-item" href="{% url 'core:configuracion' %}">Configuración</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'core:logout' %}">Cerrar sesión</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item" data-aos="fade-left" data-aos-delay="200">
+                            <a class="nav-link" href="#">
+                                <i class="fas fa-store me-2"></i>Tienda
+                            </a>
+                        </li>
+                        <li class="nav-item" data-aos="fade-left" data-aos-delay="300">
+                            <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#loginModal">
+                                <i class="fas fa-sign-in-alt me-2"></i>Iniciar sesión
+                            </a>
+                        </li>
+                        <li class="nav-item" data-aos="fade-left" data-aos-delay="400">
+                            <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#registerModal">
+                                <i class="fas fa-user-plus me-2"></i>Registrarse
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section con Swiper -->
+    <div class="swiper hero-slider">
+        <div class="swiper-wrapper">
+            <!-- Slide 1 -->
+            <div class="swiper-slide" style="background-image: url('{% static 'images/hdr4.png' %}');">
+                <div class="hero-content" data-aos="zoom-in">
+                    <h1 class="mb-4">Revoluciona tu Agricultura con CampoUnido</h1>
+                    <p class="mb-5">La plataforma que conecta agricultores con tecnología de punta y mercados directos</p>
+                        {% if user.is_authenticated %}
+                        <a class="btn btn-primary me-3" href="{% url 'core:dashboard' %}">
+                            <i class="fas fa-chart-line me-2"></i>Ir al Dashboard
+                        </a>
+                        {% else %}
+                        <a class="btn btn-primary me-3" href="#" data-bs-toggle="modal" data-bs-target="#loginModal">
+                            <i class="fas fa-sign-in-alt me-2"></i>Comenzar Ahora
+                        </a>
+                        <a class="btn btn-outline-light" href="#" data-bs-toggle="modal" data-bs-target="#registerModal">
+                            <i class="fas fa-user-plus me-2"></i>Crear Cuenta
+                        </a>
+                        {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="swiper-pagination"></div>
+        <div class="swiper-button-next"></div>
+        <div class="swiper-button-prev"></div>
+    </div>
+
+    <!-- Características Principales -->
+    <section class="py-5" id="features">
+        <div class="container">
+            <h2 class="section-title" data-aos="fade-up">Soluciones Innovadoras</h2>
+            <div class="row">
+                <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="100">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-store fa-3x mb-4" style="color: var(--primary-color)"></i>
+                            <h4 class="mb-3">Marketplace Directo</h4>
+                            <p>Conecta con consumidores locales y vende tus productos sin intermediarios.</p>
+                </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="200">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-chart-line fa-3x mb-4" style="color: var(--primary-color)"></i>
+                            <h4 class="mb-3">IoT Agrícola</h4>
+                            <p>Monitorea y controla tus cultivos en tiempo real con sensores avanzados.</p>
+        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="300">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-brain fa-3x mb-4" style="color: var(--primary-color)"></i>
+                            <h4 class="mb-3">IA Predictiva</h4>
+                            <p>Anticipa condiciones climáticas y optimiza tus cultivos con IA.</p>
+                </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Estadísticas -->
+    <section class="py-5 bg-primary text-white">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-3 mb-4" data-aos="fade-up">
+                    <div class="impact-card p-4 text-center">
+                        <i class="fas fa-users fa-2x mb-3"></i>
+                        <h3 class="counter" data-target="10000">0</h3>
+                        <p>Agricultores Activos</p>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4" data-aos="fade-up" data-aos-delay="100">
+                    <div class="impact-card p-4 text-center">
+                        <i class="fas fa-shopping-cart fa-2x mb-3"></i>
+                        <h3 class="counter" data-target="500">0</h3>
+                        <p>Toneladas Vendidas</p>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4" data-aos="fade-up" data-aos-delay="200">
+                    <div class="impact-card p-4 text-center">
+                        <i class="fas fa-chart-pie fa-2x mb-3"></i>
+                        <h3 class="counter" data-target="20">0</h3>
+                        <p>% Más Rentabilidad</p>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4" data-aos="fade-up" data-aos-delay="300">
+                    <div class="impact-card p-4 text-center">
+                        <i class="fas fa-smile fa-2x mb-3"></i>
+                        <h3 class="counter" data-target="95">0</h3>
+                        <p>% Satisfacción</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Marketplace Preview -->
+    <section class="py-5" id="marketplace">
+        <div class="container">
+            <h2 class="section-title" data-aos="fade-up">Productos Destacados</h2>
+            <p class="text-center mb-5" data-aos="fade-up">Descubre productos frescos directamente de nuestros agricultores</p>
+            
+            <div class="row">
+                <!-- Productos destacados estáticos temporales -->
+                {% for i in '123'|make_list %}
+                <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter }}00">
+                    <div class="card h-100 product-card">
+                        <img src="{% static 'images/default-product.jpg' %}" class="card-img-top" alt="Producto" style="height: 200px; object-fit: cover;">
+                        <div class="card-body">
+                            <h5 class="card-title">Producto de muestra {{ forloop.counter }}</h5>
+                            <p class="card-text text-muted">Descripción del producto de muestra mientras se repara el marketplace.</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="h5 mb-0">$19.99</span>
+                                <a href="#" class="btn btn-primary">Ver Detalles</a>
+                    </div>
+                </div>
+                    </div>
+                </div>
+                {% endfor %}
+                    </div>
+            
+            <div class="text-center mt-4">
+                <a href="#" class="btn btn-primary btn-lg">
+                    <i class="fas fa-store me-2"></i>Ver Todos los Productos
+                </a>
+                {% if user.is_authenticated %}
+                    <a href="#" class="btn btn-success btn-lg ms-3">
+                        <i class="fas fa-plus me-2"></i>Publicar Producto
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-4">
+                    <h5 class="mb-4">Sobre CampoUnido</h5>
+                    <p>Transformando la agricultura colombiana con tecnología e innovación.</p>
+                    <div class="social-icons mt-4">
+                        <a href="#" class="text-white me-3"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-white me-3"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-white me-3"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-4 mb-4">
+                    <h5 class="mb-4">Enlaces Rápidos</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#" class="text-white text-decoration-none">Inicio</a></li>
+                        <li class="mb-2"><a href="#" class="text-white text-decoration-none">Servicios</a></li>
+                        <li class="mb-2"><a href="#" class="text-white text-decoration-none">Contacto</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4">
+                    <h5 class="mb-4">Contacto</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-3"><i class="fas fa-map-marker-alt me-2"></i> Bogotá, Colombia</li>
+                        <li class="mb-3"><i class="fas fa-phone me-2"></i> +57 123 456 7890</li>
+                        <li class="mb-3"><i class="fas fa-envelope me-2"></i> info@campounido.com</li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="text-center">
+                <p class="mb-0">&copy; 2024 CampoUnido. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <!-- Notificaciones -->
+    <script src="{% static 'js/notifications.js' %}"></script>
+    <script>
+        // Inicializar AOS
+        AOS.init({
+            duration: 1000,
+            once: true
+        });
+
+        // Inicializar Swiper Hero
+        new Swiper('.hero-slider', {
+            loop: true,
+            autoplay: {
+                delay: 5000,
+                disableOnInteraction: false,
+            },
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true
+            },
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+            effect: 'fade',
+            fadeEffect: {
+                crossFade: true
+            }
+        });
+
+        // Contador de estadísticas
+        const counters = document.querySelectorAll('.counter');
+        counters.forEach(counter => {
+            const target = parseInt(counter.getAttribute('data-target'));
+            const increment = target / 200;
+            
+            function updateCount() {
+                const count = parseInt(counter.innerText);
+                if (count < target) {
+                    counter.innerText = Math.ceil(count + increment);
+                    setTimeout(updateCount, 10);
+                } else {
+                    counter.innerText = target;
+                }
+            }
+            
+            const observer = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting) {
+                    updateCount();
+                }
+            });
+            
+            observer.observe(counter);
+        });
+
+        // Navbar Scroll Effect
+        window.addEventListener('scroll', function() {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar.style.padding = '0.5rem 0';
+                navbar.style.background = 'rgba(255, 255, 255, 0.98)';
+            } else {
+                navbar.style.padding = '1rem 0';
+                navbar.style.background = 'rgba(255, 255, 255, 0.95)';
+            }
+        });
+
+        // Smooth Scroll - Solo para enlaces internos de la página
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                // Solo procesar enlaces internos que apuntan a elementos existentes
+                const targetId = this.getAttribute('href');
+                if (targetId.startsWith('#')) {
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        e.preventDefault();
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                }
+            });
+        });
+
+        // Deshabilitar el comportamiento por defecto para los enlaces de login y registro
+        // Esto asegura que funcionen incluso si hay scripts que interfieren
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginLinks = document.querySelectorAll('a[href="/login/"]');
+            const registerLinks = document.querySelectorAll('a[href="/register/"]');
+            
+            loginLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    window.location.href = '/login/';
+                });
+            });
+            
+            registerLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    window.location.href = '/register/';
+                });
+            });
+        });
+    </script>
+
+    <!-- Modal de Login -->
+    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0" style="background: linear-gradient(135deg, #ff1b6b 0%, #45caff 100%); backdrop-filter: blur(10px); border-radius: 20px; box-shadow: 0 15px 30px rgba(0,0,0,0.3);">
+                <div class="modal-header border-0 justify-content-end">
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                <div class="modal-body px-4 py-2">
+                    <h2 class="text-center text-white mb-4">Login</h2>
+                    <form id="loginForm" method="post" action="{% url 'core:login' %}">
+                        {% csrf_token %}
+                        <div class="mb-4 position-relative">
+                            <label for="modal_email" class="form-label text-white mb-1">
+                                <i class="fas fa-envelope me-2"></i>Email
+                            </label>
+                            <input type="email" name="username" id="modal_email" class="form-control bg-light bg-opacity-25 border-0 text-white" style="padding-left: 15px; border-radius: 10px; height: 50px;" required>
+                        </div>
+                        
+                        <div class="mb-4 position-relative">
+                            <label for="modal_password" class="form-label text-white mb-1">
+                                <i class="fas fa-lock me-2"></i>Password
+                            </label>
+                            <input type="password" name="password" id="modal_password" class="form-control bg-light bg-opacity-25 border-0 text-white" style="padding-left: 15px; border-radius: 10px; height: 50px;" required>
+                    </div>
+                        
+                        <div class="mb-4 form-check">
+                            <input type="checkbox" class="form-check-input" id="remember-me" name="remember_me">
+                            <label class="form-check-label text-white" for="remember-me">Remember me</label>
+                            <a href="#" class="float-end text-white text-decoration-none">Forgot Password?</a>
+                </div>
+                        
+                        <input type="hidden" name="next" value="{{ request.path }}">
+                        
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-light btn-lg" style="border-radius: 50px; font-weight: 600;">
+                                Login
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="text-center mt-4 mb-3">
+                        <p class="text-white">Don't have an account? <a href="#" class="text-white fw-bold" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#registerModal">Register</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+                </div>
+
+    <!-- Modal de Registro -->
+    <div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0" style="background: linear-gradient(135deg, #43cea2 0%, #185a9d 100%); backdrop-filter: blur(10px); border-radius: 20px; box-shadow: 0 15px 30px rgba(0,0,0,0.3);">
+                <div class="modal-header border-0 justify-content-end">
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body px-4 py-2">
+                    <h2 class="text-center text-white mb-4">Register</h2>
+                    <form id="registerForm" method="post" action="{% url 'core:register' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="id_register_email" class="form-label text-white mb-1">Email</label>
+                            <input type="email" name="email" id="id_register_email" class="form-control bg-light bg-opacity-25 border-0 text-white" style="border-radius: 10px; height: 50px;" required>
+            </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_first_name" class="form-label text-white mb-1">First Name</label>
+                                <input type="text" name="first_name" id="id_first_name" class="form-control bg-light bg-opacity-25 border-0 text-white" style="border-radius: 10px; height: 50px;">
+        </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="id_last_name" class="form-label text-white mb-1">Last Name</label>
+                                <input type="text" name="last_name" id="id_last_name" class="form-control bg-light bg-opacity-25 border-0 text-white" style="border-radius: 10px; height: 50px;">
+                    </div>
+                </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_password1" class="form-label text-white mb-1">Password</label>
+                            <input type="password" name="password1" id="id_password1" class="form-control bg-light bg-opacity-25 border-0 text-white" style="border-radius: 10px; height: 50px;" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_password2" class="form-label text-white mb-1">Confirm Password</label>
+                            <input type="password" name="password2" id="id_password2" class="form-control bg-light bg-opacity-25 border-0 text-white" style="border-radius: 10px; height: 50px;" required>
+                    </div>
+                        
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-light btn-lg" style="border-radius: 50px; font-weight: 600;">
+                                Register
+                            </button>
+                </div>
+                    </form>
+                    
+                    <div class="text-center mt-4 mb-3">
+                        <p class="text-white">Already have an account? <a href="#" class="text-white fw-bold" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#loginModal">Login</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts para manejar los formularios en los modales -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mostrar el modal de login si hay un error
+            {% if login_error %}
+                var loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+                loginModal.show();
+            {% endif %}
+            
+            // Mostrar el modal de registro si hay un error
+            {% if register_error %}
+                var registerModal = new bootstrap.Modal(document.getElementById('registerModal'));
+                registerModal.show();
+            {% endif %}
+            
+            // Manejar el formulario de login
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                
+                // Para depuración
+                console.log("Enviando formulario de login...");
+                for (let pair of formData.entries()) {
+                    console.log(pair[0] + ': ' + pair[1]);
+                }
+                
+                // Usar la misma URL que está configurada en el formulario
+                const loginUrl = this.getAttribute('action');
+                
+                fetch(loginUrl, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    console.log("Status de respuesta:", response.status);
+                    // Intentar convertir a JSON, pero si falla, manejar el error
+                    return response.text().then(text => {
+                        try {
+                            return JSON.parse(text);
+                        } catch (error) {
+                            console.error("Error parsing JSON:", error);
+                            console.log("Response text:", text);
+                            // Si la respuesta no es JSON válido, es probablemente una redirección HTML
+                            // En ese caso, simplemente redirigimos a la página principal
+                            window.location.href = '/';
+                            return null;
+                        }
+                    });
+                })
+                .then(data => {
+                    if (data) {
+                        if (data.success) {
+                            window.location.href = data.redirect_url || '/';
+                        } else {
+                            alert(data.message || 'Error al iniciar sesión. Verifique su correo y contraseña.');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    // En caso de error, enviar el formulario normalmente como fallback
+                    this.submit();
+                });
+            });
+            
+            // Manejar el formulario de registro
+            document.getElementById('registerForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                
+                // Para depuración
+                console.log("Enviando formulario de registro...");
+                for (let pair of formData.entries()) {
+                    console.log(pair[0] + ': ' + pair[1]);
+                }
+                
+                // Usar la misma URL que está configurada en el formulario
+                const registerUrl = this.getAttribute('action');
+                
+                fetch(registerUrl, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    console.log("Status de respuesta:", response.status);
+                    // Intentar convertir a JSON, pero si falla, manejar el error
+                    return response.text().then(text => {
+                        try {
+                            return JSON.parse(text);
+                        } catch (error) {
+                            console.error("Error parsing JSON:", error);
+                            console.log("Response text:", text);
+                            // Si la respuesta no es JSON válido, es probablemente una redirección HTML
+                            // En ese caso, simplemente redirigimos a la página principal
+                            window.location.href = '/';
+                            return null;
+                        }
+                    });
+                })
+                .then(data => {
+                    if (data) {
+                        if (data.success) {
+                            window.location.href = data.redirect_url || '/';
+                        } else {
+                            alert(data.message || 'Error al registrarse. Verifique los datos ingresados.');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    // En caso de error, enviar el formulario normalmente como fallback
+                    this.submit();
+                });
+            });
+        });
+    </script>
+</body>
+</html>

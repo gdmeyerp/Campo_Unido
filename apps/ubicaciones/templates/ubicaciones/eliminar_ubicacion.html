@@ -1,0 +1,84 @@
+{% extends "core/dashboard.html" %}
+{% load static %}
+
+{% block title %}Eliminar Ubicación - Campo Unido{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+        <h1 class="h2">Eliminar Ubicación</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'ubicaciones:mis_ubicaciones' %}" class="btn btn-outline-secondary">
+                <span data-feather="arrow-left"></span> Volver a Mis Ubicaciones
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Confirmar Eliminación</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h4 class="alert-heading">¡Atención!</h4>
+                        <p>Está a punto de eliminar la ubicación <strong>"{{ ubicacion.nombre }}"</strong>. Esta acción no se puede deshacer.</p>
+                        {% if ubicacion.es_principal %}
+                            <hr>
+                            <p class="mb-0">
+                                <span class="text-danger">Esta es su ubicación principal.</span> Si la elimina, otra ubicación se establecerá como principal automáticamente si dispone de más ubicaciones.
+                            </p>
+                        {% endif %}
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Detalles de la Ubicación</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Nombre:</strong> {{ ubicacion.nombre }}</p>
+                                    <p><strong>Dirección:</strong> {{ ubicacion.direccion }}</p>
+                                    <p><strong>Ciudad:</strong> {{ ubicacion.ciudad.nombre }}, {{ ubicacion.ciudad.estado.nombre }}, {{ ubicacion.ciudad.estado.pais.nombre }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Código Postal:</strong> {{ ubicacion.codigo_postal|default:"No especificado" }}</p>
+                                    <p><strong>Latitud:</strong> {{ ubicacion.latitud|default:"No especificada" }}</p>
+                                    <p><strong>Longitud:</strong> {{ ubicacion.longitud|default:"No especificada" }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post" action="{% url 'ubicaciones:eliminar_ubicacion' ubicacion.id %}">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'ubicaciones:mis_ubicaciones' %}" class="btn btn-secondary">
+                                <span data-feather="x"></span> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <span data-feather="trash-2"></span> Eliminar Definitivamente
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,151 @@
+{% extends 'core/dashboard.html' %}
+{% load static %}
+
+{% block title %}Gestión de Inventario - Campo Unido{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'inventario/css/inventario.css' %}">
+<style>
+    .sidebar-inventario {
+        background-color: #f8f9fa;
+        border-right: 1px solid #dee2e6;
+        padding: 15px;
+    }
+    
+    .sidebar-inventario .nav-link {
+        color: #495057;
+        border-radius: 0.25rem;
+        padding: 0.5rem 1rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .sidebar-inventario .nav-link:hover {
+        background-color: #e9ecef;
+    }
+    
+    .sidebar-inventario .nav-link.active {
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .card-dashboard {
+        border-radius: 0.5rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        margin-bottom: 1.5rem;
+    }
+    
+    .card-dashboard .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        font-weight: 600;
+    }
+    
+    .alert-stock-bajo {
+        background-color: #fff3cd;
+        border-color: #ffeeba;
+        color: #856404;
+    }
+    
+    .alert-caducidad {
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        color: #721c24;
+    }
+    
+    .badge-entrada {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .badge-salida {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .badge-ajuste {
+        background-color: #17a2b8;
+        color: white;
+    }
+    
+    .badge-alerta {
+        background-color: #ffc107;
+        color: #212529;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar de Inventario -->
+        <div class="col-md-3 col-lg-2 d-md-block sidebar-inventario">
+            <h5 class="mb-3">Inventario</h5>
+            <div class="nav flex-column">
+                <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'inventario:dashboard' %}">
+                    <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+                </a>
+                <a class="nav-link {% if 'productos' in request.path %}active{% endif %}" href="{% url 'inventario:lista_productos' %}">
+                    <i class="fas fa-box mr-2"></i> Productos
+                </a>
+                <a class="nav-link {% if 'categorias' in request.path %}active{% endif %}" href="{% url 'inventario:lista_categorias' %}">
+                    <i class="fas fa-tags mr-2"></i> Categorías
+                </a>
+                <a class="nav-link {% if 'estados' in request.path %}active{% endif %}" href="{% url 'inventario:lista_estados' %}">
+                    <i class="fas fa-clipboard-check mr-2"></i> Estados
+                </a>
+                <a class="nav-link {% if 'movimientos' in request.path %}active{% endif %}" href="{% url 'inventario:lista_movimientos' %}">
+                    <i class="fas fa-exchange-alt mr-2"></i> Movimientos
+                </a>
+                <a class="nav-link {% if 'proveedores' in request.path %}active{% endif %}" href="{% url 'inventario:lista_proveedores' %}">
+                    <i class="fas fa-truck mr-2"></i> Proveedores
+                </a>
+                <a class="nav-link {% if 'pedidos' in request.path %}active{% endif %}" href="{% url 'inventario:lista_pedidos' %}">
+                    <i class="fas fa-clipboard-list mr-2"></i> Pedidos
+                </a>
+                <a class="nav-link {% if 'almacenes' in request.path %}active{% endif %}" href="{% url 'inventario:lista_almacenes' %}">
+                    <i class="fas fa-warehouse mr-2"></i> Almacenes
+                </a>
+            </div>
+        </div>
+        
+        <!-- Contenido Principal -->
+        <div class="col-md-9 col-lg-10 ml-sm-auto px-md-4 py-4">
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                {% endfor %}
+            {% endif %}
+            
+            {% block inventario_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'inventario/js/inventario.js' %}"></script>
+<script>
+    $(document).ready(function() {
+        // Inicializar tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+        
+        // Inicializar datepickers
+        $('.datepicker').datepicker({
+            format: 'yyyy-mm-dd',
+            autoclose: true,
+            todayHighlight: true
+        });
+        
+        // Inicializar select2 para selects con búsqueda
+        $('.select2').select2({
+            theme: 'bootstrap4',
+            width: '100%'
+        });
+    });
+</script>
+{% endblock %} 

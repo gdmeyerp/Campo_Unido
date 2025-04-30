@@ -1,0 +1,185 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Productos{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <!-- Barra lateral de filtros -->
+        <div class="col-lg-3 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Filtros</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="border-bottom pb-2 mb-3">Categorías</h6>
+                    <div class="list-group mb-4">
+                        <a href="{% url 'marketplace:product_list' %}" class="list-group-item list-group-item-action {% if not categoria_actual %}active{% endif %}">
+                            Todas las categorías
+                        </a>
+                        {% for cat in categorias %}
+                        <a href="{% url 'marketplace:product_list' %}?categoria={{ cat.id }}" class="list-group-item list-group-item-action {% if categoria_actual == cat.id|stringformat:'i' %}active{% endif %}">
+                            {{ cat.nombre }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Búsqueda -->
+                    <h6 class="border-bottom pb-2 mb-3">Buscar</h6>
+                    <form action="{% url 'marketplace:product_list' %}" method="get" class="mb-4">
+                        <div class="input-group">
+                            <input type="text" name="q" class="form-control" placeholder="Buscar productos..." value="{{ query }}">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Productos -->
+        <div class="col-lg-9">
+            <!-- Encabezado y acciones -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">
+                    {% if categoria_actual %}
+                        {% for cat in categorias %}
+                            {% if categoria_actual == cat.id|stringformat:'i' %}
+                                Productos en {{ cat.nombre }}
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        Todos los productos
+                    {% endif %}
+                </h2>
+                
+                {% if user.is_authenticated %}
+                <a href="{% url 'marketplace:product_create' %}" class="btn btn-success">
+                    <i class="fas fa-plus me-2"></i>Publicar Producto
+                </a>
+                {% endif %}
+            </div>
+            
+            {% if messages %}
+            <div class="messages mb-4">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Grid de productos -->
+            {% if productos %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for producto in productos %}
+                <div class="col">
+                    <div class="card h-100 shadow-sm hover-shadow">
+                        {% if producto.imagen %}
+                        <img src="{{ producto.imagen.url }}" class="card-img-top" alt="{{ producto.nombre }}" style="height: 200px; object-fit: cover;">
+                        {% else %}
+                        <div class="bg-light text-center py-5" style="height: 200px;">
+                            <i class="fas fa-image fa-3x text-muted"></i>
+                            <p class="text-muted mt-2">Sin imagen</p>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="card-body">
+                            <h5 class="card-title">{{ producto.nombre }}</h5>
+                            <p class="card-text text-muted small">
+                                {% if producto.categoria %}
+                                <span class="badge bg-secondary">{{ producto.categoria.nombre }}</span>
+                                {% endif %}
+                            </p>
+                            <p class="card-text">
+                                {% if producto.descripcion %}
+                                {{ producto.descripcion|truncatechars:100 }}
+                                {% else %}
+                                <span class="text-muted">Sin descripción</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        
+                        <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+                            <h5 class="text-primary mb-0">${{ producto.precio }}</h5>
+                            <div>
+                                <a href="{% url 'marketplace:product_detail' producto.id %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye me-1"></i>Ver
+                                </a>
+                                {% if user.is_authenticated %}
+                                <a href="{% url 'marketplace:add_to_cart' producto.id %}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-shopping-cart me-1"></i>Comprar
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Paginación -->
+            {% if productos.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-5">
+                <ul class="pagination justify-content-center">
+                    {% if productos.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ productos.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if categoria_actual %}&categoria={{ categoria_actual }}{% endif %}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;</span>
+                    </li>
+                    {% endif %}
+                    
+                    {% for i in productos.paginator.page_range %}
+                        {% if productos.number == i %}
+                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}{% if categoria_actual %}&categoria={{ categoria_actual }}{% endif %}">{{ i }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if productos.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ productos.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if categoria_actual %}&categoria={{ categoria_actual }}{% endif %}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+            {% else %}
+            <div class="alert alert-info text-center p-5">
+                <i class="fas fa-info-circle fa-3x mb-3"></i>
+                <h4>No se encontraron productos</h4>
+                <p>
+                    No hay productos disponibles en este momento 
+                    {% if query %}con la búsqueda "{{ query }}"{% endif %}
+                    {% if categoria_actual %}en esta categoría{% endif %}.
+                </p>
+                {% if user.is_authenticated %}
+                <a href="{% url 'marketplace:product_create' %}" class="btn btn-primary mt-3">
+                    <i class="fas fa-plus me-2"></i>Añadir un producto
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

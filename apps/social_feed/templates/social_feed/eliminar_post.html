@@ -1,0 +1,78 @@
+{% extends 'social_feed/base.html' %}
+{% load static %}
+
+{% block feed_content %}
+<div class="card">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0">Eliminar publicación</h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i> ¿Estás seguro de que deseas eliminar esta publicación? Esta acción no se puede deshacer.
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <img src="{% static 'img/default-avatar.png' %}" alt="{{ post.usuario.username }}" class="rounded-circle me-2" width="40" height="40">
+                    <div>
+                        <div class="fw-bold">{{ post.usuario.get_full_name|default:post.usuario.username }}</div>
+                        <div class="text-muted small">{{ post.fecha_creacion|date:"d/m/Y H:i" }}</div>
+                    </div>
+                </div>
+                
+                <p>{{ post.contenido|linebreaksbr }}</p>
+                
+                {% if post.multimedia.exists %}
+                <div class="post-images">
+                    {% for media in post.multimedia.all %}
+                        {% if media.tipo == 'imagen' %}
+                        <img src="{{ media.archivo.url }}" alt="{{ media.titulo|default:'Imagen' }}" class="img-fluid rounded mb-2" style="max-height: 200px;">
+                        {% elif media.tipo == 'video' %}
+                        <video controls class="img-fluid rounded mb-2" style="max-height: 200px;">
+                            <source src="{{ media.archivo.url }}" type="video/mp4">
+                            Tu navegador no soporta la reproducción de videos.
+                        </video>
+                        {% else %}
+                        <a href="{{ media.archivo.url }}" class="btn btn-sm btn-outline-secondary mb-2" target="_blank">
+                            <i class="fas fa-file me-1"></i> {{ media.titulo|default:media.archivo.name }}
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div>
+                        <span class="me-3">
+                            <i class="fas fa-heart {% if request.user in post.likes.all %}text-danger{% endif %}"></i>
+                            {{ post.total_likes }}
+                        </span>
+                        <span>
+                            <i class="fas fa-comment"></i>
+                            {{ post.total_comentarios }}
+                        </span>
+                    </div>
+                    <div>
+                        {% if not post.es_publico %}
+                        <span class="badge bg-secondary"><i class="fas fa-lock me-1"></i> Privado</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <form action="{% url 'social_feed:eliminar_post' post_id=post.id %}" method="post">
+            {% csrf_token %}
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'social_feed:detalle_post' post_id=post.id %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash-alt me-1"></i> Eliminar publicación
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 

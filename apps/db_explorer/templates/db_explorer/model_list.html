@@ -1,0 +1,330 @@
+{% extends 'db_explorer/base.html' %}
+{% load static %}
+{% load db_explorer_filters %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item"><a href="{% url 'db_explorer:index' %}">Explorador de Base de Datos</a></li>
+<li class="breadcrumb-item active">{{ verbose_name_plural }}</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group mr-2">
+    <a href="{% url 'db_explorer:create_record' app_label model %}" class="btn btn-sm btn-success">
+        <i class="fas fa-plus"></i> Nuevo Registro
+    </a>
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#filterModal">
+        <i class="fas fa-filter"></i> Filtros
+    </button>
+    <a href="{% url 'db_explorer:visualize_data' app_label model %}" class="btn btn-sm btn-outline-primary">
+        <i class="fas fa-chart-bar"></i> Visualizar Datos
+    </a>
+    <a href="?{% if search_term %}search={{ search_term }}&{% endif %}export=csv" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-file-csv"></i> Exportar CSV
+    </a>
+    <a href="?{% if search_term %}search={{ search_term }}&{% endif %}export=json" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-file-code"></i> Exportar JSON
+    </a>
+</div>
+{% endblock %}
+
+{% block db_explorer_content %}
+<div class="container-fluid my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{{ title }}</h2>
+        <a href="{% url 'db_explorer:index' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver a la lista de modelos
+        </a>
+    </div>
+
+    {% if not table_exists %}
+    <div class="alert alert-warning">
+        <h4 class="alert-heading">¡Tabla no disponible!</h4>
+        <p>La tabla para este modelo no existe en la base de datos. Esto puede suceder por las siguientes razones:</p>
+        <ul>
+            <li>Las migraciones no se han aplicado. Ejecuta <code>python manage.py migrate</code> para crear las tablas.</li>
+            <li>El modelo es nuevo y necesitas crear una migración. Ejecuta <code>python manage.py makemigrations</code> seguido de <code>python manage.py migrate</code>.</li>
+            <li>La conexión a la base de datos tiene problemas.</li>
+        </ul>
+        <hr>
+        <p class="mb-0">Contacta al administrador del sistema si no puedes resolver este problema.</p>
+    </div>
+    {% else %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="card-title mb-0">Filtros de búsqueda</h5>
+                </div>
+                <div class="col-md-6 text-right">
+                    <span>Total de registros: {{ page_obj.paginator.count }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control" placeholder="Buscar..." value="{{ search_term }}">
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-secondary" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <select name="order_by" class="form-control" onchange="this.form.submit()">
+                        <option value="">Ordenar por...</option>
+                        {% for field in fields %}
+                        <option value="{{ field.name }}" {% if order_by == field.name %}selected{% endif %}>
+                            {{ field.verbose_name }} (Asc)
+                        </option>
+                        <option value="-{{ field.name }}" {% if order_by == '-'|add:field.name %}selected{% endif %}>
+                            {{ field.verbose_name }} (Desc)
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button type="submit" class="btn btn-primary mr-2">
+                        <i class="fas fa-filter"></i> Aplicar filtros
+                    </button>
+                    <a href="{% url 'db_explorer:model_list' app_label model %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-sync"></i> Reiniciar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped table-sm">
+                    <thead>
+                        <tr>
+                            {% for field in fields %}
+                            <th>
+                                <a href="?order_by={% if order_by == field.name %}-{% endif %}{{ field.name }}{% if search_term %}&search={{ search_term }}{% endif %}" 
+                                   class="text-dark {% if order_by == field.name %}sorted-asc{% elif order_by == '-'|add:field.name %}sorted-desc{% endif %}">
+                                    {{ field.verbose_name }}
+                                    {% if order_by == field.name %}
+                                    <i class="fas fa-sort-up"></i>
+                                    {% elif order_by == '-'|add:field.name %}
+                                    <i class="fas fa-sort-down"></i>
+                                    {% else %}
+                                    <i class="fas fa-sort text-muted"></i>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            {% endfor %}
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for obj in page_obj.object_list %}
+                        <tr>
+                            {% for field in fields %}
+                            <td>
+                                {% if forloop.first %}
+                                <a href="{% url 'db_explorer:record_detail' app_label model obj.pk %}">
+                                    {{ obj|getattr_filter:field.name|default:"-" }}
+                                </a>
+                                {% else %}
+                                {{ obj|getattr_filter:field.name|default:"-" }}
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'db_explorer:edit_record' app_label model obj.pk %}" 
+                                       class="btn btn-primary shadow-sm" 
+                                       title="Editar" 
+                                       data-toggle="tooltip" 
+                                       style="border-radius: 4px; margin-right: 5px; transition: all 0.3s ease;">
+                                        <i class="fas fa-edit fa-fw"></i> Editar
+                                    </a>
+                                    <a href="{% url 'db_explorer:delete_record' app_label model obj.pk %}" 
+                                       class="btn btn-danger shadow-sm" 
+                                       title="Eliminar" 
+                                       data-toggle="tooltip"
+                                       style="border-radius: 4px; transition: all 0.3s ease;"
+                                       onclick="return confirm('¿Está seguro de eliminar este registro? Esta acción no se puede deshacer.')">
+                                        <i class="fas fa-trash fa-fw"></i> Eliminar
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="{{ fields|length|add:1 }}" class="text-center p-4">
+                                <div class="alert alert-secondary mb-0">
+                                    <i class="fas fa-info-circle mr-2"></i> No se encontraron registros.
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+    <nav aria-label="Navegación de páginas" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% if search_term %}&search={{ search_term }}{% endif %}{% if order_by %}&order_by={{ order_by }}{% endif %}" aria-label="Primera">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_term %}&search={{ search_term }}{% endif %}{% if order_by %}&order_by={{ order_by }}{% endif %}" aria-label="Anterior">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Primera">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                </a>
+            </li>
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Anterior">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% endif %}
+
+            {% for i in page_obj.paginator.page_range %}
+            {% if page_obj.number == i %}
+            <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+            {% elif i > page_obj.number|add:"-5" and i < page_obj.number|add:"5" %}
+            <li class="page-item"><a class="page-link" href="?page={{ i }}{% if search_term %}&search={{ search_term }}{% endif %}{% if order_by %}&order_by={{ order_by }}{% endif %}">{{ i }}</a></li>
+            {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_term %}&search={{ search_term }}{% endif %}{% if order_by %}&order_by={{ order_by }}{% endif %}" aria-label="Siguiente">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_term %}&search={{ search_term }}{% endif %}{% if order_by %}&order_by={{ order_by }}{% endif %}" aria-label="Última">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Siguiente">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Última">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    {% endif %}
+</div>
+
+<!-- Modal de Filtros -->
+<div class="modal fade" id="filterModal" tabindex="-1" role="dialog" aria-labelledby="filterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="filterModalLabel">Filtros Avanzados</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="advanced-filter-form" method="get">
+                    <input type="hidden" name="order_by" value="{{ order_by }}">
+                    
+                    <div class="form-group">
+                        <label for="search">Búsqueda General</label>
+                        <input type="text" class="form-control" id="search" name="search" value="{{ search_term }}" placeholder="Buscar en todos los campos de texto">
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6>Filtros por Campo</h6>
+                    <div class="row">
+                        {% for field in fields %}
+                        <div class="col-md-6 mb-3">
+                            <label for="filter_{{ field.name }}">{{ field.verbose_name }}</label>
+                            {% if field.type == 'CharField' or field.type == 'TextField' %}
+                            <input type="text" class="form-control" id="filter_{{ field.name }}" name="filter_{{ field.name }}" placeholder="Filtrar por {{ field.verbose_name }}">
+                            {% elif field.type == 'IntegerField' or field.type == 'AutoField' %}
+                            <input type="number" class="form-control" id="filter_{{ field.name }}" name="filter_{{ field.name }}" placeholder="Filtrar por {{ field.verbose_name }}">
+                            {% elif field.type == 'BooleanField' %}
+                            <select class="form-control" id="filter_{{ field.name }}" name="filter_{{ field.name }}">
+                                <option value="">-- Seleccionar --</option>
+                                <option value="true">Sí</option>
+                                <option value="false">No</option>
+                            </select>
+                            {% elif field.type == 'DateField' or field.type == 'DateTimeField' %}
+                            <div class="input-group">
+                                <input type="text" class="form-control datepicker" id="filter_{{ field.name }}_from" name="filter_{{ field.name }}_from" placeholder="Desde">
+                                <div class="input-group-append">
+                                    <span class="input-group-text">-</span>
+                                </div>
+                                <input type="text" class="form-control datepicker" id="filter_{{ field.name }}_to" name="filter_{{ field.name }}_to" placeholder="Hasta">
+                            </div>
+                            {% elif field.is_relation %}
+                            <input type="text" class="form-control" id="filter_{{ field.name }}" name="filter_{{ field.name }}" placeholder="ID de {{ field.verbose_name }}">
+                            {% else %}
+                            <input type="text" class="form-control" id="filter_{{ field.name }}" name="filter_{{ field.name }}" placeholder="Filtrar por {{ field.verbose_name }}">
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('advanced-filter-form').submit();">Aplicar Filtros</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    $(document).ready(function() {
+        // Inicializar tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+        
+        // Efectos de hover para botones de acción
+        $('.btn-primary, .btn-danger').hover(
+            function() { 
+                $(this).css('transform', 'translateY(-2px)').css('box-shadow', '0 4px 8px rgba(0,0,0,0.2)'); 
+            },
+            function() { 
+                $(this).css('transform', 'translateY(0)').css('box-shadow', '0 2px 5px rgba(0,0,0,0.2)'); 
+            }
+        );
+        
+        // Inicializar datepickers en el modal de filtros
+        $('.datepicker').datepicker({
+            format: 'yyyy-mm-dd',
+            autoclose: true,
+            todayHighlight: true
+        });
+        
+        // Filtro personalizado para obtener atributos de objetos en las plantillas
+        django.jQuery.expr[':'].contains = function(a, i, m) {
+            return jQuery(a).text().toUpperCase().indexOf(m[3].toUpperCase()) >= 0;
+        };
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,169 @@
+{% extends "foro_machina/base_foro.html" %}
+{% load i18n %}
+{% load widget_tweaks %}
+
+{% block title %}{% trans "Crear Foro" %} - {% trans "Foro Campo Unido" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+        <h1 class="h2">{% trans "Crear Nuevo Foro" %}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'foro_machina:admin_foros' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> {% trans "Volver a Administración" %}
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        <div class="messages mb-4">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{% trans "Formulario de Creación de Foro" %}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="form-group">
+                            <label for="{{ form.name.id_for_label }}">{% trans "Nombre del Foro" %}:</label>
+                            {% render_field form.name class="form-control" placeholder="Nombre del foro" %}
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.description.id_for_label }}">{% trans "Descripción" %}:</label>
+                            {% render_field form.description class="form-control" placeholder="Descripción del foro" %}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.description.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.parent.id_for_label }}">{% trans "Foro Padre" %}:</label>
+                            {% render_field form.parent class="form-control" %}
+                            <small class="form-text text-muted">{% trans "Opcional. Selecciona un foro padre si este es un subforo." %}</small>
+                            {% if form.parent.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.parent.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.type.id_for_label }}">{% trans "Tipo de Foro" %}:</label>
+                            {% render_field form.type class="form-control" %}
+                            <small class="form-text text-muted">{% trans "Selecciona el tipo de foro que deseas crear." %}</small>
+                            {% if form.type.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.type.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.image.id_for_label }}">{% trans "Imagen" %}:</label>
+                            {% render_field form.image class="form-control-file" %}
+                            <small class="form-text text-muted">{% trans "Opcional. Puedes subir una imagen para el foro." %}</small>
+                            {% if form.image.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.image.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                {% render_field form.display_sub_forum_list class="custom-control-input" %}
+                                <label class="custom-control-label" for="{{ form.display_sub_forum_list.id_for_label }}">
+                                    {% trans "Mostrar lista de subforos" %}
+                                </label>
+                                <small class="form-text text-muted">{% trans "Indica si se debe mostrar la lista de subforos para este foro." %}</small>
+                            </div>
+                            {% if form.display_sub_forum_list.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.display_sub_forum_list.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="text-right">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save"></i> {% trans "Guardar Foro" %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">{% trans "Información" %}</h5>
+                </div>
+                <div class="card-body">
+                    <h6>{% trans "Tipos de Foro" %}</h6>
+                    <ul>
+                        <li><strong>{% trans "Categoría" %}</strong>: {% trans "Agrupa varios foros bajo un tema común." %}</li>
+                        <li><strong>{% trans "Foro" %}</strong>: {% trans "Un foro donde los usuarios pueden crear temas y publicar mensajes." %}</li>
+                        <li><strong>{% trans "Enlace" %}</strong>: {% trans "Un enlace a otro sitio web o recurso." %}</li>
+                    </ul>
+                    
+                    <h6>{% trans "Estructura Jerárquica" %}</h6>
+                    <p>{% trans "Puedes crear una estructura jerárquica de foros seleccionando un foro padre para los nuevos foros." %}</p>
+                    
+                    <h6>{% trans "Permisos" %}</h6>
+                    <p>{% trans "Los permisos básicos se asignarán automáticamente al crear el foro. Puedes ajustarlos más tarde desde el panel de administración." %}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block css %}
+    {{ block.super }}
+    {{ form.media.css }}
+{% endblock css %}
+
+{% block js %}
+    {{ block.super }}
+    {{ form.media.js }}
+{% endblock js %} 

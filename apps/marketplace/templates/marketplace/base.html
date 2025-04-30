@@ -1,0 +1,32 @@
+{% extends "core/dashboard.html" %}
+{% load static %}
+
+{% block title %}Marketplace{% endblock %}
+
+{% block content %}
+<div class="marketplace-container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'marketplace:index' %}">Marketplace</a></li>
+                    {% block breadcrumb_items %}{% endblock %}
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="marketplace-content">
+        {% block marketplace_content %}
+        <!-- Contenido del marketplace va aquí -->
+        {% endblock %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Scripts específicos del marketplace -->
+{% block marketplace_js %}{% endblock %}
+{% endblock %} 

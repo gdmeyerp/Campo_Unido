@@ -1,0 +1,81 @@
+{% extends 'inventario/base.html' %}
+{% load static %}
+
+{% block title %}Almacenes - Campo Unido{% endblock %}
+
+{% block inventario_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Almacenes</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'inventario:asignar_propietario_almacenes' %}" class="btn btn-sm btn-info mr-2">
+            <i class="fas fa-user-tag"></i> Asignar Almacenes
+        </a>
+        <a href="{% url 'inventario:crear_almacen' %}" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus"></i> Nuevo Almacén
+        </a>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-warehouse mr-2"></i> Lista de Almacenes
+        </h6>
+    </div>
+    <div class="card-body">
+        {% if almacenes %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Dirección</th>
+                            <th>Ubicaciones</th>
+                            <th>Productos</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for almacen in almacenes %}
+                            <tr>
+                                <td>{{ almacen.nombre_almacen }}</td>
+                                <td>{{ almacen.direccion|default:"No especificada" }}</td>
+                                <td>{{ almacen.ubicacionalmacen_set.count }}</td>
+                                <td>
+                                    {% with productos_count=almacen.ubicacionalmacen_set.all|length %}
+                                        {{ productos_count }}
+                                    {% endwith %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'inventario:detalle_almacen' pk=almacen.pk %}" class="btn btn-info btn-sm">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle mr-2"></i> No hay almacenes registrados.
+                <a href="{% url 'inventario:crear_almacen' %}" class="alert-link">Crear el primer almacén</a>.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script>
+        $(document).ready(function() {
+            $('#dataTable').DataTable({
+                "language": {
+                    "url": "{% static 'js/dataTables.spanish.json' %}"
+                },
+                "order": [[0, "asc"]]
+            });
+        });
+    </script>
+{% endblock %} 

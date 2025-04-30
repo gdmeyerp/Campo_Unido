@@ -1,0 +1,36 @@
+{% load static %}
+<!-- Componente de chat flotante -->
+<div id="chat-floating-container">
+    <!-- Botón principal del chat -->
+    <div id="chat-main-button" class="chat-button">
+        <i class="fas fa-comments"></i>
+        <div id="chat-notification-count" class="chat-notification-badge">0</div>
+    </div>
+    
+    <!-- Panel de conversaciones -->
+    <div id="chat-conversations-panel" class="chat-panel">
+        <div class="chat-panel-header">
+            <h5>Conversaciones</h5>
+        </div>
+        <div id="chat-conversations-list" class="chat-panel-body">
+            <!-- Aquí se cargarán las conversaciones vía JavaScript -->
+            <div class="chat-loading">
+                <i class="fas fa-spinner fa-spin"></i> Cargando...
+            </div>
+        </div>
+    </div>
+    
+    <!-- Contenedor para ventanas de chat -->
+    <div id="floating-chat-windows">
+        <!-- Las ventanas de chat se crearán dinámicamente mediante JavaScript -->
+    </div>
+</div>
+
+<!-- Scripts de chat flotante -->
+<script src="{% static 'chat_flotante/js/chat_flotante.js' %}"></script>
+<link rel="stylesheet" href="{% static 'chat_flotante/css/chat_flotante.css' %}">
+
+<!-- Aseguramos que se incluyan Font Awesome para los iconos -->
+{% if not fontawesome_included %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+{% endif %} 

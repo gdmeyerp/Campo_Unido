@@ -1,0 +1,170 @@
+/* Estilos para el Explorador de Base de Datos */
+
+/* Tarjetas de aplicaciones */
+.app-card {
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.app-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.app-card .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    padding: 15px;
+}
+
+.app-card .card-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    padding: 10px 15px;
+}
+
+/* Lista de modelos */
+.model-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.model-item {
+    padding: 10px 15px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: all 0.2s ease;
+}
+
+.model-item:hover {
+    background-color: #f8f9fa;
+}
+
+.model-item:last-child {
+    border-bottom: none;
+}
+
+.model-count {
+    font-size: 0.8rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    background-color: #007bff;
+    color: white;
+}
+
+/* Tablas */
+.table-responsive {
+    overflow-x: auto;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.sort-header {
+    cursor: pointer;
+}
+
+.sort-header:hover {
+    background-color: #e9ecef;
+}
+
+/* Campos relacionados */
+.field-relation {
+    color: #007bff;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.field-relation:hover {
+    color: #0056b3;
+}
+
+/* Caja de búsqueda */
+.search-box {
+    position: relative;
+}
+
+.search-box .clear-search {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #6c757d;
+}
+
+.search-box .clear-search:hover {
+    color: #343a40;
+}
+
+/* Sección de objetos relacionados */
+.related-objects-section {
+    margin-top: 30px;
+}
+
+.related-badge {
+    font-size: 0.8rem;
+    background-color: #007bff;
+}
+
+/* Filas de campos */
+.field-row:nth-child(odd) {
+    background-color: rgba(0,0,0,.05);
+}
+
+.field-row {
+    padding: 10px 0;
+}
+
+/* Migas de pan */
+.breadcrumb {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    padding: 10px 15px;
+    margin-bottom: 20px;
+}
+
+.breadcrumb-item a {
+    color: #6c757d;
+}
+
+.breadcrumb-item.active {
+    color: #343a40;
+}
+
+/* Tarjetas de estadísticas */
+.card-body h3 {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+/* Representación de código */
+pre {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    padding: 15px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 15px;
+    }
+    
+    .field-row .col-md-4 {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .pagination .page-link {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+} 

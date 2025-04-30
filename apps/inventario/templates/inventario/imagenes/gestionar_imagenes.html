@@ -1,0 +1,79 @@
+{% extends 'inventario/base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">{{ titulo }}</h5>
+            <p class="text-muted">Gestiona las imágenes del producto {{ producto.nombre_producto }}</p>
+        </div>
+        <div class="card-body">
+            <!-- Mensajes -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <!-- Botones de acción -->
+            <div class="mb-4">
+                <a href="{% url 'inventario:subir_imagen' producto_id=producto.id %}" class="btn btn-primary">
+                    <i class="fas fa-upload"></i> Subir imagen
+                </a>
+                <a href="{% url 'inventario:subir_imagenes_multiples' producto_id=producto.id %}" class="btn btn-outline-primary">
+                    <i class="fas fa-images"></i> Subir múltiples imágenes
+                </a>
+                <a href="{% url 'inventario:detalle_producto' pk=producto.id %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver al producto
+                </a>
+            </div>
+            
+            <!-- Galería de imágenes -->
+            <div class="row">
+                {% if imagenes %}
+                    {% for imagen in imagenes %}
+                        <div class="col-md-4 col-lg-3 mb-4">
+                            <div class="card h-100">
+                                <img src="{{ imagen.imagen.url }}" class="card-img-top" alt="{{ imagen.titulo|default:producto.nombre_producto }}">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        {{ imagen.titulo|default:"Sin título" }}
+                                        {% if imagen.es_principal %}
+                                            <span class="badge bg-success">Principal</span>
+                                        {% endif %}
+                                    </h6>
+                                    <p class="card-text small text-muted">{{ imagen.descripcion|default:"" }}</p>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <div class="btn-group btn-group-sm w-100" role="group">
+                                        {% if not imagen.es_principal %}
+                                            <a href="{% url 'inventario:marcar_como_principal' imagen_id=imagen.id %}" class="btn btn-outline-success">
+                                                <i class="fas fa-star"></i> Principal
+                                            </a>
+                                        {% endif %}
+                                        <a href="{% url 'inventario:eliminar_imagen' imagen_id=imagen.id %}" class="btn btn-outline-danger">
+                                            <i class="fas fa-trash"></i> Eliminar
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <p class="mb-0">Este producto no tiene imágenes. ¡Añade la primera!</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

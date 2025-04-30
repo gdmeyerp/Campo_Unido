@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Categorías de Productos{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Categorías de Productos</h1>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Listado de Categorías</h5>
+                    
+                    {% if categories %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nombre</th>
+                                        <th>Descripción</th>
+                                        <th>Categoría Padre</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for category in categories %}
+                                    <tr>
+                                        <td>{{ category.categoria_producto_id }}</td>
+                                        <td>{{ category.nombre_categoria }}</td>
+                                        <td>{{ category.descripcion }}</td>
+                                        <td>
+                                            {% if category.categoria_padre_id %}
+                                                {{ category.categoria_padre_id.nombre_categoria }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'marketplace:categoria_detalle_by_id' category.categoria_producto_id %}" class="btn btn-primary btn-sm">Ver Productos</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No hay categorías disponibles.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

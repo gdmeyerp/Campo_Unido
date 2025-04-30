@@ -1,0 +1,159 @@
+{% extends "foro_machina/base_foro.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Nuevo tema" %} - {{ forum.name }} - {% trans "Foro Campo Unido" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+        <h1 class="h2">{% trans "Crear nuevo tema" %}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'foro_machina:foro_detalle' forum.id %}" class="btn btn-outline-secondary">
+                <span data-feather="arrow-left"></span>
+                {% trans "Volver al foro" %}
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{% trans "Nuevo tema en" %}: {{ forum.name }}</h5>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        <div class="messages">
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }}">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <form method="post" action="{% url 'foro_machina:crear_tema' forum.id %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <div class="form-group">
+                            <label for="subject">{% trans "Título del tema" %} *</label>
+                            <input type="text" class="form-control" id="subject" name="subject" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tags">{% trans "Etiquetas" %}</label>
+                            <input type="text" class="form-control" id="tags" name="tags" placeholder="agricultura, maíz, clima">
+                            <small class="form-text text-muted">{% trans "Añade etiquetas separadas por comas para categorizar tu tema" %}</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="content">{% trans "Contenido" %} *</label>
+                            <textarea class="form-control" id="content" name="content" rows="10" required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="attachment">{% trans "Archivo adjunto" %}</label>
+                            <div class="input-group">
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" id="attachment" name="attachment">
+                                    <label class="custom-file-label" for="attachment">{% trans "Seleccionar archivo" %}</label>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">{% trans "Puedes adjuntar un archivo a tu tema (opcional)" %}</small>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'foro_machina:foro_detalle' forum.id %}" class="btn btn-secondary">
+                                {% trans "Cancelar" %}
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                {% trans "Crear tema" %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block css %}
+    {{ block.super }}
+    {{ post_form.media.css }}
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        .bootstrap-tagsinput {
+            width: 100%;
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #495057;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        .bootstrap-tagsinput .tag {
+            margin-right: 2px;
+            color: white;
+            background-color: #007bff;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            display: inline-block;
+        }
+        .custom-file-input:focus ~ .custom-file-label {
+            border-color: #80bdff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        .custom-file-label::after {
+            content: "Buscar";
+        }
+    </style>
+{% endblock css %}
+
+{% block js %}
+    {{ block.super }}
+    {{ post_form.media.js }}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Inicializar el plugin de etiquetas
+            $('input[data-role="tagsinput"]').tagsinput();
+            
+            // Mostrar el nombre del archivo seleccionado
+            $('.custom-file-input').on('change', function() {
+                var fileName = $(this).val().split('\\').pop();
+                $(this).next('.custom-file-label').html(fileName);
+                
+                // Vista previa de imágenes
+                var previewContainer = $('.image-previews');
+                previewContainer.empty();
+                
+                if (this.files && this.files[0]) {
+                    var file = this.files[0];
+                    if (file.type.match('image.*')) {
+                        var reader = new FileReader();
+                        reader.onload = function(e) {
+                            var img = $('<img class="img-thumbnail mr-2 mb-2" style="max-height: 150px;">');
+                            img.attr('src', e.target.result);
+                            previewContainer.append(img);
+                        }
+                        reader.readAsDataURL(file);
+                    } else {
+                        var fileInfo = $('<span class="badge badge-info mr-2 mb-2 p-2"></span>');
+                        fileInfo.text(file.name);
+                        previewContainer.append(fileInfo);
+                    }
+                }
+            });
+            
+            // Manejar el botón de carga
+            $('#upload-btn').on('click', function() {
+                $('.custom-file-input').click();
+            });
+        });
+    </script>
+{% endblock js %} 

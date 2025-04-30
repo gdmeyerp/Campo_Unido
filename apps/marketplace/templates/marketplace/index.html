@@ -1,0 +1,260 @@
+{% extends "marketplace/base.html" %}
+{% load static %}
+
+{% block page_title %}Marketplace - Campo Unido{% endblock %}
+
+{% block marketplace_content %}
+<div class="jumbotron bg-light rounded p-4 mb-4">
+    <h1 class="display-4">Bienvenido al Marketplace</h1>
+    <p class="lead">Encuentra los mejores productos agrícolas directamente de los productores locales.</p>
+    <hr class="my-4">
+    <p>¿Quieres vender tus productos? Regístrate como vendedor y comienza a ofrecer tus productos.</p>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-success btn-lg" href="{% url 'marketplace:agregar_producto_inventario' %}" role="button">
+            <i class="fas fa-exchange-alt mr-2"></i> Agregar producto desde inventario
+        </a>
+        <a class="btn btn-outline-success btn-lg" href="{% url 'marketplace:producto_crear' %}" role="button">
+            <i class="fas fa-plus mr-2"></i> Crear nuevo producto
+        </a>
+    </div>
+</div>
+
+<!-- Categorías -->
+<section class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0">Categorías</h2>
+        <a href="{% url 'marketplace:categoria_lista' %}" class="btn btn-sm btn-outline-success">Ver todas</a>
+    </div>
+    <div class="row">
+        {% if categorias %}
+            {% for categoria in categorias %}
+                <div class="col-6 col-md-4 col-lg-3 mb-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">{{ categoria.nombre_categoria }}</h5>
+                            <p class="card-text small text-muted">{{ categoria.productos_count }} productos</p>
+                            <a href="{% url 'marketplace:categoria_detalle_by_id' categoria.categoria_producto_id %}" class="btn btn-sm btn-outline-success">Ver Productos</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    No hay categorías disponibles en este momento.
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Productos destacados -->
+<section class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0">Productos destacados</h2>
+        <a href="{% url 'marketplace:producto_lista' %}" class="btn btn-sm btn-outline-success">Ver todos</a>
+    </div>
+    <div class="row">
+        {% if productos_destacados %}
+            {% for producto in productos_destacados %}
+                <div class="col-6 col-md-4 col-lg-3 mb-4">
+                    <div class="card h-100 border-0 shadow-sm producto-card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <a href="{% url 'marketplace:producto_detalle' producto.producto_id %}" class="text-dark">{{ producto.nombre_producto }}</a>
+                            </h5>
+                            <p class="card-text small text-muted">{{ producto.categoria_producto_id_id.nombre_categoria }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="font-weight-bold">${{ producto.precio_base }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white border-top-0">
+                            <div class="btn-group btn-block">
+                                <button type="button" class="btn btn-sm btn-outline-primary add-to-cart" data-product-id="{{ producto.producto_id }}">
+                                    <i class="fas fa-shopping-cart"></i> Añadir
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary add-to-wishlist" data-product-id="{{ producto.producto_id }}">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    No hay productos destacados disponibles en este momento.
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Productos recientes -->
+<section class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0">Productos recientes</h2>
+        <a href="{% url 'marketplace:producto_lista' %}?ordenar=fecha_desc" class="btn btn-sm btn-outline-success">Ver todos</a>
+    </div>
+    <div class="row">
+        {% if productos_recientes %}
+            {% for producto in productos_recientes %}
+                <div class="col-6 col-md-4 col-lg-3 mb-4">
+                    <div class="card h-100 border-0 shadow-sm producto-card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <a href="{% url 'marketplace:producto_detalle' producto.producto_id %}" class="text-dark">{{ producto.nombre_producto }}</a>
+                            </h5>
+                            <p class="card-text small text-muted">{{ producto.categoria_producto_id_id.nombre_categoria }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="font-weight-bold">${{ producto.precio_base }}</span>
+                                </div>
+                                <small class="text-muted">Nuevo</small>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white border-top-0">
+                            <div class="btn-group btn-block">
+                                <button type="button" class="btn btn-sm btn-outline-primary add-to-cart" data-product-id="{{ producto.producto_id }}">
+                                    <i class="fas fa-shopping-cart"></i> Añadir
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary add-to-wishlist" data-product-id="{{ producto.producto_id }}">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    No hay productos recientes disponibles en este momento.
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block sidebar_content %}
+    {% if categorias %}
+        {% for categoria in categorias %}
+            <li class="list-group-item">
+                <a href="{% url 'marketplace:categoria_detalle_by_id' categoria.categoria_producto_id %}">
+                    {{ categoria.nombre_categoria }}
+                    <span class="badge badge-light float-right">{{ categoria.productos_count }}</span>
+                </a>
+                {% if categoria.get_subcategorias %}
+                    <ul class="list-unstyled ml-3 mt-2">
+                        {% for subcategoria in categoria.get_subcategorias %}
+                            <li class="mb-1">
+                                <a href="{% url 'marketplace:categoria_detalle_by_id' subcategoria.categoria_producto_id %}" class="text-muted small">
+                                    {{ subcategoria.nombre_categoria }}
+                                    <span class="badge badge-light float-right">{{ subcategoria.productos_count }}</span>
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </li>
+        {% endfor %}
+    {% else %}
+        <li class="list-group-item">No hay categorías disponibles</li>
+    {% endif %}
+{% endblock %}
+
+{% block marketplace_js %}
+<script>
+    // Código para manejar la adición de productos al carrito
+    document.querySelectorAll('.add-to-cart').forEach(button => {
+        button.addEventListener('click', function() {
+            const productId = this.getAttribute('data-product-id');
+            fetch('/marketplace/api/carrito/agregar/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    product_id: productId,
+                    quantity: 1
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Actualizar contador de carrito
+                    const cartCounter = document.getElementById('cart-counter');
+                    if (cartCounter) {
+                        cartCounter.textContent = data.cart_count;
+                        cartCounter.classList.remove('d-none');
+                    }
+                    
+                    // Mostrar notificación
+                    alert('Producto añadido al carrito');
+                } else {
+                    alert(data.error || 'Error al añadir al carrito');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al añadir al carrito');
+            });
+        });
+    });
+    
+    // Código para manejar la adición de productos a la lista de deseos
+    document.querySelectorAll('.add-to-wishlist').forEach(button => {
+        button.addEventListener('click', function() {
+            const productId = this.getAttribute('data-product-id');
+            fetch('/marketplace/api/lista-deseos/agregar/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    product_id: productId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.innerHTML = '<i class="fas fa-heart"></i>';
+                    this.classList.remove('btn-outline-secondary');
+                    this.classList.add('btn-danger');
+                    
+                    // Mostrar notificación
+                    alert('Producto añadido a favoritos');
+                } else {
+                    alert(data.error || 'Error al añadir a favoritos');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al añadir a favoritos');
+            });
+        });
+    });
+    
+    // Función auxiliar para obtener CSRF token de las cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %} 

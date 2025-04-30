@@ -6,7 +6,8 @@ import sys
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Campo_Unido.settings')
+    # Default to local settings, but allow overriding with DJANGO_SETTINGS_MODULE environment variable
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.local')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

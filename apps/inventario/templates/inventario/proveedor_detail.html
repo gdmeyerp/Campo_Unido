@@ -1,0 +1,201 @@
+{% extends 'inventario/base.html' %}
+{% load static %}
+
+{% block title %}{{ proveedor.nombre_proveedor }} - Campo Unido{% endblock %}
+
+{% block inventario_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ proveedor.nombre_proveedor }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'inventario:lista_proveedores' %}" class="btn btn-sm btn-secondary mr-2">
+            <i class="fas fa-arrow-left"></i> Volver a la lista
+        </a>
+        <a href="{% url 'inventario:editar_proveedor' proveedor.id %}" class="btn btn-sm btn-primary mr-2">
+            <i class="fas fa-edit"></i> Editar
+        </a>
+        <a href="{% url 'inventario:crear_pedido' %}?proveedor={{ proveedor.id }}" class="btn btn-sm btn-success">
+            <i class="fas fa-clipboard-list"></i> Crear Pedido
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Información del Proveedor -->
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-info-circle mr-2"></i> Información General
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div class="bg-light rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                        <i class="fas fa-truck fa-3x text-primary"></i>
+                    </div>
+                    <h4 class="mt-3">{{ proveedor.nombre_proveedor }}</h4>
+                    <p class="text-muted">
+                        <span class="badge {% if proveedor.activo %}badge-success{% else %}badge-danger{% endif %}">
+                            {% if proveedor.activo %}Activo{% else %}Inactivo{% endif %}
+                        </span>
+                    </p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-muted">Dirección</h6>
+                    <p>{{ proveedor.direccion }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Información de Contacto -->
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-address-card mr-2"></i> Información de Contacto
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6 class="text-muted">Teléfono</h6>
+                    <p>
+                        <a href="tel:{{ proveedor.telefono }}">
+                            <i class="fas fa-phone mr-2"></i> {{ proveedor.telefono }}
+                        </a>
+                    </p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-muted">Email</h6>
+                    <p>
+                        <a href="mailto:{{ proveedor.email }}">
+                            <i class="fas fa-envelope mr-2"></i> {{ proveedor.email }}
+                        </a>
+                    </p>
+                </div>
+                
+                <div class="mt-4">
+                    <a href="mailto:{{ proveedor.email }}" class="btn btn-outline-primary btn-block">
+                        <i class="fas fa-envelope"></i> Enviar Email
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Estadísticas -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-chart-bar mr-2"></i> Estadísticas
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border rounded p-3">
+                            <h3 class="text-primary">{{ pedidos_count }}</h3>
+                            <p class="text-muted mb-0">Pedidos</p>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-3">
+                            <h3 class="text-success">{{ productos_count }}</h3>
+                            <p class="text-muted mb-0">Productos</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pedidos Recientes -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-clipboard-list mr-2"></i> Pedidos Recientes</span>
+                    <a href="{% url 'inventario:lista_pedidos' %}?proveedor={{ proveedor.id }}" class="btn btn-sm btn-outline-primary">Ver Todos</a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if pedidos %}
+                <div class="list-group">
+                    {% for pedido in pedidos %}
+                    <a href="{% url 'inventario:detalle_pedido' pedido.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Pedido #{{ pedido.id }}</h6>
+                            <small>{{ pedido.fecha_pedido|date:"d/m/Y" }}</small>
+                        </div>
+                        <p class="mb-1">{{ pedido.get_estado_pedido_display }}</p>
+                        <small>
+                            <span class="badge {% if pedido.estado_pedido == 'PENDIENTE' %}badge-warning{% elif pedido.estado_pedido == 'RECIBIDO' %}badge-success{% elif pedido.estado_pedido == 'CANCELADO' %}badge-danger{% else %}badge-info{% endif %}">
+                                {{ pedido.get_estado_pedido_display }}
+                            </span>
+                            {% if pedido.fecha_entrega %}
+                            <span class="ml-2">Entrega: {{ pedido.fecha_entrega|date:"d/m/Y" }}</span>
+                            {% endif %}
+                        </small>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle mr-2"></i> No hay pedidos registrados para este proveedor.
+                </div>
+                {% endif %}
+                
+                <div class="mt-3 text-center">
+                    <a href="{% url 'inventario:crear_pedido' %}?proveedor={{ proveedor.id }}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Crear Nuevo Pedido
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Productos Suministrados -->
+<div class="card mt-4">
+    <div class="card-header">
+        <i class="fas fa-box mr-2"></i> Productos Suministrados
+    </div>
+    <div class="card-body">
+        {% if productos %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Categoría</th>
+                        <th class="text-right">Último Precio</th>
+                        <th class="text-center">Última Compra</th>
+                        <th class="text-right">Total Comprado</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for producto in productos %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'inventario:detalle_producto' producto.id %}">
+                                {{ producto.nombre }}
+                            </a>
+                        </td>
+                        <td>{{ producto.categoria.nombre }}</td>
+                        <td class="text-right">{{ producto.ultimo_precio|floatformat:2 }}</td>
+                        <td class="text-center">{{ producto.ultima_compra|date:"d/m/Y"|default:"-" }}</td>
+                        <td class="text-right">{{ producto.total_comprado }} {{ producto.unidad_medida.simbolo }}</td>
+                        <td class="text-center">
+                            <a href="{% url 'inventario:crear_pedido' %}?proveedor={{ proveedor.id }}&producto={{ producto.id }}" class="btn btn-sm btn-success">
+                                <i class="fas fa-shopping-cart"></i> Pedir
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle mr-2"></i> No hay productos registrados para este proveedor.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

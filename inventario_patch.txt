@@ -1,0 +1,189 @@
+## INSTRUCCIONES PARA ARREGLAR EL PROBLEMA DE INVENTARIO
+
+Para resolver el problema donde todos los usuarios están viendo los mismos productos en la sección de inventario, necesitas realizar las siguientes modificaciones:
+
+1. Asegúrate de que el modelo `ProductoInventario` tenga el campo `propietario`:
+
+```python
+# En apps/inventario/models.py
+class ProductoInventario(models.Model):
+    # ... campos existentes ...
+    propietario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, related_name='productos_inventario')
+```
+
+2. Crea un archivo de utilidades para funciones comunes:
+
+```python
+# En apps/inventario/utils.py
+def filtrar_productos_por_usuario(queryset, usuario):
+    """
+    Filtra un queryset de productos para mostrar solo los que pertenecen al usuario especificado.
+    """
+    return queryset.filter(propietario=usuario)
+
+def asignar_propietario_producto(producto, usuario):
+    """
+    Asigna un usuario como propietario de un producto.
+    """
+    producto.propietario = usuario
+    return producto
+```
+
+3. Crea un middleware para controlar el acceso a productos:
+
+```python
+# En apps/inventario/middleware.py
+from django.shortcuts import redirect
+from django.contrib import messages
+from .models import ProductoInventario
+
+class ProductoAccesoMiddleware:
+    """
+    Middleware para verificar que los usuarios solo accedan a sus propios productos
+    """
+    
+    def __init__(self, get_response):
+        self.get_response = get_response
+        
+    def __call__(self, request):
+        # Procesar request antes de la vista
+        if not request.user.is_authenticated:
+            return self.get_response(request)
+            
+        path = request.path
+        
+        # Solo procesar vistas de detalle, edición y eliminación de productos
+        if path.startswith('/inventario/producto/'):
+            try:
+                # Obtener el ID del producto de la URL
+                url_parts = path.split('/')
+                product_id = None
+                
+                for i, part in enumerate(url_parts):
+                    if part == 'producto' and i+1 < len(url_parts) and url_parts[i+1].isdigit():
+                        product_id = int(url_parts[i+1])
+                        break
+                
+                if product_id:
+                    # Verificar si el producto pertenece al usuario
+                    try:
+                        producto = ProductoInventario.objects.get(id=product_id)
+                        if producto.propietario and producto.propietario != request.user:
+                            messages.error(request, "No tienes permisos para acceder a este producto.")
+                            return redirect('inventario:lista_productos')
+                    except ProductoInventario.DoesNotExist:
+                        pass  # Dejar que la vista maneje el 404
+            except Exception as e:
+                # Si hay algún error, dejar pasar la solicitud y que la vista lo maneje
+                pass
+                
+        # Continuar con el flujo normal
+        response = self.get_response(request)
+        return response
+```
+
+4. Agrega el middleware a la configuración:
+
+En el archivo `config/settings/base.py`, añade el middleware en la lista MIDDLEWARE:
+
+```python
+MIDDLEWARE = [
+    # ... middlewares existentes ...
+    'apps.inventario.middleware.ProductoAccesoMiddleware',  # Middleware de acceso a productos
+]
+```
+
+5. Modifica la vista `lista_productos` para filtrar por propietario:
+
+```python
+# En apps/inventario/views.py
+@login_required
+def lista_productos(request):
+    # ... código existente ...
+    
+    # Aplicar filtros - Mostrar solo productos del usuario actual
+    queryset = ProductoInventario.objects.filter(propietario=request.user).order_by('nombre_producto')
+    
+    # ... resto del código ...
+```
+
+6. Modifica la función `crear_producto` para asignar el propietario:
+
+```python
+# En apps/inventario/views.py
+@login_required
+def crear_producto(request):
+    if request.method == 'POST':
+        form = ProductoInventarioForm(request.POST)
+        if form.is_valid():
+            producto = form.save(commit=False)
+            producto.propietario = request.user
+            producto.save()
+            # ... resto del código ...
+```
+
+7. Modifica las vistas `detalle_producto`, `editar_producto`, y `eliminar_producto` para verificar el propietario:
+
+```python
+# En apps/inventario/views.py
+@login_required
+def detalle_producto(request, pk):
+    # Verificar que el producto pertenece al usuario actual
+    producto = get_object_or_404(ProductoInventario, pk=pk, propietario=request.user)
+    # ... resto del código ...
+
+@login_required
+def editar_producto(request, pk):
+    # Verificar que el producto pertenece al usuario actual
+    producto = get_object_or_404(ProductoInventario, pk=pk, propietario=request.user)
+    # ... resto del código ...
+
+@login_required
+def eliminar_producto(request, pk):
+    # Verificar que el producto pertenece al usuario actual
+    producto = get_object_or_404(ProductoInventario, pk=pk, propietario=request.user)
+    # ... resto del código ...
+```
+
+8. Modifica el dashboard de inventario para mostrar solo los productos del usuario:
+
+```python
+# En apps/inventario/views.py
+@login_required
+def dashboard_inventario(request):
+    # Estadísticas generales - filtradas por usuario
+    total_productos = ProductoInventario.objects.filter(propietario=request.user).count()
+    productos_stock_bajo = ProductoInventario.objects.filter(
+        propietario=request.user,
+        cantidad_disponible__lte=F('stock_minimo')
+    ).count()
+    
+    # Lista de productos con stock bajo para mostrar detalles
+    productos_bajo_stock = ProductoInventario.objects.filter(
+        propietario=request.user,
+        cantidad_disponible__lte=F('stock_minimo')
+    ).order_by('cantidad_disponible')[:10]
+    
+    # Productos más vendidos (últimos 30 días)
+    fecha_inicio = timezone.now() - timedelta(days=30)
+    movimientos_salida = MovimientoInventario.objects.filter(
+        tipo_movimiento='SALIDA',
+        fecha_movimiento__gte=fecha_inicio,
+        producto_inventario__propietario=request.user  # Solo productos del usuario
+    ).values('producto_inventario').annotate(
+        total_vendido=Sum('cantidad_movimiento')
+    ).order_by('-total_vendido')[:5]
+    
+    # ... resto del código con filtrado por propietario ...
+```
+
+9. No olvides ejecutar las migraciones necesarias para el campo `propietario` en el modelo:
+
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+10. Tendrás que asignar propietarios a los productos ya existentes. Puedes hacerlo con un script o manualmente en el admin de Django.
+
+Después de realizar estos cambios, cada usuario solo debería ver sus propios productos en la sección de inventario. 

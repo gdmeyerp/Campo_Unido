@@ -1,0 +1,378 @@
+{% extends 'core/dashboard.html' %}
+{% load static %}
+
+{% block title %}Feed Social - Campo Unido{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Feed Social</h2>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">¿Qué estás pensando?</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{% url 'social_feed:crear_post' %}" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            {{ form.contenido }}
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="form-check">
+                                {{ form.es_publico }}
+                                <label class="form-check-label" for="{{ form.es_publico.id_for_label }}">
+                                    Publicación pública
+                                </label>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Publicar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <h4 class="mb-3">Publicaciones recientes</h4>
+
+            {% for post in page_obj %}
+            <div class="card post-card mb-4">
+                <div class="card-header post-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <div>
+                            <a href="{% url 'social_feed:perfil' username=post.usuario.username %}" class="text-decoration-none fw-bold">
+                                {{ post.usuario.get_full_name|default:post.usuario.username }}
+                            </a>
+                            <small class="text-muted d-block">{{ post.fecha_creacion|date:"d/m/Y H:i" }}</small>
+                        </div>
+                    </div>
+                    {% if post.usuario == request.user %}
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-light" type="button" id="dropdownMenuButton{{ post.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton{{ post.id }}">
+                            <li><a class="dropdown-item" href="{% url 'social_feed:editar_post' post_id=post.id %}"><i class="fas fa-edit me-2"></i> Editar</a></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'social_feed:eliminar_post' post_id=post.id %}"><i class="fas fa-trash-alt me-2"></i> Eliminar</a></li>
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="card-body post-content">
+                    <p>{{ post.contenido|linebreaksbr }}</p>
+
+                    {% if post.multimedia.exists %}
+                    <div class="post-images">
+                        {% for media in post.multimedia.all %}
+                            {% if media.tipo == 'imagen' %}
+                            <img src="{{ media.archivo.url }}" alt="{{ media.titulo|default:'Imagen' }}" class="img-fluid mb-3">
+                            {% elif media.tipo == 'video' %}
+                            <video controls class="w-100 mb-3">
+                                <source src="{{ media.archivo.url }}" type="video/mp4">
+                                Tu navegador no soporta la reproducción de videos.
+                            </video>
+                            {% else %}
+                            <a href="{{ media.archivo.url }}" class="d-block mb-3" target="_blank">
+                                <i class="fas fa-file me-2"></i> {{ media.titulo|default:media.archivo.name }}
+                            </a>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="card-footer post-footer">
+                    <div class="post-actions d-flex justify-content-between mb-3">
+                        <div>
+                            <button class="btn btn-sm btn-light me-2 like-button" data-post-id="{{ post.id }}">
+                                <i class="{% if request.user in post.likes.all %}fas{% else %}far{% endif %} fa-heart"></i>
+                                <span class="like-count">{{ post.total_likes }}</span>
+                            </button>
+                            <a href="{% url 'social_feed:detalle_post' post_id=post.id %}" class="btn btn-sm btn-light">
+                                <i class="fas fa-comment"></i>
+                                <span>{{ post.total_comentarios }}</span>
+                            </a>
+                        </div>
+                        <div>
+                            {% if not post.es_publico %}
+                            <span class="badge bg-secondary"><i class="fas fa-lock me-1"></i> Privado</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if post.comentarios.exists %}
+                    <div class="comment-section">
+                        <h6 class="mb-3">Comentarios recientes</h6>
+
+                        {% for comentario in post.comentarios.all|slice:":2" %}
+                        <div class="comment mb-2 p-2 border-start border-3">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <a href="{% url 'social_feed:perfil' username=comentario.usuario.username %}" class="fw-bold text-decoration-none">
+                                        {{ comentario.usuario.get_full_name|default:comentario.usuario.username }}
+                                    </a>
+                                    <small class="text-muted ms-2">{{ comentario.fecha_creacion|date:"d/m/Y H:i" }}</small>
+                                </div>
+                                {% if request.user == comentario.usuario or request.user == post.usuario %}
+                                <a href="{% url 'social_feed:eliminar_comentario' comentario_id=comentario.id %}" class="text-danger btn btn-sm">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                            <p class="mb-0 mt-1">{{ comentario.contenido }}</p>
+                        </div>
+                        {% endfor %}
+
+                        {% if post.total_comentarios > 2 %}
+                        <div class="text-center mt-2">
+                            <a href="{% url 'social_feed:detalle_post' post_id=post.id %}" class="btn btn-sm btn-outline-primary">
+                                Ver todos los comentarios ({{ post.total_comentarios }})
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <div class="comment-form mt-3">
+                        <form action="{% url 'social_feed:comentar_post' post_id=post.id %}" method="post">
+                            {% csrf_token %}
+                            <div class="input-group">
+                                {{ comentario_form.contenido }}
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="alert alert-info">
+                <p class="mb-0">No hay publicaciones disponibles. ¡Sé el primero en publicar algo!</p>
+            </div>
+            {% endfor %}
+
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Paginación" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1" aria-label="Primera">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Anterior">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;&laquo;</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;</span>
+                    </li>
+                    {% endif %}
+
+                    {% for i in page_obj.paginator.page_range %}
+                        {% if page_obj.number == i %}
+                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                        {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Siguiente">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Última">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;&raquo;</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal para mostrar imágenes -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">Imagen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img src="" class="modal-image" id="modalImage" alt="Imagen ampliada">
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .post-card {
+        margin-bottom: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .post-header {
+        padding: 15px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .post-content {
+        padding: 15px;
+    }
+    
+    .post-footer {
+        padding: 10px 15px;
+        border-top: 1px solid #f0f0f0;
+        background-color: #f9f9f9;
+    }
+    
+    .post-actions {
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .post-action {
+        cursor: pointer;
+        padding: 5px 10px;
+        border-radius: 5px;
+        transition: background-color 0.2s;
+    }
+    
+    .post-action:hover {
+        background-color: #f0f0f0;
+    }
+    
+    .post-images {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    
+    .post-image {
+        width: 100%;
+        max-width: 200px;
+        height: auto;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    
+    .comment-section {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #f0f0f0;
+    }
+    
+    .comment {
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+    }
+    
+    .comment-form {
+        margin-top: 15px;
+    }
+    
+    .liked {
+        color: #dc3545;
+    }
+    
+    .modal-image {
+        max-width: 100%;
+        max-height: 80vh;
+    }
+</style>
+
+<script>
+    // Función para mostrar imagen en modal
+    function showImageInModal(imageUrl) {
+        document.getElementById('modalImage').src = imageUrl;
+        var imageModal = new bootstrap.Modal(document.getElementById('imageModal'));
+        imageModal.show();
+    }
+    
+    // Inicializar tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Configurar los eventos para las imágenes
+        document.querySelectorAll('.post-image').forEach(function(img) {
+            img.addEventListener('click', function() {
+                showImageInModal(this.src);
+            });
+        });
+        
+        // Configurar los eventos para los likes
+        document.querySelectorAll('.like-button').forEach(function(button) {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                var postId = this.getAttribute('data-post-id');
+                var likeCount = document.getElementById('like-count-' + postId);
+                var likeIcon = this.querySelector('i');
+                
+                fetch('/social/post/' + postId + '/like/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.action === 'like') {
+                            likeIcon.classList.add('liked');
+                        } else {
+                            likeIcon.classList.remove('liked');
+                        }
+                        likeCount.textContent = data.total_likes;
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        });
+        
+        // Función para obtener el valor de una cookie
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>
+{% endblock %} 

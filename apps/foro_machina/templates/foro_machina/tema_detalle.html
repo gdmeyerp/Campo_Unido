@@ -1,6 +1,5 @@
 {% extends "foro_machina/base_foro.html" %}
 {% load i18n %}
-{% load static %}
 
 {% block title %}{{ topic.subject }} - {% trans "Foro Campo Unido" %}{% endblock %}
 
@@ -213,7 +212,6 @@
 {% block js %}
     {{ block.super }}
     {{ post_form.media.js }}
-    <script src="{% static 'foro_machina/editor_fix.js' %}"></script>
     <script>
         $(document).ready(function() {
             // Mostrar el nombre del archivo seleccionado

@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ categoria.nombre_categoria }} - Campo Unido{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'marketplace:index' %}">Inicio</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'marketplace:simple_category_list' %}">Categorías</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ categoria.nombre_categoria }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h1 class="card-title">{{ categoria.nombre_categoria }}</h1>
+                    <p class="card-text">{{ categoria.descripcion }}</p>
+                    
+                    {% if categoria.categoria_padre_id %}
+                    <p><strong>Categoría padre:</strong> {{ categoria.categoria_padre_id.nombre_categoria }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h2>Productos en esta categoría</h2>
+            <hr>
+        </div>
+    </div>
+
+    {% if productos %}
+    <div class="row">
+        {% for producto in productos %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ producto.nombre_producto }}</h5>
+                    <p class="card-text">{{ producto.descripcion|truncatechars:100 }}</p>
+                    <p class="card-text">
+                        <small class="text-muted">Precio: ${{ producto.precio_base }}</small>
+                    </p>
+                    <a href="{% url 'marketplace:producto_detalle' producto.producto_id %}" class="btn btn-primary">Ver detalles</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Paginación -->
+    {% if productos.has_other_pages %}
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if productos.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ productos.previous_page_number }}">&laquo; Anterior</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo; Anterior</span>
+                    </li>
+                    {% endif %}
+                    
+                    {% for i in productos.paginator.page_range %}
+                    {% if productos.number == i %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ i }}</span>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if productos.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ productos.next_page_number }}">Siguiente &raquo;</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Siguiente &raquo;</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                No hay productos disponibles en esta categoría.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

@@ -1,0 +1,63 @@
+{% extends "inventario/base.html" %}
+{% load static %}
+
+{% block title %}Eliminar Estado - Campo Unido{% endblock %}
+
+{% block inventario_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ titulo }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'inventario:lista_estados' %}" class="btn btn-sm btn-outline-secondary">
+            <span data-feather="arrow-left"></span> Volver a Estados
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">Confirmar Eliminación</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <h5 class="alert-heading">¡Atención!</h5>
+                    <p>Está a punto de eliminar el estado <strong>{{ estado.nombre_estado }}</strong>.</p>
+                    <p>Esta acción no se puede deshacer. Si hay productos asociados a este estado, no podrá ser eliminado.</p>
+                </div>
+                
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">Detalles del estado</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>ID:</strong> {{ estado.id }}</p>
+                        <p><strong>Nombre:</strong> {{ estado.nombre_estado }}</p>
+                    </div>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-danger">
+                            <span data-feather="trash-2"></span> Confirmar Eliminación
+                        </button>
+                        <a href="{% url 'inventario:lista_estados' %}" class="btn btn-secondary">
+                            Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar íconos Feather
+        feather.replace();
+    });
+</script>
+{% endblock %} 

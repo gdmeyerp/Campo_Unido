@@ -1,0 +1,47 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container my-5">
+    <h2>Tu Carrito de Compras</h2>
+    
+    {% if cart_items %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Precio</th>
+                        <th>Cantidad</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cart_item in cart_items %}
+                    <tr>
+                        <td>{{ cart_item.item.producto.name }}</td>
+                        <td>${{ cart_item.item.producto.price }}</td>
+                        <td>{{ cart_item.item.cantidad }}</td>
+                        <td>${{ cart_item.subtotal }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                        <td><strong>${{ total }}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        
+        <div class="d-flex justify-content-end mt-4">
+            <a href="{% url 'marketplace:checkout' %}" class="btn btn-primary">Proceder al Pago</a>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            Tu carrito está vacío. <a href="{% url 'marketplace:product_list' %}">Ver productos</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

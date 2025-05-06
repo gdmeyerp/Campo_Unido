@@ -4,7 +4,18 @@ Plataforma integral para la gestión y conexión de campos agrícolas desarrolla
 
 ## Descripción del Proyecto
 
-Campo Unido es una solución tecnológica avanzada diseñada para optimizar la gestión agrícola mediante el uso de tecnologías de información. La plataforma conecta a agricultores con herramientas digitales para monitoreo de cultivos, comercialización directa de productos, gestión logística y soporte técnico especializado.
+Campo Unido es una solución tecnológica avanzada diseñada para optimizar la gestión agrícola mediante el uso de tecnologías de información e IoT. Nuestra plataforma conecta a agricultores con herramientas digitales inteligentes para el monitoreo de cultivos, comercialización directa de productos, gestión logística y soporte técnico especializado, todo en un ecosistema integrado.
+
+### Características Principales
+
+- **Marketplace Agrícola**: Conexión directa entre productores y consumidores sin intermediarios
+- **Monitoreo IoT**: Sensores y dispositivos para control en tiempo real de cultivos
+- **Sistema de Inventario**: Gestión completa de productos, stock y movimientos
+- **Geolocalización**: Identificación de productores cercanos y optimización de rutas
+- **Foro Comunitario**: Espacio para intercambio de conocimientos entre agricultores
+- **Módulo Hidropónico**: Herramientas especializadas para cultivos hidropónicos
+- **Sistema de Eventos**: Organización y promoción de ferias y eventos agrícolas
+- **Reportes y Estadísticas**: Análisis de datos para toma de decisiones estratégicas
 
 ## Estructura del Proyecto
 
@@ -78,7 +89,7 @@ Campo_Unido/
 
 2. **Clonar el repositorio desde GitHub**:
 ```bash
-git clone https://github.com/GA10-220501097/Campo_Unido.git
+git clone https://github.com/gdmeyerp/Campo_Unido.git
 cd Campo_Unido
 ```
 
@@ -203,6 +214,18 @@ La plataforma ha sido probada y optimizada para funcionar correctamente en los s
 - Chrome para Android 105+
 - Safari para iOS 15+
 
+## Tecnologías utilizadas
+
+- **Backend**: Django 4.2, Python 3.8+
+- **Frontend**: Bootstrap 5, JavaScript, HTMX
+- **Base de datos**: PostgreSQL, SQLite (desarrollo)
+- **Autenticación**: Django Authentication System, JWT
+- **Servicios de mapas**: Leaflet, OpenStreetMap
+- **Comunicación en tiempo real**: Django Channels, WebSockets
+- **Control de versiones**: Git
+- **CI/CD**: GitHub Actions
+- **Despliegue**: Docker, Gunicorn, Nginx
+
 ## Tipo de licencia
 
 **© 2024 GA10-220501097. Todos los derechos reservados.**
@@ -225,7 +248,14 @@ Este software es propiedad intelectual de su autor y está protegido por la sigu
 
 7. **Terminación**: Cualquier incumplimiento de los términos de esta licencia resultará en la terminación automática de los derechos otorgados.
 
-Para solicitar permisos adicionales o licencias comerciales, contacte a:
-german_meyer@soy.sena.edu.co
+## Contacto y Soporte
+
+Para obtener más información, solicitar permisos adicionales o reportar problemas:
+
+- **Email**: german_meyer@soy.sena.edu.co / gdmeyerp@unal.edu.co
+- **Desarrollado por**: Germán David Meyer Pérez
+- **Institución**: SENA - Centro de Gestión de Mercados, Logística y TI
+- **Ficha**: GA10-220501097
+- **Proyecto formativo**: Software de gestión integral para campos agrícolas
 
 **Aviso Legal**: El uso no autorizado de este software puede resultar en acciones legales por infracción de derechos de autor.

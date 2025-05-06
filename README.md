@@ -253,9 +253,8 @@ Este software es propiedad intelectual de su autor y está protegido por la sigu
 Para obtener más información, solicitar permisos adicionales o reportar problemas:
 
 - **Email**: german_meyer@soy.sena.edu.co / gdmeyerp@unal.edu.co
-- **Desarrollado por**: Germán David Meyer Pérez
-- **Institución**: SENA - Centro de Gestión de Mercados, Logística y TI
-- **Ficha**: GA10-220501097
+- **Desarrollado por**: Germán Daniel Meyer Patarroyo
+- **Institución**: SENA 
 - **Proyecto formativo**: Software de gestión integral para campos agrícolas
 
 **Aviso Legal**: El uso no autorizado de este software puede resultar en acciones legales por infracción de derechos de autor.

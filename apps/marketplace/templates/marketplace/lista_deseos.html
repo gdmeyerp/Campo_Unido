@@ -3,41 +3,88 @@
 
 {% block title %}Lista de Deseos{% endblock %}
 
+{% block css %}
+{{ block.super }}
+<style>
+    .product-card {
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+
+    .product-image {
+        height: 200px;
+        object-fit: cover;
+    }
+
+    .heart-icon {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 10;
+        color: #dc3545;
+        font-size: 1.2rem;
+        text-shadow: 0 0 3px rgba(255,255,255,0.8);
+    }
+
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1050;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
+    <!-- Toast container for notifications -->
+    <div class="toast-container"></div>
+    
     <div class="row mb-4">
         <div class="col-12">
             <h2 class="h3 mb-3">Mi Lista de Deseos</h2>
-            {% if lista_deseos %}
-                <div class="row">
-                    {% for producto in lista_deseos %}
-                    <div class="col-md-4 col-lg-3 mb-4">
-                        <div class="card h-100">
-                            {% if producto.imagen_principal %}
-                                <img src="{{ producto.imagen_principal.url }}" class="card-img-top" alt="{{ producto.nombre }}">
-                            {% else %}
-                                <img src="{% static 'img/no-image.png' %}" class="card-img-top" alt="Sin imagen">
-                            {% endif %}
-                            <div class="card-body">
-                                <h5 class="card-title">{{ producto.nombre }}</h5>
-                                <p class="card-text text-muted">${{ producto.precio }}</p>
-                                <p class="card-text">{{ producto.descripcion|truncatechars:100 }}</p>
+            {% if items %}
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                    {% for item in items %}
+                    <div class="col">
+                        <div class="card h-100 shadow-sm border-0 product-card">
+                            <div class="position-relative">
+                                {% if item.producto.imagen %}
+                                    <img src="{{ item.producto.imagen.url }}" class="card-img-top product-image" alt="{{ item.producto.nombre }}">
+                                {% else %}
+                                    <div class="bg-light d-flex justify-content-center align-items-center product-image">
+                                        <i class="fas fa-image fa-2x text-muted"></i>
+                                    </div>
+                                {% endif %}
+                                <i class="fas fa-heart heart-icon"></i>
                             </div>
-                            <div class="card-footer bg-white">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <a href="{% url 'marketplace:detalle_producto' producto.id %}" class="btn btn-outline-primary btn-sm">Ver Detalles</a>
-                                    <form method="post" action="{% url 'marketplace:eliminar_de_lista_deseos' producto.id %}" class="d-inline">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ item.producto.nombre }}</h5>
+                                <p class="card-text text-primary fw-bold">${{ item.producto.precio }}</p>
+                                <p class="card-text small text-muted">{{ item.producto.descripcion|truncatechars:70 }}</p>
+                            </div>
+                            <div class="card-footer bg-white d-flex justify-content-between align-items-center border-top">
+                                <a href="{% url 'marketplace:detalle_producto' item.producto.id %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye"></i> Ver Detalles
+                                </a>
+                                <div class="btn-group">
+                                    <form method="post" action="{% url 'marketplace:eliminar_de_lista_deseos' item.producto.id %}" class="d-inline">
                                         {% csrf_token %}
-                                        <button type="submit" class="btn btn-outline-danger btn-sm">
-                                            <i class="fas fa-heart-broken"></i> Eliminar
+                                        <button type="submit" class="btn btn-outline-danger btn-sm" title="Eliminar de favoritos">
+                                            <i class="fas fa-heart-broken"></i>
                                         </button>
                                     </form>
-                                    <form method="post" action="{% url 'marketplace:agregar_al_carrito' producto.id %}" class="d-inline">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-success btn-sm">
-                                            <i class="fas fa-cart-plus"></i>
-                                        </button>
-                                    </form>
+                                    <button type="button" 
+                                            class="btn btn-success btn-sm add-to-cart ms-2" 
+                                            data-product-id="{{ item.producto.id }}" 
+                                            title="Añadir al carrito">
+                                        <i class="fas fa-cart-plus"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -59,14 +106,93 @@
 {{ block.super }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Get CSRF token
+    function getCSRFToken() {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name === 'csrftoken') {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    // Show toast notification
+    function showToast(message, type = 'success') {
+        const toastContainer = document.querySelector('.toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        
+        toastContainer.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+        });
+    }
+
+    // Add to cart functionality
+    const addToCartButtons = document.querySelectorAll('.add-to-cart');
+    addToCartButtons.forEach(button => {
+        button.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const productId = this.dataset.productId;
+            const button = this;
+            
+            try {
+                const response = await fetch('/marketplace/api/carrito/agregar/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({
+                        producto_id: productId,
+                        cantidad: 1
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('¡Producto agregado al carrito!');
+                    // Update cart count in navbar if it exists
+                    const cartCount = document.querySelector('#cart-count');
+                    if (cartCount) {
+                        cartCount.textContent = data.cart_count;
+                    }
+                } else {
+                    showToast(data.error || 'Error al agregar al carrito', 'danger');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error al agregar al carrito', 'danger');
+            }
+        });
+    });
+
     // Animación para los botones de eliminar
     const deleteButtons = document.querySelectorAll('.btn-outline-danger');
     deleteButtons.forEach(button => {
         button.addEventListener('click', function(e) {
             const card = this.closest('.card');
-            card.style.transition = 'all 0.3s ease';
+            card.style.transition = 'all 0.5s ease';
             card.style.opacity = '0';
-            card.style.transform = 'scale(0.8)';
+            card.style.transform = 'scale(0.8) translateY(-20px)';
         });
     });
 });

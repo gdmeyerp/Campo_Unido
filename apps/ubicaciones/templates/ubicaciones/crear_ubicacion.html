@@ -179,6 +179,7 @@
 {% endblock %}
 
 {% block js %}
+{{ block.super }}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Inicializar el mapa siguiendo la documentación oficial de Leaflet
@@ -209,26 +210,19 @@
             updateMarker(e.latlng);
         });
         
-        // Si ya hay coordenadas en los campos, mostrar el marcador
+        // Si hay coordenadas iniciales, mostrar el marcador
         if (latInput.value && lngInput.value) {
-            var latlng = L.latLng(parseFloat(latInput.value), parseFloat(lngInput.value));
-            updateMarker(latlng);
-            map.setView(latlng, 15);
+            updateMarker(L.latLng(parseFloat(latInput.value), parseFloat(lngInput.value)));
+            map.setView([parseFloat(latInput.value), parseFloat(lngInput.value)], 13);
         }
-        
-        // Invalidar tamaño después de cargar completamente
-        setTimeout(function() {
-            map.invalidateSize();
-        }, 300);
-        
-        // Referencias a los elementos del formulario
-        var paisSelect = document.getElementById('id_pais');
-        var estadoSelect = document.getElementById('id_estado');
-        var ciudadSelect = document.getElementById('id_ciudad');
-        var formulario = document.querySelector('form');
-        
-        // Función para cargar los estados basados en el país seleccionado
-        function cargarEstados(paisId, callback) {
+
+        // Elementos del formulario
+        const paisSelect = document.getElementById('id_pais');
+        const estadoSelect = document.getElementById('id_estado');
+        const ciudadSelect = document.getElementById('id_ciudad');
+
+        // Función para cargar estados
+        function cargarEstados(paisId) {
             if (!paisId) {
                 estadoSelect.innerHTML = '<option value="">Seleccione primero un país</option>';
                 estadoSelect.disabled = true;
@@ -236,147 +230,62 @@
                 ciudadSelect.disabled = true;
                 return;
             }
-            
-            estadoSelect.disabled = false;
-            estadoSelect.innerHTML = '<option value="">Cargando estados...</option>';
-            
-            fetch('/ubicaciones/api/estados/' + paisId + '/')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Error en la respuesta del servidor');
-                    }
-                    return response.json();
-                })
+
+            fetch(`/ubicaciones/api/estados/${paisId}/`)
+                .then(response => response.json())
                 .then(data => {
                     estadoSelect.innerHTML = '<option value="">Seleccione un estado</option>';
-                    if (data.estados.length === 0) {
-                        estadoSelect.innerHTML = '<option value="">No hay estados disponibles</option>';
-                        estadoSelect.disabled = true;
-                    } else {
-                        data.estados.forEach(estado => {
-                            var option = document.createElement('option');
-                            option.value = estado.id;
-                            option.textContent = estado.nombre;
-                            estadoSelect.appendChild(option);
-                        });
-                        
-                        if (callback) {
-                            callback();
-                        }
-                    }
+                    data.estados.forEach(estado => {
+                        const option = document.createElement('option');
+                        option.value = estado.id;
+                        option.textContent = estado.nombre;
+                        estadoSelect.appendChild(option);
+                    });
+                    estadoSelect.disabled = false;
                 })
                 .catch(error => {
                     console.error('Error al cargar estados:', error);
                     estadoSelect.innerHTML = '<option value="">Error al cargar estados</option>';
-                    estadoSelect.disabled = true;
                 });
         }
-        
-        // Función para cargar las ciudades basadas en el estado seleccionado
-        function cargarCiudades(estadoId, callback) {
+
+        // Función para cargar ciudades
+        function cargarCiudades(estadoId) {
             if (!estadoId) {
                 ciudadSelect.innerHTML = '<option value="">Seleccione primero un estado</option>';
                 ciudadSelect.disabled = true;
                 return;
             }
-            
-            ciudadSelect.disabled = false;
-            ciudadSelect.innerHTML = '<option value="">Cargando ciudades...</option>';
-            
-            fetch('/ubicaciones/api/ciudades/' + estadoId + '/')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Error en la respuesta del servidor');
-                    }
-                    return response.json();
-                })
+
+            fetch(`/ubicaciones/api/ciudades/${estadoId}/`)
+                .then(response => response.json())
                 .then(data => {
                     ciudadSelect.innerHTML = '<option value="">Seleccione una ciudad</option>';
-                    if (data.ciudades.length === 0) {
-                        ciudadSelect.innerHTML = '<option value="">No hay ciudades disponibles</option>';
-                        ciudadSelect.disabled = true;
-                    } else {
-                        data.ciudades.forEach(ciudad => {
-                            var option = document.createElement('option');
-                            option.value = ciudad.id;
-                            option.textContent = ciudad.nombre;
-                            ciudadSelect.appendChild(option);
-                        });
-                        
-                        if (callback) {
-                            callback();
-                        }
-                    }
+                    data.ciudades.forEach(ciudad => {
+                        const option = document.createElement('option');
+                        option.value = ciudad.id;
+                        option.textContent = ciudad.nombre;
+                        ciudadSelect.appendChild(option);
+                    });
+                    ciudadSelect.disabled = false;
                 })
                 .catch(error => {
                     console.error('Error al cargar ciudades:', error);
                     ciudadSelect.innerHTML = '<option value="">Error al cargar ciudades</option>';
-                    ciudadSelect.disabled = true;
                 });
         }
-        
-        // Evento para cambio de país
+
+        // Event listeners
         paisSelect.addEventListener('change', function() {
-            var paisId = this.value;
-            cargarEstados(paisId);
+            cargarEstados(this.value);
         });
-        
-        // Evento para cambio de estado
+
         estadoSelect.addEventListener('change', function() {
-            var estadoId = this.value;
-            cargarCiudades(estadoId);
+            cargarCiudades(this.value);
         });
-        
-        // Validación antes de enviar el formulario
-        formulario.addEventListener('submit', function(e) {
-            // Verificar si hay un país seleccionado
-            if (!paisSelect.value) {
-                e.preventDefault();
-                paisSelect.classList.add('field-error');
-                alert('Por favor, seleccione un país.');
-                return false;
-            }
-            
-            // Verificar si hay un estado seleccionado
-            if (!estadoSelect.value) {
-                e.preventDefault();
-                estadoSelect.classList.add('field-error');
-                alert('Por favor, seleccione un estado/departamento.');
-                return false;
-            }
-            
-            // Verificar si hay una ciudad seleccionada
-            if (!ciudadSelect.value) {
-                e.preventDefault();
-                ciudadSelect.classList.add('field-error');
-                alert('Por favor, seleccione una ciudad.');
-                return false;
-            }
-            
-            // Todo está correcto, permitir el envío del formulario
-            return true;
-        });
-        
-        // Si hay un país preseleccionado, cargar sus estados
-        if (paisSelect.value) {
-            cargarEstados(paisSelect.value, function() {
-                // Si hay un estado preseleccionado, cargar sus ciudades
-                if (estadoSelect.value) {
-                    cargarCiudades(estadoSelect.value);
-                }
-            });
-        }
-        
-        // Buscar posición del usuario si está disponible
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(function(position) {
-                var userLatLng = L.latLng(position.coords.latitude, position.coords.longitude);
-                map.setView(userLatLng, 12);
-                updateMarker(userLatLng);
-            }, function(error) {
-                console.log('Error al obtener la ubicación:', error.message);
-            });
-        }
+
+        // Inicializar feather icons
+        feather.replace();
     });
 </script>
 {% endblock %} 

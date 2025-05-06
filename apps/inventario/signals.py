@@ -77,22 +77,33 @@ def verificar_stock_minimo(sender, instance, **kwargs):
 def registrar_salida_inventario(sender, instance, created, **kwargs):
     """
     Registra una salida de inventario cuando se realiza una compra.
+    Ahora trabaja con la relación many-to-many a través de DetalleCompra.
     """
     if created:
         try:
-            producto_inventario = ProductoInventario.objects.get(id=instance.producto.id)
-            
-            MovimientoInventario.objects.create(
-                producto_inventario=producto_inventario,
-                tipo_movimiento='SALIDA',
-                cantidad_movimiento=instance.cantidad,
-                usuario=instance.comprador,
-                descripcion_movimiento=f'Venta: Compra #{instance.id}',
-                referencia_documento=str(instance.id),
-                tipo_documento='COMPRA'
-            )
-        except ProductoInventario.DoesNotExist:
-            pass
+            # Las compras tienen detalles asociados, no un producto directamente
+            # Procesamos cada detalle de compra
+            for detalle in instance.detalles.all():
+                try:
+                    # Intentamos encontrar el producto equivalente en el inventario
+                    producto_inventario = ProductoInventario.objects.filter(
+                        nombre_producto__iexact=detalle.producto.nombre
+                    ).first()
+                    
+                    if producto_inventario:
+                        MovimientoInventario.objects.create(
+                            producto_inventario=producto_inventario,
+                            tipo_movimiento='SALIDA',
+                            cantidad_movimiento=detalle.cantidad,
+                            usuario=instance.usuario if hasattr(instance, 'usuario') else None,
+                            descripcion_movimiento=f'Venta: Compra #{instance.id} - {detalle.producto.nombre}',
+                            referencia_documento=str(instance.id),
+                            tipo_documento='COMPRA'
+                        )
+                except Exception as e:
+                    print(f"Error al procesar detalle de compra: {str(e)}")
+        except Exception as e:
+            print(f"Error al registrar salida de inventario para compra #{instance.id}: {str(e)}")
 
 @receiver(post_delete, sender=ReservaInventario)
 def liberar_reserva_inventario(sender, instance, **kwargs):
@@ -154,18 +165,31 @@ def crear_notificacion_stock_bajo(sender, instance, created, **kwargs):
     """
     Crea una notificación cuando se genera una alerta de stock bajo.
     """
-    if created and hasattr(instance.producto_inventario, 'usuario'):
-        usuario = instance.producto_inventario.usuario
-        producto = instance.producto_inventario
-        
-        Notificacion.objects.create(
-            usuario=usuario,
-            tipo='STOCK_BAJO',
-            nivel='WARNING',
-            titulo=f'Stock bajo: {producto.nombre_producto}',
-            mensaje=f'El producto "{producto.nombre_producto}" tiene un stock de {producto.cantidad_disponible} unidades, por debajo del mínimo recomendado ({producto.stock_minimo}).',
-            enlace=reverse('inventario:detalle_producto', args=[producto.id])
-        )
+    if created:
+        try:
+            producto = instance.producto_inventario
+            if hasattr(producto, 'propietario') and producto.propietario:
+                usuario = producto.propietario
+                
+                # Crear notificación
+                notificacion = Notificacion.objects.create(
+                    usuario=usuario,
+                    tipo='STOCK_BAJO',
+                    nivel='WARNING',
+                    titulo=f'Stock bajo: {producto.nombre_producto}',
+                    mensaje=f'El producto "{producto.nombre_producto}" tiene un stock de {producto.cantidad_disponible} unidades, por debajo del mínimo recomendado ({producto.stock_minimo}).',
+                    enlace=reverse('inventario:detalle_producto', args=[producto.id])
+                )
+                
+                # Registro detallado para depuración
+                print(f"Notificación de stock bajo creada para producto: {producto.nombre_producto} (ID:{producto.id})")
+                print(f"Usuario: {getattr(usuario, 'email', getattr(usuario, 'id', 'desconocido'))}")
+                print(f"Stock actual: {producto.cantidad_disponible}, Mínimo: {producto.stock_minimo}")
+                
+                return notificacion
+        except Exception as e:
+            print(f"Error al crear notificación de stock bajo: {str(e)}")
+    return None
 
 @receiver(post_save, sender=PedidoProveedor)
 def notificar_cambios_pedido(sender, instance, created, **kwargs):
@@ -256,21 +280,28 @@ def notificar_movimiento_inventario(sender, instance, created, **kwargs):
         
     producto = instance.producto_inventario
     
-    # Solo notificar para movimientos grandes (más del 20% del stock)
+    # Notificar todos los movimientos importantes (sin restricción de porcentaje)
     if instance.tipo_movimiento in ['ENTRADA', 'SALIDA', 'AJUSTE']:
-        stock_total = producto.cantidad_disponible + (instance.cantidad_movimiento if instance.tipo_movimiento == 'SALIDA' else 0)
-        if stock_total > 0 and (instance.cantidad_movimiento / stock_total) >= 0.2:
-            tipo_texto = {
-                'ENTRADA': 'entrada',
-                'SALIDA': 'salida',
-                'AJUSTE': 'ajuste'
-            }.get(instance.tipo_movimiento, 'movimiento')
+        tipo_texto = {
+            'ENTRADA': 'entrada',
+            'SALIDA': 'salida',
+            'AJUSTE': 'ajuste'
+        }.get(instance.tipo_movimiento, 'movimiento')
+        
+        # Determinar el nivel de notificación según el tipo de movimiento
+        nivel = 'INFO'
+        if instance.tipo_movimiento == 'AJUSTE':
+            nivel = 'WARNING'  # Los ajustes podrían necesitar más atención
             
+        try:
             Notificacion.objects.create(
                 usuario=instance.usuario,
                 tipo='MOVIMIENTO',
-                nivel='INFO',
-                titulo=f'Movimiento importante de {tipo_texto}',
+                nivel=nivel,
+                titulo=f'Movimiento de {tipo_texto} registrado',
                 mensaje=f'Se ha registrado un {tipo_texto} de {instance.cantidad_movimiento} unidades para el producto "{producto.nombre_producto}".',
                 enlace=reverse('inventario:detalle_producto', args=[producto.id])
-            ) 
+            )
+        except Exception as e:
+            # Loggear el error pero no interrumpir el flujo del programa
+            print(f"Error al crear notificación de movimiento: {str(e)}") 

@@ -75,6 +75,18 @@ class PostForm(BasePostForm):
     """
     Formulario para crear o editar un post.
     """
+    content = forms.CharField(
+        label=_('Contenido'),
+        widget=forms.Textarea(attrs={
+            'class': 'machina-mde-markdown form-control',
+            'rows': 8,
+            'placeholder': _('Escribe tu mensaje aquí...'),
+        }),
+        error_messages={
+            'required': _('El contenido del mensaje es obligatorio.'),
+        }
+    )
+    
     attachment = forms.FileField(
         label=_('Archivo adjunto'),
         required=False,
@@ -88,19 +100,19 @@ class PostForm(BasePostForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super(PostForm, self).__init__(*args, **kwargs)
-        self.fields['content'].widget.attrs.update({
-            'class': 'form-control',
-            'rows': 8,
-        })
         if 'subject' in self.fields:
             self.fields['subject'].widget.attrs.update({
                 'class': 'form-control',
             })
     
+    def clean_content(self):
+        content = self.cleaned_data.get('content')
+        if not content or not content.strip():
+            raise forms.ValidationError(_('El contenido del mensaje es obligatorio.'))
+        return content.strip()
+    
     def save(self, commit=True):
         post = super(PostForm, self).save(commit=False)
-        
         if commit:
             post.save()
-        
         return post 

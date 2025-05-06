@@ -1,0 +1,129 @@
+/* 
+ * inventario.css - Estilos del módulo de inventario
+ */
+
+/* Estilos generales */
+.inventario-container {
+    padding: 20px;
+}
+
+/* Estilos para tarjetas */
+.card-inventario {
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    transition: transform 0.3s;
+}
+
+.card-inventario:hover {
+    transform: translateY(-5px);
+}
+
+/* Estilos para tablas */
+.table-inventario {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table-inventario th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.table-inventario th, 
+.table-inventario td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.table-inventario tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Estilos para formularios */
+.form-inventario label {
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.form-inventario .form-control {
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+    padding: 10px;
+}
+
+.form-inventario .form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Estilos para datepicker */
+.ui-datepicker {
+    padding: 10px;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ui-datepicker-header {
+    background-color: #007bff;
+    color: white;
+    border-radius: 4px 4px 0 0;
+}
+
+.ui-datepicker-calendar .ui-state-default {
+    border: none;
+    background: transparent;
+    text-align: center;
+}
+
+.ui-datepicker-calendar .ui-state-active {
+    background-color: #007bff;
+    color: white;
+    border-radius: 50%;
+}
+
+/* Estilos para estados de producto */
+.estado-activo {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+.estado-inactivo {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+/* Estilos para badges de stock */
+.badge-stock-normal {
+    background-color: #28a745;
+    color: white;
+}
+
+.badge-stock-bajo {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.badge-stock-critico {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Estilos para la página de notificaciones */
+.notificacion-item {
+    border-left: 4px solid transparent;
+    transition: background-color 0.3s;
+}
+
+.notificacion-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notificacion-item.no-leida {
+    border-left-color: #007bff;
+    background-color: #f0f7ff;
+} 

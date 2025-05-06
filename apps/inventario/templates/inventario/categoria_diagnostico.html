@@ -1,0 +1,259 @@
+{% extends "inventario/base.html" %}
+{% load static %}
+
+{% block title %}{{ titulo }} - Campo Unido{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ titulo }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group mr-2">
+                {% if duplicate_categories or similar_categories %}
+                <a href="?fix=1" class="btn btn-sm btn-warning" onclick="return confirm('¿Está seguro que desea reparar automáticamente las categorías? Esto fusionará las categorías duplicadas y similares.')">
+                    <span data-feather="tool"></span> Reparar Categorías
+                </a>
+                {% endif %}
+                <a href="{% url 'inventario:lista_categorias' %}" class="btn btn-sm btn-outline-secondary">
+                    <span data-feather="list"></span> Volver a Lista
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas generales -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Estadísticas Generales</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h3 class="display-4">{{ total_categories }}</h3>
+                                    <p class="text-muted">Categorías totales</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h3 class="display-4">{{ main_categories }}</h3>
+                                    <p class="text-muted">Categorías principales</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h3 class="display-4">{{ sub_categories }}</h3>
+                                    <p class="text-muted">Subcategorías</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h3 class="display-4">{{ unused_categories }}</h3>
+                                    <p class="text-muted">Categorías sin productos</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Categorías duplicadas -->
+    {% if duplicate_categories %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Categorías Duplicadas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> Se han encontrado categorías con nombres duplicados. Esto puede causar problemas en la aplicación.
+                    </div>
+                    
+                    {% for dup in duplicate_categories %}
+                    <div class="mb-4">
+                        <h5>{{ dup.nombre }} ({{ dup.count }} ocurrencias)</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Descripción</th>
+                                        <th>Productos asociados</th>
+                                        <th>Acción recomendada</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for cat in dup.categorias %}
+                                    <tr>
+                                        <td>{{ cat.id }}</td>
+                                        <td>{{ cat.descripcion|truncatechars:100 }}</td>
+                                        <td>{{ cat.productos }}</td>
+                                        <td>
+                                            {% if forloop.first %}
+                                            <span class="badge badge-success">Mantener (ID más antiguo)</span>
+                                            {% else %}
+                                            <span class="badge badge-danger">Fusionar con ID {{ dup.categorias.0.id }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Categorías similares -->
+    {% if similar_categories %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">Categorías Similares con Diferentes Nombres</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Se han encontrado categorías que podrían representar el mismo concepto pero con nombres diferentes.
+                    </div>
+                    
+                    {% for similar in similar_categories %}
+                    <div class="mb-4">
+                        <h5>{{ similar.pair.0 }} y {{ similar.pair.1 }}</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nombre</th>
+                                        <th>Descripción</th>
+                                        <th>Productos asociados</th>
+                                        <th>Acción recomendada</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for cat in similar.categories %}
+                                    <tr>
+                                        <td>{{ cat.id }}</td>
+                                        <td>{{ cat.nombre }}</td>
+                                        <td>{{ cat.descripcion|truncatechars:100 }}</td>
+                                        <td>{{ cat.productos }}</td>
+                                        <td>
+                                            {% if cat.productos > similar.categories.1.productos and forloop.first or cat.productos >= similar.categories.0.productos and not forloop.first %}
+                                            <span class="badge badge-success">Mantener (más productos)</span>
+                                            {% else %}
+                                            <span class="badge badge-danger">Fusionar</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Top categorías -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Top 10 Categorías por Número de Productos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Productos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cat in top_categories %}
+                                <tr>
+                                    <td>{{ cat.id }}</td>
+                                    <td>{{ cat.nombre }}</td>
+                                    <td>{{ cat.productos }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center">No hay categorías con productos.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones manuales -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Acciones Disponibles</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <a href="{% url 'inventario:sincronizar_categorias' %}" class="btn btn-outline-primary btn-block">
+                                <span data-feather="refresh-cw"></span> Sincronizar Categorías con Marketplace
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{% url 'inventario:lista_categorias' %}" class="btn btn-outline-secondary btn-block">
+                                <span data-feather="list"></span> Gestionar Categorías Manualmente
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {% if duplicate_categories or similar_categories %}
+                            <a href="?fix=1" class="btn btn-warning btn-block" onclick="return confirm('¿Está seguro que desea reparar automáticamente las categorías? Esto fusionará las categorías duplicadas y similares.')">
+                                <span data-feather="tool"></span> Reparar Categorías Automáticamente
+                            </a>
+                            {% else %}
+                            <button class="btn btn-outline-success btn-block" disabled>
+                                <span data-feather="check"></span> No se requieren reparaciones
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar íconos Feather
+        feather.replace();
+    });
+</script>
+{% endblock %} 

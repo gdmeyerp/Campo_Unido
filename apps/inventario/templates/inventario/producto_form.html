@@ -2,174 +2,197 @@
 {% load static %}
 {% load crispy_forms_tags %}
 
-{% block title %}{% if form.instance.id %}Editar{% else %}Crear{% endif %} Producto{% endblock %}
+{% block title %}{{ titulo }} - Campo Unido{% endblock %}
 
-{% block inventario_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h2">{% if form.instance.id %}Editar{% else %}Crear{% endif %} Producto</h1>
-    <div>
-        <a href="{% if form.instance.id %}{% url 'inventario:detalle_producto' form.instance.id %}{% else %}{% url 'inventario:lista_productos' %}{% endif %}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left mr-2"></i>Volver
-        </a>
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">{{ titulo }}</h1>
+        <div>
+            {% if producto.id %}
+            <a href="{% url 'inventario:eliminar_producto' producto.id %}" class="btn btn-danger me-2">
+                <i class="fas fa-trash mr-1"></i> Eliminar Producto
+            </a>
+            {% endif %}
+            <a href="{% url 'inventario:lista_productos' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left mr-1"></i> Volver a la lista
+            </a>
+        </div>
     </div>
-</div>
-
-<div class="card shadow mb-4">
-    <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold text-primary">{% if form.instance.id %}Editar{% else %}Crear{% endif %} Producto</h6>
-    </div>
-    <div class="card-body">
-        <form method="post" novalidate>
-            {% csrf_token %}
-
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    {{ form.nombre_producto|as_crispy_field }}
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <div class="form-group">
-                        <label for="{{ form.categoria_producto.id_for_label }}">Categoría *</label>
-                        <div class="input-group">
-                            {{ form.categoria_producto }}
-                            <div class="input-group-append">
-                                <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#modalNuevaCategoria">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                            </div>
+    
+    <div class="card shadow">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.nombre_producto|as_crispy_field }}
                         </div>
-                        {% if form.categoria_producto.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.categoria_producto.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
                     </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-3 mb-3">
-                    {{ form.cantidad_disponible|as_crispy_field }}
-                </div>
-
-                <div class="col-md-3 mb-3">
-                    {{ form.stock_minimo|as_crispy_field }}
-                </div>
-
-                <div class="col-md-3 mb-3">
-                    {{ form.precio_compra|as_crispy_field }}
-                </div>
-
-                <div class="col-md-3 mb-3">
-                    {{ form.precio_venta|as_crispy_field }}
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <div class="form-group">
-                        <label for="{{ form.estado_producto.id_for_label }}">Estado *</label>
-                        <div class="input-group">
-                            {{ form.estado_producto }}
-                            <div class="input-group-append">
-                                <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#modalNuevoEstado">
-                                    <i class="fas fa-plus"></i>
-                                </button>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_categoria_producto">Categoría *</label>
+                            <div class="input-group">
+                                <select name="categoria_producto" class="form-control" id="id_categoria_producto" required>
+                                    <option value="" selected>---------</option>
+                                    {% for categoria in categorias %}
+                                    <option value="{{ categoria.id }}" {% if form.instance.categoria_producto and form.instance.categoria_producto.id == categoria.id %}selected{% endif %}>
+                                        {% if categoria.categoria_padre %}{{ categoria.categoria_padre.nombre_categoria }} / {% endif %}{{ categoria.nombre_categoria }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#modalNuevaCategoria">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
                             </div>
+                            {% if form.categoria_producto.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.categoria_producto.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
-                        {% if form.estado_producto.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.estado_producto.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
                     </div>
                 </div>
-            </div>
-
-            <div class="mb-3">
-                {{ form.descripcion_producto|as_crispy_field }}
-            </div>
-
-            <!-- Asegurarnos de que el campo propietario se incluya en el formulario -->
-            {{ form.propietario }}
-
-            <div class="d-flex justify-content-end">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save mr-2"></i>Guardar
-                </button>
-            </div>
-        </form>
+                
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            {{ form.cantidad_disponible|as_crispy_field }}
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            {{ form.stock_minimo|as_crispy_field }}
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            {{ form.precio_compra|as_crispy_field }}
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            {{ form.precio_venta|as_crispy_field }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_estado_producto">Estado *</label>
+                            <div class="input-group">
+                                <select name="estado_producto" class="form-control" id="id_estado_producto" required>
+                                    <option value="" selected>---------</option>
+                                    {% for estado in estados %}
+                                    <option value="{{ estado.id }}" {% if form.instance.estado_producto and form.instance.estado_producto.id == estado.id %}selected{% endif %}>
+                                        {{ estado.nombre_estado }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#modalNuevoEstado">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if form.estado_producto.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.estado_producto.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            
+                <div class="mb-3">
+                    {{ form.descripcion_producto|as_crispy_field }}
+                </div>
+            
+                <!-- Asegurarnos de que el campo propietario se incluya en el formulario -->
+                {{ form.propietario }}
+            
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save mr-2"></i>Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
-
-<!-- Modal para crear nueva categoría -->
-<div class="modal fade" id="modalNuevaCategoria" tabindex="-1" role="dialog" aria-labelledby="modalNuevaCategoriaLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalNuevaCategoriaLabel">Nueva Categoría</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="formNuevaCategoria">
-                    <div class="form-group">
-                        <label for="nombre_categoria">Nombre de la categoría *</label>
-                        <input type="text" class="form-control" id="nombre_categoria" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="categoria_padre">Categoría padre</label>
-                        <select class="form-control" id="categoria_padre">
-                            <option value="">Ninguna (categoría principal)</option>
-                            {% for categoria in categorias %}
-                                <option value="{{ categoria.id }}">{{ categoria.nombre_categoria }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="descripcion_categoria">Descripción</label>
-                        <textarea class="form-control" id="descripcion_categoria" rows="3"></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="guardarCategoria">Guardar</button>
+    
+    <!-- Modal para crear nueva categoría -->
+    <div class="modal fade" id="modalNuevaCategoria" tabindex="-1" role="dialog" aria-labelledby="modalNuevaCategoriaLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalNuevaCategoriaLabel">Nueva Categoría</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="formNuevaCategoria">
+                        <div class="form-group">
+                            <label for="nombre_categoria">Nombre de la categoría *</label>
+                            <input type="text" class="form-control" id="nombre_categoria" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="categoria_padre">Categoría padre</label>
+                            <select class="form-control" id="categoria_padre">
+                                <option value="">Ninguna (categoría principal)</option>
+                                {% for categoria in categorias %}
+                                    <option value="{{ categoria.id }}">{{ categoria.nombre_categoria }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="descripcion_categoria">Descripción</label>
+                            <textarea class="form-control" id="descripcion_categoria" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="guardarCategoria">Guardar</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
-
-<!-- Modal para crear nuevo estado -->
-<div class="modal fade" id="modalNuevoEstado" tabindex="-1" role="dialog" aria-labelledby="modalNuevoEstadoLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalNuevoEstadoLabel">Nuevo Estado</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="formNuevoEstado">
-                    <div class="form-group">
-                        <label for="nombre_estado">Nombre del estado *</label>
-                        <input type="text" class="form-control" id="nombre_estado" required>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="guardarEstado">Guardar</button>
+    
+    <!-- Modal para crear nuevo estado -->
+    <div class="modal fade" id="modalNuevoEstado" tabindex="-1" role="dialog" aria-labelledby="modalNuevoEstadoLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalNuevoEstadoLabel">Nuevo Estado</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="formNuevoEstado">
+                        <div class="form-group">
+                            <label for="nombre_estado">Nombre del estado *</label>
+                            <input type="text" class="form-control" id="nombre_estado" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="guardarEstado">Guardar</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}
 
 {% block js %}

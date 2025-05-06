@@ -5,6 +5,8 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'inventario/css/inventario.css' %}">
+<!-- Agregar jQuery UI CSS para los datepickers -->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <style>
     .sidebar-inventario {
         background-color: #f8f9fa;
@@ -128,6 +130,8 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Agregar jQuery UI para datepicker -->
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 <script src="{% static 'inventario/js/inventario.js' %}"></script>
 <script>
     $(document).ready(function() {

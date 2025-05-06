@@ -1,0 +1,91 @@
+{% extends 'core/dashboard.html' %}
+{% load static %}
+
+{% block title %}Editar Dirección de Envío - Campo Unido{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1>Editar Dirección de Envío</h1>
+            <hr>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Información de la dirección</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="form-group mb-3">
+                            <label for="nombre_completo">Nombre completo*</label>
+                            <input type="text" class="form-control" id="nombre_completo" name="nombre_completo" value="{{ direccion.nombre_completo }}" required>
+                            <small class="form-text text-muted">Nombre de la persona que recibirá el pedido</small>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="telefono">Teléfono*</label>
+                            <input type="tel" class="form-control" id="telefono" name="telefono" value="{{ direccion.telefono }}" required>
+                            <small class="form-text text-muted">Teléfono de contacto para la entrega</small>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="direccion">Dirección*</label>
+                            <textarea class="form-control" id="direccion" name="direccion" rows="2" required>{{ direccion.direccion }}</textarea>
+                            <small class="form-text text-muted">Calle, número, colonia, etc.</small>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="ciudad">Ciudad*</label>
+                                    <input type="text" class="form-control" id="ciudad" name="ciudad" value="{{ direccion.ciudad }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="departamento">Departamento/Estado*</label>
+                                    <input type="text" class="form-control" id="departamento" name="departamento" value="{{ direccion.departamento }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="codigo_postal">Código Postal</label>
+                            <input type="text" class="form-control" id="codigo_postal" name="codigo_postal" value="{{ direccion.codigo_postal|default:'' }}">
+                            <small class="form-text text-muted">Opcional</small>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="notas_adicionales">Notas adicionales</label>
+                            <textarea class="form-control" id="notas_adicionales" name="notas_adicionales" rows="2">{{ direccion.notas_adicionales|default:'' }}</textarea>
+                            <small class="form-text text-muted">Instrucciones especiales para la entrega (opcional)</small>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="predeterminada" name="predeterminada" {% if direccion.predeterminada %}checked{% endif %}>
+                            <label class="form-check-label" for="predeterminada">
+                                Establecer como dirección predeterminada
+                            </label>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'marketplace:mis_direcciones' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

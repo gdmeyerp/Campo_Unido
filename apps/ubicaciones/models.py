@@ -1,6 +1,15 @@
 from django.db import models
 from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.db.models import F, ExpressionWrapper, FloatField
+from django.db.models.functions import ACos, Cos, Sin, Radians
 import math
+from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator
+from apps.marketplace.models import Producto, CategoriaProducto
+from math import radians, sin, cos, sqrt, atan2
+
+User = get_user_model()
 
 
 class Pais(models.Model):
@@ -77,9 +86,14 @@ class Ubicacion(models.Model):
 
 
 class AreaServicio(models.Model):
+    """Área de servicio de un productor"""
     productor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='areas_servicio')
     ubicacion_centro = models.ForeignKey(Ubicacion, on_delete=models.CASCADE, related_name='areas_servicio')
-    radio_km = models.DecimalField(max_digits=5, decimal_places=2, help_text='Radio de cobertura en kilómetros')
+    radio_km = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2,
+        help_text="Radio de cobertura en kilómetros"
+    )
     activa = models.BooleanField(default=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     
@@ -88,143 +102,154 @@ class AreaServicio(models.Model):
         verbose_name_plural = 'Áreas de Servicio'
     
     def __str__(self):
-        return f"Área de {self.productor.username} - {self.ubicacion_centro.nombre} ({self.radio_km} km)"
-        
+        return f"Área de {self.productor.username} - {self.ubicacion_centro.nombre}"
+    
     @staticmethod
     def calcular_distancia(lat1, lon1, lat2, lon2):
         """
-        Calcula la distancia en kilómetros entre dos puntos geográficos
-        utilizando la fórmula de Haversine.
+        Calcula la distancia en kilómetros entre dos puntos usando la fórmula de Haversine
         """
-        # Radio de la Tierra en kilómetros
-        R = 6371.0
+        R = 6371  # Radio de la Tierra en km
         
-        # Convertir grados a radianes
-        lat1_rad = math.radians(lat1)
-        lon1_rad = math.radians(lon1)
-        lat2_rad = math.radians(lat2)
-        lon2_rad = math.radians(lon2)
+        lat1, lon1, lat2, lon2 = map(math.radians, [float(lat1), float(lon1), float(lat2), float(lon2)])
         
-        # Diferencias en radianes
-        dlat = lat2_rad - lat1_rad
-        dlon = lon2_rad - lon1_rad
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
         
-        # Fórmula de Haversine
-        a = math.sin(dlat/2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon/2)**2
-        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-        distancia = R * c
+        a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+        c = 2 * math.asin(math.sqrt(a))
         
-        return distancia
+        return R * c
+    
+    def esta_en_rango(self, ubicacion):
+        """
+        Verifica si una ubicación está dentro del radio de servicio
+        """
+        if not (self.ubicacion_centro.latitud and self.ubicacion_centro.longitud and 
+                ubicacion.latitud and ubicacion.longitud):
+            return False
+            
+        distancia = self.calcular_distancia(
+            self.ubicacion_centro.latitud,
+            self.ubicacion_centro.longitud,
+            ubicacion.latitud,
+            ubicacion.longitud
+        )
+        
+        return distancia <= float(self.radio_km)
 
 
 class PreferenciaUbicacion(models.Model):
+    """Preferencias de ubicación de un usuario"""
     usuario = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='preferencia_ubicacion')
-    ubicacion_preferida = models.ForeignKey(Ubicacion, on_delete=models.SET_NULL, related_name='preferencias_usuarios', 
-                                          blank=True, null=True)
-    radio_busqueda_km = models.DecimalField(max_digits=5, decimal_places=2, default=10.0,
-                                         help_text='Radio de búsqueda preferido en kilómetros')
-
+    radio_busqueda_km = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=10.0,
+        help_text="Radio de búsqueda preferido en kilómetros"
+    )
+    ubicacion_preferida = models.ForeignKey(
+        Ubicacion,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='preferencias_usuarios'
+    )
+    
     class Meta:
         verbose_name = 'Preferencia de Ubicación'
         verbose_name_plural = 'Preferencias de Ubicación'
-
+    
     def __str__(self):
         return f"Preferencias de {self.usuario.username}"
 
 
 class UbicacionProducto(models.Model):
-    ubicacion = models.ForeignKey(Ubicacion, on_delete=models.CASCADE, related_name='productos')
+    """Ubicación específica de un producto"""
     producto = models.ForeignKey('marketplace.Producto', on_delete=models.CASCADE, related_name='ubicaciones')
+    ubicacion = models.ForeignKey(Ubicacion, on_delete=models.CASCADE, related_name='productos')
     stock_disponible = models.PositiveIntegerField(default=0)
     activo = models.BooleanField(default=True)
     
     class Meta:
         verbose_name = 'Ubicación de Producto'
         verbose_name_plural = 'Ubicaciones de Productos'
-        unique_together = ('producto', 'ubicacion')
-        
+        unique_together = ['producto', 'ubicacion']
+    
     def __str__(self):
         return f"{self.producto.nombre} en {self.ubicacion.nombre}"
-    
-    @classmethod
-    def encontrar_productos_cercanos(cls, ubicacion, radio_km=10.0, categoria=None):
+
+    @staticmethod
+    def encontrar_productos_cercanos(ubicacion_usuario, radio_km=10, categoria=None, limite=10):
         """
-        Encuentra productos cercanos a una ubicación dentro de un radio específico.
-        
-        Args:
-            ubicacion: Objeto Ubicacion desde donde buscar
-            radio_km: Radio de búsqueda en kilómetros
-            categoria: Objeto CategoriaProducto opcional para filtrar por categoría
-            
-        Returns:
-            Lista de productos cercanos con información de distancia
+        Encuentra productos cercanos a una ubicación dada
         """
-        from apps.marketplace.models import Producto
-        
-        productos_cercanos = []
-        
-        # Verificar que la ubicación tenga coordenadas
-        if not ubicacion or not ubicacion.latitud or not ubicacion.longitud:
+        if not (ubicacion_usuario.latitud and ubicacion_usuario.longitud):
             return []
             
-        lat1 = float(ubicacion.latitud)
-        lon1 = float(ubicacion.longitud)
+        # Convertir coordenadas a radianes
+        lat = float(ubicacion_usuario.latitud)
+        lon = float(ubicacion_usuario.longitud)
         
-        # Obtener todas las ubicaciones de productos (excepto las del usuario de la ubicación proporcionada)
-        ubicaciones_productos = cls.objects.filter(
+        # Filtrar productos activos y con stock
+        productos = UbicacionProducto.objects.filter(
             activo=True,
             stock_disponible__gt=0,
-            producto__activo=True
-        ).exclude(
-            ubicacion__usuario=ubicacion.usuario
-        ).select_related(
-            'ubicacion',
-            'producto',
-            'producto__categoria',
-            'ubicacion__ciudad',
-            'ubicacion__ciudad__estado',
-            'ubicacion__ciudad__estado__pais'
+            ubicacion__latitud__isnull=False,
+            ubicacion__longitud__isnull=False
         )
         
-        # Filtrar por categoría si se especifica
         if categoria:
-            ubicaciones_productos = ubicaciones_productos.filter(producto__categoria=categoria)
-            
-        # Para cada ubicación de producto, calcular la distancia
-        for up in ubicaciones_productos:
-            if not up.ubicacion.latitud or not up.ubicacion.longitud:
-                continue
-                
-            lat2 = float(up.ubicacion.latitud)
-            lon2 = float(up.ubicacion.longitud)
-            
-            distancia = AreaServicio.calcular_distancia(lat1, lon1, lat2, lon2)
-            
-            # Si está dentro del radio de búsqueda, añadir a los resultados
-            if distancia <= float(radio_km):
-                productos_cercanos.append({
-                    'producto': up.producto,
-                    'ubicacion': up.ubicacion,
-                    'stock': up.stock_disponible,
-                    'distancia': distancia
-                })
+            productos = productos.filter(producto__categoria=categoria)
         
-        # Ordenar por distancia
-        productos_cercanos.sort(key=lambda x: x['distancia'])
+        # Calcular distancia usando la fórmula de Haversine
+        productos = productos.annotate(
+            distancia=ExpressionWrapper(
+                6371 * ACos(
+                    Cos(Radians(lat)) * 
+                    Cos(Radians(F('ubicacion__latitud'))) * 
+                    Cos(Radians(F('ubicacion__longitud')) - Radians(lon)) + 
+                    Sin(Radians(lat)) * 
+                    Sin(Radians(F('ubicacion__latitud')))
+                ),
+                output_field=FloatField()
+            )
+        ).filter(distancia__lte=radio_km)
         
-        return productos_cercanos
+        # Ordenar por distancia y limitar resultados
+        return productos.order_by('distancia')[:limite]
 
 
 class UsuariosPorCategoria(models.Model):
-    """Modelo para guardar estadísticas de cuántos usuarios hay por cada categoría de producto"""
-    categoria = models.ForeignKey('marketplace.CategoriaProducto', on_delete=models.CASCADE)
-    total_usuarios = models.PositiveIntegerField(default=0)
-    usuarios_activos = models.PositiveIntegerField(default=0)
+    """Modelo para mantener un registro de usuarios por categoría de producto"""
+    categoria = models.ForeignKey(CategoriaProducto, on_delete=models.CASCADE)
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
     ultima_actualizacion = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
-        verbose_name = 'Estadística por Categoría'
-        verbose_name_plural = 'Estadísticas por Categorías'
+        unique_together = ('categoria', 'usuario')
+        indexes = [
+            models.Index(fields=['categoria', 'usuario']),
+        ]
+
+    @classmethod
+    def actualizar_usuario_categoria(cls, usuario, producto):
+        """Actualiza el registro de usuarios por categoría cuando se publica o actualiza un producto"""
+        cls.objects.get_or_create(
+            categoria=producto.categoria,
+            usuario=usuario
+        )
+
+    @classmethod
+    def eliminar_usuario_categoria(cls, usuario, categoria):
+        """Elimina el registro si el usuario ya no tiene productos en esta categoría"""
+        # Verificar si el usuario aún tiene productos activos en esta categoría
+        productos_activos = UbicacionProducto.objects.filter(
+            ubicacion__usuario=usuario,
+            producto__categoria=categoria,
+            producto__activo=True,
+            stock_disponible__gt=0
+        ).exists()
         
-    def __str__(self):
-        return f"Estadísticas de {self.categoria.nombre}" 
+        if not productos_activos:
+            cls.objects.filter(usuario=usuario, categoria=categoria).delete() 

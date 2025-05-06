@@ -60,7 +60,7 @@ def editar_perfil(request):
         
         perfil.save()
         messages.success(request, 'Perfil actualizado correctamente.')
-        return redirect('profile')
+        return redirect('core:profile')
     
     return render(request, 'core/editar_perfil.html')
 
@@ -140,6 +140,12 @@ def index(request):
 def dashboard(request):
     """Vista del dashboard del usuario"""
     return render(request, 'core/dashboard.html')
+
+@login_required
+def monitorizacion(request):
+    """Vista de monitorización del sistema"""
+    # Esta es una vista placeholder que se implementará en el futuro
+    return render(request, 'core/monitorizacion.html')
 
 def login_view(request):
     """Vista para el inicio de sesión de usuarios con email"""

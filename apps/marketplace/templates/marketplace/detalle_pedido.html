@@ -1,0 +1,196 @@
+{% extends 'core/dashboard.html' %}
+{% load static %}
+
+{% block title %}Detalle de Pedido - Campo Unido{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    {% if messages %}
+    <div class="row mb-4">
+        <div class="col-12">
+            {% for message in messages %}
+                {% if 'compra se ha realizado con éxito' in message.message %}
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fas fa-check-circle fa-3x"></i>
+                        </div>
+                        <div>
+                            <h4 class="alert-heading">¡Compra Realizada con Éxito!</h4>
+                            <p>{{ message }}</p>
+                            <hr>
+                            <p class="mb-0">Puedes descargar el comprobante de compra usando el botón de descarga.</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% else %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    <strong>{% if message.tags == 'success' %}¡Éxito!{% elif message.tags == 'error' %}Error:{% elif message.tags == 'warning' %}Advertencia:{% else %}Información:{% endif %}</strong> {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'marketplace:lista_pedidos' %}">Mis Pedidos</a></li>
+                    <li class="breadcrumb-item active">Pedido #{{ pedido.id }}</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Detalle de Pedido</h1>
+                <div>
+                    <a href="{% url 'marketplace:descargar_factura' pedido.id %}" class="btn btn-primary">
+                        <i class="fas fa-file-download"></i> Descargar Comprobante
+                    </a>
+                </div>
+            </div>
+            <hr>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información del pedido -->
+        <div class="col-lg-8">
+            <!-- Estado y fecha del pedido -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Información del Pedido</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Número de Orden:</strong> 
+                                {% if pedido.orden %}
+                                    {{ pedido.orden.numero_orden }}
+                                {% else %}
+                                    #{{ pedido.id }}
+                                {% endif %}
+                            </p>
+                            <p><strong>Fecha de Compra:</strong> {{ pedido.fecha_compra|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Estado:</strong> 
+                                <span class="badge {% if pedido.estado == 'pagado' %}bg-success{% elif pedido.estado == 'enviado' %}bg-primary{% elif pedido.estado == 'entregado' %}bg-info{% elif pedido.estado == 'cancelado' %}bg-danger{% else %}bg-warning{% endif %}">
+                                    {{ pedido.get_estado_display|default:pedido.estado|title }}
+                                </span>
+                            </p>
+                            <p><strong>Método de Pago:</strong> {{ pedido.metodo_pago|default:"No especificado" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="alert alert-info">
+                                <h6 class="alert-heading">Detalle de Entrega</h6>
+                                <p style="white-space: pre-line;">{{ pedido.direccion_envio }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de productos -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Productos Comprados</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-center">Cantidad</th>
+                                    <th class="text-end">Precio</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in items %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if item.producto.imagen %}
+                                            <img src="{{ item.producto.imagen.url }}" alt="{{ item.producto.nombre }}" class="img-thumbnail me-2" style="width: 50px; height: 50px; object-fit: cover;">
+                                            {% else %}
+                                            <div class="bg-light me-2 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                                <i class="fas fa-seedling text-muted"></i>
+                                            </div>
+                                            {% endif %}
+                                            <div>
+                                                <a href="{% url 'marketplace:detalle_producto' item.producto.id %}">{{ item.producto.nombre }}</a>
+                                                <small class="d-block text-muted">{{ item.producto.categoria.nombre|default:"Sin categoría" }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">{{ item.cantidad }}</td>
+                                    <td class="text-end">${{ item.precio_unitario|floatformat:2 }}</td>
+                                    <td class="text-end">${{ item.subtotal|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-group-divider">
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                                    <td class="text-end"><strong>${{ pedido.total|floatformat:2 }}</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen y acciones -->
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Resumen del Pedido</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <span>${{ pedido.total|floatformat:2 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Envío:</span>
+                        <span>$0.00</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong>Total:</strong>
+                        <strong>${{ pedido.total|floatformat:2 }}</strong>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'marketplace:descargar_factura' pedido.id %}" class="btn btn-outline-primary w-100 mb-2">
+                        <i class="fas fa-file-download"></i> Descargar Comprobante
+                    </a>
+                    {% if pedido.estado == 'entregado' %}
+                    <a href="#" class="btn btn-outline-success w-100 mb-2">
+                        <i class="fas fa-star"></i> Valorar Productos
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'marketplace:lista_pedidos' %}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-arrow-left"></i> Volver a Mis Pedidos
+                    </a>
+                </div>
+            </div>
+            
+            {% if pedido.orden.notas %}
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Información Adicional</h5>
+                </div>
+                <div class="card-body">
+                    <p style="white-space: pre-line;">{{ pedido.orden.notas }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

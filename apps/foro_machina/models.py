@@ -2,10 +2,11 @@ from django.db import models
 from django.conf import settings
 from machina.core.db.models import get_model
 from django.utils.translation import gettext_lazy as _
-from machina.apps.forum_conversation.models import Topic
 
-# Obtener el modelo Forum original
+# Obtener los modelos necesarios
 Forum = get_model('forum', 'Forum')
+Topic = get_model('forum_conversation', 'Topic')
+Post = get_model('forum_conversation', 'Post')
 
 # Añadir el campo created_by al modelo Forum
 if not hasattr(Forum, 'created_by'):
@@ -41,13 +42,13 @@ class TopicAttachment(models.Model):
     Modelo para almacenar archivos adjuntos a temas del foro.
     """
     topic = models.ForeignKey(
-        'forum_conversation.Topic',
+        Topic,
         related_name='attachments',
         on_delete=models.CASCADE,
         verbose_name=_('Tema')
     )
     post = models.ForeignKey(
-        'forum_conversation.Post',
+        Post,
         related_name='custom_attachments',
         on_delete=models.CASCADE,
         verbose_name=_('Post'),

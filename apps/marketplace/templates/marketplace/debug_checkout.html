@@ -1,0 +1,349 @@
+{% extends 'core/dashboard.html' %}
+{% load static %}
+
+{% block title %}Depuración de Checkout - Campo Unido{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="display-5 fw-bold">Depuración de Checkout</h1>
+            <p class="lead">Información detallada para identificar problemas con el proceso de checkout</p>
+            <p class="text-muted">Generado: {{ debug_time }}</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <p><strong>Instrucciones:</strong> Esta página muestra información detallada sobre el estado del carrito, 
+                sesión y compras recientes para ayudar a identificar problemas en el proceso de checkout.</p>
+                <p>Si estás experimentando problemas, utiliza esta información para identificar posibles causas.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estado General -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Información del Usuario</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>ID de Usuario:</span>
+                            <span class="font-weight-bold">{{ user_info.id }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Autenticado:</span>
+                            <span class="font-weight-bold">{{ user_info.is_authenticated }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Username:</span>
+                            <span class="font-weight-bold">{{ user_info.username }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Email:</span>
+                            <span class="font-weight-bold">{{ user_info.email }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Resumen del Carrito</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Cantidad de productos:</span>
+                            <span class="font-weight-bold">{{ cart_count }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Total:</span>
+                            <span class="font-weight-bold">${{ cart_total|floatformat:2 }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Estado:</span>
+                            {% if cart_count > 0 %}
+                                {% if problemas_stock %}
+                                    <span class="badge bg-danger">Problemas de stock</span>
+                                {% else %}
+                                    <span class="badge bg-success">Listo para checkout</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Carrito vacío</span>
+                            {% endif %}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Problemas de Stock -->
+    {% if problemas_stock %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">⚠️ Problemas de Stock Detectados</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Solicitado</th>
+                                    <th>Disponible</th>
+                                    <th>Faltante</th>
+                                    <th>Acción Recomendada</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for problema in problemas_stock %}
+                                <tr>
+                                    <td>{{ problema.producto }}</td>
+                                    <td>{{ problema.solicitado }}</td>
+                                    <td>{{ problema.disponible }}</td>
+                                    <td>{{ problema.faltante }}</td>
+                                    <td>Reducir cantidad o eliminar producto</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Detalle del Carrito -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Detalle del Carrito</h5>
+                </div>
+                <div class="card-body">
+                    {% if cart_items %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Producto</th>
+                                    <th>Cantidad</th>
+                                    <th>Precio</th>
+                                    <th>Subtotal</th>
+                                    <th>Stock</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in cart_items %}
+                                <tr>
+                                    <td>{{ item.id }}</td>
+                                    <td>{{ item.nombre }}</td>
+                                    <td>{{ item.cantidad }}</td>
+                                    <td>${{ item.precio|floatformat:2 }}</td>
+                                    <td>${{ item.subtotal|floatformat:2 }}</td>
+                                    <td>{{ item.stock_disponible }}</td>
+                                    <td>
+                                        {% if item.stock_suficiente %}
+                                            <span class="badge bg-success">OK</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Stock insuficiente</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        No hay productos en el carrito.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compras Recientes -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Compras Recientes</h5>
+                </div>
+                <div class="card-body">
+                    {% if compras_recientes %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Fecha</th>
+                                    <th>Total</th>
+                                    <th>Estado</th>
+                                    <th># Orden</th>
+                                    <th>Estado Orden</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for compra in compras_info %}
+                                <tr>
+                                    <td>{{ compra.id }}</td>
+                                    <td>{{ compra.fecha }}</td>
+                                    <td>${{ compra.total|floatformat:2 }}</td>
+                                    <td>{{ compra.estado }}</td>
+                                    <td>
+                                        {% if compra.orden %}
+                                            {{ compra.orden.numero_orden }}
+                                        {% else %}
+                                            <span class="text-danger">Sin orden</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if compra.orden %}
+                                            {{ compra.orden.estado }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{% url 'marketplace:detalle_pedido' compra.id %}" class="btn btn-sm btn-outline-primary">Ver</a>
+                                            <a href="{% url 'marketplace:descargar_factura' compra.id %}" class="btn btn-sm btn-outline-secondary">Factura</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        No hay compras recientes para mostrar.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mensajes -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Mensajes en la Sesión</h5>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nivel</th>
+                                    <th>Mensaje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for msg in messages %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-{{ msg.level }}">
+                                            {{ msg.level }}
+                                        </span>
+                                    </td>
+                                    <td>{{ msg.message }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        No hay mensajes en la sesión.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Datos de Sesión -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Datos de Sesión</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Clave</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for key, value in session_data.items %}
+                                <tr>
+                                    <td>{{ key }}</td>
+                                    <td>
+                                        <code>{{ value }}</code>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="2" class="text-center">No hay datos de sesión relevantes.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enlaces de Acción -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Acciones Disponibles</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{% url 'marketplace:ver_carrito' %}" class="btn btn-primary">
+                            <i class="fas fa-shopping-cart"></i> Ver Carrito
+                        </a>
+                        <a href="{% url 'marketplace:checkout' %}" class="btn btn-success">
+                            <i class="fas fa-cash-register"></i> Ir al Checkout
+                        </a>
+                        <a href="{% url 'marketplace:lista_pedidos' %}" class="btn btn-info">
+                            <i class="fas fa-list"></i> Mis Pedidos
+                        </a>
+                        <a href="{% url 'marketplace:lista_productos' %}" class="btn btn-secondary">
+                            <i class="fas fa-shopping-bag"></i> Seguir Comprando
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

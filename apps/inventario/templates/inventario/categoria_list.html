@@ -12,6 +12,12 @@
                 <a href="{% url 'inventario:crear_categoria' %}" class="btn btn-sm btn-outline-primary">
                     <span data-feather="plus"></span> Nueva Categoría
                 </a>
+                <a href="{% url 'inventario:sincronizar_categorias' %}" class="btn btn-sm btn-outline-success" title="Sincronizar categorías con marketplace">
+                    <span data-feather="refresh-cw"></span> Sincronizar Categorías
+                </a>
+                <a href="{% url 'inventario:diagnosticar_categorias' %}" class="btn btn-sm btn-outline-info" title="Diagnosticar y reparar problemas de categorías">
+                    <span data-feather="tool"></span> Diagnosticar Categorías
+                </a>
             </div>
             <a href="{% url 'inventario:dashboard' %}" class="btn btn-sm btn-outline-secondary">
                 <span data-feather="arrow-left"></span> Volver al Dashboard

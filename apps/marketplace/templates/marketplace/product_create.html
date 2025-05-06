@@ -1,4 +1,4 @@
-{% extends "core/base.html" %}
+{% extends "core/dashboard.html" %}
 {% load static %}
 
 {% block title %}Crear Nuevo Producto{% endblock %}
@@ -62,25 +62,59 @@
                             <label for="categoria" class="form-label">Categoría</label>
                             <select class="form-select" id="categoria" name="categoria">
                                 <option value="">Seleccionar categoría...</option>
-                                {% for categoria in categorias %}
-                                <option value="{{ categoria.id }}" {% if values.categoria == categoria.id %}selected{% endif %}>
-                                    {{ categoria.nombre }}
-                                </option>
-                                {% endfor %}
+                                {% if categorias %}
+                                <optgroup label="Categorías de Marketplace">
+                                    {% for categoria in categorias %}
+                                    <option value="{{ categoria.id }}" {% if values.categoria == categoria.id %}selected{% endif %}>
+                                        {{ categoria.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </optgroup>
+                                {% endif %}
+                                
+                                {% if categorias_inventario %}
+                                <optgroup label="Categorías de Inventario">
+                                    {% for categoria in categorias_inventario %}
+                                    <option value="inv_{{ categoria.id }}" {% if values.categoria == categoria.id %}selected{% endif %}>
+                                        {{ categoria.nombre_categoria }}
+                                    </option>
+                                    {% endfor %}
+                                </optgroup>
+                                {% endif %}
                             </select>
                         </div>
                         
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="destacado" name="destacado" {% if values.destacado %}checked{% endif %}>
+                            <label class="form-check-label" for="destacado">Destacar este producto</label>
+                            <div class="form-text">Los productos destacados aparecen en la página principal del marketplace.</div>
+                        </div>
+                        
                         <div class="mb-4">
-                            <label for="imagen" class="form-label">Imagen del Producto</label>
+                            <label for="imagen" class="form-label">Imagen Principal</label>
                             <input type="file" class="form-control" id="imagen" name="imagen" accept="image/*">
                             <div class="form-text">Formatos aceptados: JPG, PNG, GIF. Tamaño máximo: 5MB.</div>
+                            <div class="preview-container-main mt-2"></div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="imagenes_adicionales" class="form-label">Imágenes Adicionales</label>
+                            <input type="file" class="form-control" id="imagenes_adicionales" name="imagenes_adicionales" multiple accept="image/*">
+                            <div class="form-text">Puede seleccionar hasta 5 imágenes adicionales. Formatos aceptados: JPG, PNG, GIF.</div>
+                            <div class="preview-container-adicionales mt-2 row"></div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="activo" name="activo" checked>
+                            <label class="form-check-label" for="activo">Producto visible en tienda</label>
+                            <div class="form-text">Desmarcar esta opción si no quieres que el producto aparezca aún en la tienda.</div>
                         </div>
                         
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary btn-lg">
                                 <i class="fas fa-save me-2"></i>Crear Producto
                             </button>
-                            <a href="{% url 'marketplace:product_list' %}" class="btn btn-outline-secondary">
+                            <a href="{% url 'marketplace:mi_tienda' %}" class="btn btn-outline-secondary">
                                 <i class="fas fa-arrow-left me-2"></i>Volver
                             </a>
                         </div>
@@ -127,23 +161,56 @@ document.getElementById('imagen').addEventListener('change', function(e) {
                 </div>
             `;
             
-            const previewContainer = document.querySelector('.preview-container');
+            const previewContainer = document.querySelector('.preview-container-main');
             if (previewContainer) {
                 previewContainer.innerHTML = '';
                 previewContainer.appendChild(preview);
             } else {
                 const newContainer = document.createElement('div');
-                newContainer.className = 'preview-container';
+                newContainer.className = 'preview-container-main';
                 newContainer.appendChild(preview);
                 fileInput.parentNode.appendChild(newContainer);
             }
             
             document.querySelector('.remove-preview').addEventListener('click', function() {
-                document.querySelector('.preview-container').remove();
+                document.querySelector('.preview-container-main').remove();
                 fileInput.value = '';
             });
         }
         reader.readAsDataURL(fileInput.files[0]);
+    }
+});
+
+document.getElementById('imagenes_adicionales').addEventListener('change', function(e) {
+    const fileInputs = e.target.files;
+    const previewContainer = document.querySelector('.preview-container-adicionales');
+    previewContainer.innerHTML = '';
+    
+    for (let i = 0; i < fileInputs.length; i++) {
+        const file = fileInputs[i];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.createElement('div');
+            preview.className = 'col-md-4 mb-3';
+            preview.innerHTML = `
+                <div class="card">
+                    <img src="${e.target.result}" class="card-img-top img-thumbnail" style="max-height: 200px; object-fit: contain;">
+                    <div class="card-body text-center">
+                        <button type="button" class="btn btn-sm btn-danger remove-preview">
+                            <i class="fas fa-times"></i> Eliminar
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            previewContainer.appendChild(preview);
+            
+            document.querySelector('.remove-preview').addEventListener('click', function() {
+                preview.remove();
+                fileInputs[i].value = '';
+            });
+        }
+        reader.readAsDataURL(file);
     }
 });
 </script>

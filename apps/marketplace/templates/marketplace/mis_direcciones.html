@@ -1,0 +1,78 @@
+{% extends 'core/dashboard.html' %}
+{% load static %}
+
+{% block title %}Mis Direcciones - Campo Unido{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Mis Direcciones de Envío</h1>
+                <a href="{% url 'marketplace:agregar_direccion' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Agregar nueva dirección
+                </a>
+            </div>
+            <hr>
+        </div>
+    </div>
+
+    <div class="row">
+        {% if direcciones %}
+            {% for direccion in direcciones %}
+            <div class="col-lg-6 mb-4">
+                <div class="card {% if direccion.predeterminada %}border-primary{% endif %}">
+                    <div class="card-header {% if direccion.predeterminada %}bg-primary text-white{% else %}bg-light{% endif %}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">{{ direccion.nombre_completo }}</h5>
+                            {% if direccion.predeterminada %}
+                                <span class="badge bg-light text-dark">Predeterminada</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Dirección:</strong> {{ direccion.direccion }}</p>
+                        <p><strong>Ciudad:</strong> {{ direccion.ciudad }}, {{ direccion.departamento }}</p>
+                        <p><strong>Teléfono:</strong> {{ direccion.telefono }}</p>
+                        {% if direccion.codigo_postal %}
+                            <p><strong>Código Postal:</strong> {{ direccion.codigo_postal }}</p>
+                        {% endif %}
+                        {% if direccion.notas_adicionales %}
+                            <p><strong>Notas:</strong> {{ direccion.notas_adicionales }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'marketplace:editar_direccion' direccion.id %}" class="btn btn-outline-primary">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                            <form method="post" action="{% url 'marketplace:eliminar_direccion' direccion.id %}" onsubmit="return confirm('¿Estás seguro de eliminar esta dirección?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger">
+                                    <i class="fas fa-trash"></i> Eliminar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <p>No tienes direcciones de envío registradas.</p>
+                    <a href="{% url 'marketplace:agregar_direccion' %}" class="btn btn-primary mt-2">
+                        <i class="fas fa-plus"></i> Agregar mi primera dirección
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div class="mt-4">
+        <a href="{% url 'marketplace:checkout' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al checkout
+        </a>
+    </div>
+</div>
+{% endblock %} 

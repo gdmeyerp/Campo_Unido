@@ -103,7 +103,7 @@
         <div class="col-6 col-md-4 col-lg-3 mb-4">
             <div class="card h-100 border-0 shadow-sm producto-card">
                 <div class="position-relative">
-                    <a href="{% url 'marketplace:producto_detalle' producto.slug %}">
+                    <a href="{% url 'marketplace:detalle_producto' producto.slug %}">
                         {% if producto.imagen_principal %}
                             <img src="{{ producto.imagen_principal.url }}" class="card-img-top" alt="{{ producto.nombre_producto }}">
                         {% else %}
@@ -119,7 +119,7 @@
                 </div>
                 <div class="card-body">
                     <h5 class="card-title">
-                        <a href="{% url 'marketplace:producto_detalle' producto.slug %}" class="text-dark">{{ producto.nombre_producto }}</a>
+                        <a href="{% url 'marketplace:detalle_producto' producto.slug %}" class="text-dark">{{ producto.nombre_producto }}</a>
                     </h5>
                     <p class="card-text small text-muted">{{ producto.categoria_producto.nombre_categoria }}</p>
                     <div class="d-flex justify-content-between align-items-center">
@@ -165,7 +165,7 @@
             <div class="alert alert-info">
                 No se encontraron productos.
                 {% if query or filtros_activos %}
-                    <a href="{% if categoria %}{% url 'marketplace:categoria_detalle_by_id' categoria.categoria_producto_id %}{% else %}{% url 'marketplace:producto_lista' %}{% endif %}" class="btn btn-sm btn-outline-secondary ml-3">Limpiar filtros</a>
+                    <a href="{% if categoria %}{% url 'marketplace:productos_por_categoria' categoria.categoria_producto_id %}{% else %}{% url 'marketplace:lista_productos' %}{% endif %}" class="btn btn-sm btn-outline-secondary ml-3">Limpiar filtros</a>
                 {% endif %}
             </div>
         </div>
@@ -179,7 +179,7 @@
             <div class="row no-gutters">
                 <div class="col-md-3">
                     <div class="position-relative h-100">
-                        <a href="{% url 'marketplace:producto_detalle' producto.slug %}">
+                        <a href="{% url 'marketplace:detalle_producto' producto.slug %}">
                             {% if producto.imagen_principal %}
                                 <img src="{{ producto.imagen_principal.url }}" class="img-fluid rounded-start h-100" alt="{{ producto.nombre_producto }}" style="object-fit: cover;">
                             {% else %}
@@ -199,7 +199,7 @@
                         <div class="row">
                             <div class="col-md-8">
                                 <h5 class="card-title">
-                                    <a href="{% url 'marketplace:producto_detalle' producto.slug %}" class="text-dark">{{ producto.nombre_producto }}</a>
+                                    <a href="{% url 'marketplace:detalle_producto' producto.slug %}" class="text-dark">{{ producto.nombre_producto }}</a>
                                 </h5>
                                 <p class="card-text small text-muted">{{ producto.categoria_producto.nombre_categoria }}</p>
                                 <p class="card-text">{{ producto.descripcion|truncatewords:20 }}</p>
@@ -251,7 +251,7 @@
         <div class="alert alert-info">
             No se encontraron productos.
             {% if query or filtros_activos %}
-                <a href="{% if categoria %}{% url 'marketplace:categoria_detalle_by_id' categoria.categoria_producto_id %}{% else %}{% url 'marketplace:producto_lista' %}{% endif %}" class="btn btn-sm btn-outline-secondary ml-3">Limpiar filtros</a>
+                <a href="{% if categoria %}{% url 'marketplace:productos_por_categoria' categoria.categoria_producto_id %}{% else %}{% url 'marketplace:lista_productos' %}{% endif %}" class="btn btn-sm btn-outline-secondary ml-3">Limpiar filtros</a>
             {% endif %}
         </div>
     {% endfor %}
@@ -328,7 +328,7 @@
         <h5 class="mb-0">Filtros</h5>
     </div>
     <div class="card-body">
-        <form method="get" action="{% if categoria %}{% url 'marketplace:categoria_detalle_by_id' categoria.categoria_producto_id %}{% else %}{% url 'marketplace:producto_lista' %}{% endif %}">
+        <form method="get" action="{% if categoria %}{% url 'marketplace:productos_por_categoria' categoria.categoria_producto_id %}{% else %}{% url 'marketplace:lista_productos' %}{% endif %}">
             {% if query %}<input type="hidden" name="query" value="{{ query }}">{% endif %}
             {% if categoria_id %}<input type="hidden" name="categoria" value="{{ categoria_id }}">{% endif %}
             {% if orden %}<input type="hidden" name="ordenar" value="{{ orden }}">{% endif %}
@@ -366,7 +366,7 @@
             <button type="submit" class="btn btn-primary btn-block">Aplicar filtros</button>
             
             {% if filtros_activos %}
-            <a href="{% if categoria %}{% url 'marketplace:categoria_detalle_by_id' categoria.categoria_producto_id %}{% else %}{% url 'marketplace:producto_lista' %}{% endif %}" class="btn btn-outline-secondary btn-block mt-2">Limpiar filtros</a>
+            <a href="{% if categoria %}{% url 'marketplace:productos_por_categoria' categoria.categoria_producto_id %}{% else %}{% url 'marketplace:lista_productos' %}{% endif %}" class="btn btn-outline-secondary btn-block mt-2">Limpiar filtros</a>
             {% endif %}
         </form>
     </div>
@@ -451,32 +451,37 @@
     document.querySelectorAll('.add-to-wishlist').forEach(button => {
         button.addEventListener('click', function() {
             const productId = this.getAttribute('data-product-id');
-            fetch('/marketplace/api/lista-deseos/agregar/', {
+            fetch('{% url "marketplace:api_lista_deseos_toggle" %}', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: JSON.stringify({
-                    product_id: productId
-                })
+                body: `producto_id=${productId}`
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    this.innerHTML = '<i class="fas fa-heart"></i>';
-                    this.classList.remove('btn-outline-secondary');
-                    this.classList.add('btn-danger');
+                if (data.status === 'success') {
+                    if (data.added) {
+                        this.innerHTML = '<i class="fas fa-heart"></i>';
+                        this.classList.remove('btn-outline-secondary');
+                        this.classList.add('btn-danger');
+                    } else {
+                        this.innerHTML = '<i class="far fa-heart"></i>';
+                        this.classList.remove('btn-danger');
+                        this.classList.add('btn-outline-secondary');
+                    }
                     
                     // Mostrar notificación
-                    alert('Producto añadido a favoritos');
+                    alert(data.message);
                 } else {
-                    alert(data.error || 'Error al añadir a favoritos');
+                    alert(data.message || 'Error al actualizar favoritos');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error al añadir a favoritos');
+                alert('Error al actualizar favoritos');
             });
         });
     });

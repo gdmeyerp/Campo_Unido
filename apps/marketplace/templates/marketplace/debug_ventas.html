@@ -1,0 +1,251 @@
+{% extends "core/dashboard.html" %}
+{% load static %}
+
+{% block title %}Depuración de Ventas - Campo Unido{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Depuración de Ventas</h1>
+                <div>
+                    <a href="{% url 'marketplace:mi_tienda' %}" class="btn btn-primary">
+                        <i class="fas fa-arrow-left"></i> Volver a Mi Tienda
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-info">
+        <h5>Información de Diagnóstico</h5>
+        <p>Esta página muestra datos de diagnóstico para ayudar a identificar problemas con la visualización de ventas.</p>
+    </div>
+
+    <!-- Productos del Vendedor -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Productos del Vendedor ({{ productos.count }})</h5>
+        </div>
+        <div class="card-body">
+            {% if productos %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Precio</th>
+                                <th>Stock</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for producto in productos %}
+                                <tr>
+                                    <td>{{ producto.id }}</td>
+                                    <td>{{ producto.nombre }}</td>
+                                    <td>${{ producto.precio }}</td>
+                                    <td>{{ producto.stock }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <p><strong>IDs de productos:</strong> {{ productos_ids|join:", " }}</p>
+            {% else %}
+                <p>No tienes productos en tu tienda.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Todas las ventas en el sistema -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Ventas en el Sistema (Total: {{ todas_ventas_count }})</h5>
+        </div>
+        <div class="card-body">
+            {% if todas_ventas %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha</th>
+                                <th>Usuario</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for venta in todas_ventas %}
+                                <tr>
+                                    <td>{{ venta.id }}</td>
+                                    <td>{{ venta.fecha_compra|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ venta.usuario.email }}</td>
+                                    <td>${{ venta.total }}</td>
+                                    <td>{{ venta.estado }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p>No hay ventas en el sistema.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Ventas por ID de producto -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Ventas por ID de Producto (Total: {{ ventas_por_producto_count }})</h5>
+        </div>
+        <div class="card-body">
+            {% if ventas_por_producto %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha</th>
+                                <th>Usuario</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for venta in ventas_por_producto %}
+                                <tr>
+                                    <td>{{ venta.id }}</td>
+                                    <td>{{ venta.fecha_compra|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ venta.usuario.email }}</td>
+                                    <td>${{ venta.total }}</td>
+                                    <td>{{ venta.estado }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p>No hay ventas de tus productos (búsqueda por ID).</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Ventas por Vendedor -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Ventas por Vendedor (Total: {{ ventas_por_vendedor_count }})</h5>
+        </div>
+        <div class="card-body">
+            {% if ventas_por_vendedor %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha</th>
+                                <th>Usuario</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                                <th>Tiene Orden</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for venta in ventas_por_vendedor %}
+                                <tr>
+                                    <td>{{ venta.id }}</td>
+                                    <td>{{ venta.fecha_compra|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ venta.usuario.email }}</td>
+                                    <td>${{ venta.total }}</td>
+                                    <td>{{ venta.estado }}</td>
+                                    <td>
+                                        {% if venta.orden %}
+                                            Sí (#{{ venta.orden.numero_orden }})
+                                        {% else %}
+                                            No
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p>No hay ventas de tus productos (búsqueda por vendedor).</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Detalles de Ventas -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Detalles de Ventas (Total: {{ detalles_ventas_count }})</h5>
+        </div>
+        <div class="card-body">
+            {% if detalles_ventas %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Compra ID</th>
+                                <th>Fecha</th>
+                                <th>Producto</th>
+                                <th>Cantidad</th>
+                                <th>Precio Unitario</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for detalle in detalles_ventas %}
+                                <tr>
+                                    <td>{{ detalle.compra.id }}</td>
+                                    <td>{{ detalle.compra.fecha_compra|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ detalle.producto.nombre }}</td>
+                                    <td>{{ detalle.cantidad }}</td>
+                                    <td>${{ detalle.precio_unitario }}</td>
+                                    <td>${{ detalle.subtotal }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p>No hay detalles de ventas para tus productos.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Productos Vendidos -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Productos Vendidos (Total: {{ productos_vendidos|length }})</h5>
+        </div>
+        <div class="card-body">
+            {% if productos_vendidos %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Producto ID</th>
+                                <th>Unidades Vendidas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for producto in productos_vendidos %}
+                                <tr>
+                                    <td>{{ producto.producto }}</td>
+                                    <td>{{ producto.total_vendidos }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p>No se han vendido productos.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -6,6 +6,7 @@
 
 {% block extra_css %}
     {{ block.super }}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         .form-group.required .control-label:after {
             content: "*";
@@ -39,6 +40,20 @@
         </a>
     </div>
 </div>
+
+<!-- Mensajes del sistema -->
+{% if messages %}
+<div class="messages mb-4">
+    {% for message in messages %}
+    <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% elif message.tags == 'warning' %}alert-warning{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
 
 <div class="row">
     <div class="col-md-10 mx-auto">
@@ -111,12 +126,40 @@
 
 {% block extra_js %}
     {{ block.super }}
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
     <script>
         $(document).ready(function() {
-            // Inicializar select2 para los campos de selección
+            // Inicializar select2 para los campos de selección con opciones mejoradas
             $('#id_producto_inventario').select2({
                 theme: 'bootstrap4',
-                placeholder: 'Seleccione un producto'
+                placeholder: 'Seleccione un producto',
+                width: '100%',
+                allowClear: true,
+                ajax: {
+                    url: '{% url "inventario:api_producto_info" %}',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            search: params.term, // término de búsqueda
+                            page: params.page || 1
+                        };
+                    },
+                    processResults: function (data, params) {
+                        params.page = params.page || 1;
+                        return {
+                            results: data.results || [],
+                            pagination: {
+                                more: data.pagination ? data.pagination.more : false
+                            }
+                        };
+                    },
+                    cache: true
+                },
+                minimumInputLength: 1
+            }).on('select2:select', function(e) {
+                cargarInfoProducto(); // Cargar info al seleccionar un producto
             });
             
             $('#id_tipo_movimiento').select2({
@@ -125,9 +168,20 @@
                 minimumResultsForSearch: Infinity
             });
             
+            // Inicializar datepickers para campos de fecha
+            $('input[type="date"]').flatpickr({
+                locale: 'es',
+                altInput: true,
+                altFormat: "d/m/Y",
+                dateFormat: "Y-m-d",
+                allowInput: true
+            });
+            
             // Función para cargar información del producto
             function cargarInfoProducto() {
                 var productoId = $('#id_producto_inventario').val();
+                console.log("Cargando info para producto ID:", productoId);
+                
                 if (productoId) {
                     $.ajax({
                         url: '{% url "inventario:api_producto_info" %}',
@@ -136,11 +190,21 @@
                         },
                         dataType: 'json',
                         success: function(data) {
-                            $('#stock-actual').text(data.cantidad_disponible + ' ' + data.unidad_medida);
-                            $('#stock-minimo').text(data.stock_minimo + ' ' + data.unidad_medida);
-                            $('#stock-maximo').text(data.stock_maximo + ' ' + data.unidad_medida);
-                            $('#stock-info').show();
-                            calcularStockDespues();
+                            console.log("Datos recibidos:", data);
+                            if(data && data.cantidad_disponible !== undefined) {
+                                $('#stock-actual').text(data.cantidad_disponible + ' ' + (data.unidad_medida || ''));
+                                $('#stock-minimo').text(data.stock_minimo + ' ' + (data.unidad_medida || ''));
+                                $('#stock-maximo').text((data.stock_maximo || 'N/A') + ' ' + (data.unidad_medida || ''));
+                                $('#stock-info').show();
+                                calcularStockDespues();
+                            } else {
+                                $('#stock-info').hide();
+                                console.error('Error en datos recibidos:', data);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error al cargar info del producto:', error);
+                            $('#stock-info').hide();
                         }
                     });
                 } else {
@@ -150,7 +214,8 @@
             
             // Función para calcular el stock después del movimiento
             function calcularStockDespues() {
-                var stockActual = parseFloat($('#stock-actual').text());
+                var stockActualText = $('#stock-actual').text();
+                var stockActual = parseFloat(stockActualText) || 0;
                 var cantidad = parseFloat($('#id_cantidad_movimiento').val()) || 0;
                 var tipo = $('#id_tipo_movimiento').val();
                 var stockDespues = stockActual;
@@ -169,7 +234,8 @@
                 if (stockDespues < 0) {
                     $('#stock-despues').removeClass('text-success text-warning').addClass('text-danger');
                 } else {
-                    var stockMinimo = parseFloat($('#stock-minimo').text());
+                    var stockMinimoText = $('#stock-minimo').text();
+                    var stockMinimo = parseFloat(stockMinimoText) || 0;
                     if (stockDespues <= stockMinimo) {
                         $('#stock-despues').removeClass('text-success text-danger').addClass('text-warning');
                     } else {
@@ -179,8 +245,8 @@
             }
             
             // Eventos
-            $('#id_producto_inventario').change(cargarInfoProducto);
-            $('#id_cantidad_movimiento, #id_tipo_movimiento').change(calcularStockDespues);
+            $('#id_producto_inventario').on('change', cargarInfoProducto);
+            $('#id_cantidad_movimiento, #id_tipo_movimiento').on('change', calcularStockDespues);
             
             // Cargar información inicial si hay un producto seleccionado
             if ($('#id_producto_inventario').val()) {

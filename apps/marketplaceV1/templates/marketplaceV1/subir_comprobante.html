@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Subir Comprobante de Pago - Campo Unido{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1>Subir Comprobante de Pago</h1>
+                <a href="{% url 'marketplaceV1:detalle_orden' pago.compra.orden.id %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver a la orden
+                </a>
+            </div>
+            <hr>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Información del Pago</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <p><strong>Orden:</strong> {{ pago.compra.orden.numero_orden }}</p>
+                            <p><strong>Método de pago:</strong> {{ pago.metodo_pago.nombre }}</p>
+                            <p><strong>Monto:</strong> ${{ pago.monto|floatformat:2 }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Estado:</strong> 
+                                <span class="badge 
+                                    {% if pago.estado == 'pendiente' %}badge-warning
+                                    {% elif pago.estado == 'verificado' %}badge-success
+                                    {% elif pago.estado == 'rechazado' %}badge-danger
+                                    {% elif pago.estado == 'reembolsado' %}badge-info
+                                    {% endif %}">
+                                    {{ pago.get_estado_display }}
+                                </span>
+                            </p>
+                            <p><strong>Fecha:</strong> {{ pago.fecha_pago|date:"d/m/Y H:i" }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Instrucciones del método de pago -->
+                    {% if pago.metodo_pago.instrucciones %}
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> Instrucciones de Pago</h6>
+                        <p class="mb-0">{{ pago.metodo_pago.instrucciones|linebreaks }}</p>
+                        
+                        {% if pago.metodo_pago.datos_adicionales %}
+                            {% for key, value in pago.metodo_pago.datos_adicionales.items %}
+                            <p class="mb-0"><strong>{{ key }}:</strong> {{ value }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Formulario para subir comprobante -->
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="form-group">
+                            <label for="comprobante">Comprobante de Pago<span class="text-danger">*</span></label>
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="comprobante" name="comprobante" required>
+                                <label class="custom-file-label" for="comprobante">Seleccionar archivo...</label>
+                                <small class="form-text text-muted">
+                                    Formatos aceptados: JPG, PNG, PDF. Tamaño máximo: 5MB.
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="referencia">Referencia / Número de Transacción</label>
+                            <input type="text" class="form-control" id="referencia" name="referencia" placeholder="Ejemplo: 123456789">
+                            <small class="form-text text-muted">
+                                Número de referencia o transacción que aparece en tu comprobante.
+                            </small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="comentarios">Comentarios Adicionales</label>
+                            <textarea class="form-control" id="comentarios" name="comentarios" rows="3" placeholder="Escribe aquí cualquier información adicional sobre tu pago..."></textarea>
+                        </div>
+                        
+                        <div class="form-group mt-4 text-center">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload"></i> Subir Comprobante
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Script para mostrar el nombre del archivo seleccionado
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelector('.custom-file-input').addEventListener('change', function(e) {
+            var fileName = e.target.files[0].name;
+            var nextSibling = e.target.nextElementSibling;
+            nextSibling.innerText = fileName;
+        });
+    });
+</script>
+{% endblock %} 

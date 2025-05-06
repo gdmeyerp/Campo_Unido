@@ -30,6 +30,13 @@
             {% for categoria in categorias %}
                 <div class="col-6 col-md-4 col-lg-3 mb-4">
                     <div class="card h-100 border-0 shadow-sm">
+                        {% if categoria.imagen %}
+                            <img src="{{ categoria.imagen.url }}" class="card-img-top" alt="{{ categoria.nombre_categoria }}" style="height: 150px; object-fit: cover;">
+                        {% else %}
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
+                                <i class="fas fa-seedling fa-3x text-muted"></i>
+                            </div>
+                        {% endif %}
                         <div class="card-body text-center">
                             <h5 class="card-title">{{ categoria.nombre_categoria }}</h5>
                             <p class="card-text small text-muted">{{ categoria.productos_count }} productos</p>
@@ -52,27 +59,39 @@
 <section class="mb-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="h3 mb-0">Productos destacados</h2>
-        <a href="{% url 'marketplace:producto_lista' %}" class="btn btn-sm btn-outline-success">Ver todos</a>
+        <a href="{% url 'marketplace:lista_productos' %}" class="btn btn-sm btn-outline-success">Ver todos</a>
     </div>
     <div class="row">
         {% if productos_destacados %}
             {% for producto in productos_destacados %}
                 <div class="col-6 col-md-4 col-lg-3 mb-4">
                     <div class="card h-100 border-0 shadow-sm producto-card">
+                        {% if producto.imagen %}
+                            <img src="{{ producto.imagen.url }}" class="card-img-top" alt="{{ producto.nombre_producto }}" style="height: 200px; object-fit: cover;">
+                        {% else %}
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <i class="fas fa-image fa-3x text-muted"></i>
+                            </div>
+                        {% endif %}
                         <div class="card-body">
                             <h5 class="card-title">
-                                <a href="{% url 'marketplace:producto_detalle' producto.producto_id %}" class="text-dark">{{ producto.nombre_producto }}</a>
+                                <a href="{% url 'marketplace:detalle_producto' producto.producto_id %}" class="text-dark">{{ producto.nombre_producto }}</a>
                             </h5>
                             <p class="card-text small text-muted">{{ producto.categoria_producto_id_id.nombre_categoria }}</p>
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <span class="font-weight-bold">${{ producto.precio_base }}</span>
                                 </div>
+                                {% if producto.stock > 0 %}
+                                    <span class="badge bg-success">Disponible</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Agotado</span>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="card-footer bg-white border-top-0">
                             <div class="btn-group btn-block">
-                                <button type="button" class="btn btn-sm btn-outline-primary add-to-cart" data-product-id="{{ producto.producto_id }}">
+                                <button type="button" class="btn btn-sm btn-outline-primary add-to-cart" data-product-id="{{ producto.producto_id }}" {% if producto.stock <= 0 %}disabled{% endif %}>
                                     <i class="fas fa-shopping-cart"></i> Añadir
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-secondary add-to-wishlist" data-product-id="{{ producto.producto_id }}">
@@ -97,16 +116,23 @@
 <section class="mb-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="h3 mb-0">Productos recientes</h2>
-        <a href="{% url 'marketplace:producto_lista' %}?ordenar=fecha_desc" class="btn btn-sm btn-outline-success">Ver todos</a>
+        <a href="{% url 'marketplace:lista_productos' %}?ordenar=fecha_desc" class="btn btn-sm btn-outline-success">Ver todos</a>
     </div>
     <div class="row">
         {% if productos_recientes %}
             {% for producto in productos_recientes %}
                 <div class="col-6 col-md-4 col-lg-3 mb-4">
                     <div class="card h-100 border-0 shadow-sm producto-card">
+                        {% if producto.imagen %}
+                            <img src="{{ producto.imagen.url }}" class="card-img-top" alt="{{ producto.nombre_producto }}" style="height: 200px; object-fit: cover;">
+                        {% else %}
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <i class="fas fa-image fa-3x text-muted"></i>
+                            </div>
+                        {% endif %}
                         <div class="card-body">
                             <h5 class="card-title">
-                                <a href="{% url 'marketplace:producto_detalle' producto.producto_id %}" class="text-dark">{{ producto.nombre_producto }}</a>
+                                <a href="{% url 'marketplace:detalle_producto' producto.producto_id %}" class="text-dark">{{ producto.nombre_producto }}</a>
                             </h5>
                             <p class="card-text small text-muted">{{ producto.categoria_producto_id_id.nombre_categoria }}</p>
                             <div class="d-flex justify-content-between align-items-center">
@@ -118,7 +144,7 @@
                         </div>
                         <div class="card-footer bg-white border-top-0">
                             <div class="btn-group btn-block">
-                                <button type="button" class="btn btn-sm btn-outline-primary add-to-cart" data-product-id="{{ producto.producto_id }}">
+                                <button type="button" class="btn btn-sm btn-outline-primary add-to-cart" data-product-id="{{ producto.producto_id }}" {% if producto.stock <= 0 %}disabled{% endif %}>
                                     <i class="fas fa-shopping-cart"></i> Añadir
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-secondary add-to-wishlist" data-product-id="{{ producto.producto_id }}">
@@ -145,6 +171,7 @@
         {% for categoria in categorias %}
             <li class="list-group-item">
                 <a href="{% url 'marketplace:categoria_detalle_by_id' categoria.categoria_producto_id %}">
+                    <i class="fas fa-{{ categoria.icono|default:'seedling' }} mr-2"></i>
                     {{ categoria.nombre_categoria }}
                     <span class="badge badge-light float-right">{{ categoria.productos_count }}</span>
                 </a>
@@ -153,6 +180,7 @@
                         {% for subcategoria in categoria.get_subcategorias %}
                             <li class="mb-1">
                                 <a href="{% url 'marketplace:categoria_detalle_by_id' subcategoria.categoria_producto_id %}" class="text-muted small">
+                                    <i class="fas fa-{{ subcategoria.icono|default:'leaf' }} mr-2"></i>
                                     {{ subcategoria.nombre_categoria }}
                                     <span class="badge badge-light float-right">{{ subcategoria.productos_count }}</span>
                                 </a>
@@ -211,32 +239,37 @@
     document.querySelectorAll('.add-to-wishlist').forEach(button => {
         button.addEventListener('click', function() {
             const productId = this.getAttribute('data-product-id');
-            fetch('/marketplace/api/lista-deseos/agregar/', {
+            fetch('{% url "marketplace:api_lista_deseos_toggle" %}', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: JSON.stringify({
-                    product_id: productId
-                })
+                body: `producto_id=${productId}`
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    this.innerHTML = '<i class="fas fa-heart"></i>';
-                    this.classList.remove('btn-outline-secondary');
-                    this.classList.add('btn-danger');
+                if (data.status === 'success') {
+                    if (data.added) {
+                        this.innerHTML = '<i class="fas fa-heart"></i>';
+                        this.classList.remove('btn-outline-secondary');
+                        this.classList.add('btn-danger');
+                    } else {
+                        this.innerHTML = '<i class="far fa-heart"></i>';
+                        this.classList.remove('btn-danger');
+                        this.classList.add('btn-outline-secondary');
+                    }
                     
                     // Mostrar notificación
-                    alert('Producto añadido a favoritos');
+                    alert(data.message);
                 } else {
-                    alert(data.error || 'Error al añadir a favoritos');
+                    alert(data.message || 'Error al actualizar favoritos');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error al añadir a favoritos');
+                alert('Error al actualizar favoritos');
             });
         });
     });

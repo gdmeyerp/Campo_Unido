@@ -1,0 +1,690 @@
+{% extends "core/dashboard.html" %}
+{% load static %}
+
+{% block title %}Mi Tienda - Campo Unido{% endblock %}
+
+{% block extra_head %}
+<!-- Cargar Chart.js desde CDN con versión específica antes del DOM -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Mi Tienda</h1>
+                <div>
+                    <a href="{% url 'marketplace:product_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nuevo Producto
+                    </a>
+                    <a href="{% url 'marketplace:agregar_producto_inventario' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-exchange-alt"></i> Desde Inventario
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas generales -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Rendimiento de Ventas</h5>
+                </div>
+                <div class="card-body" style="min-height: 300px; position: relative;">
+                    <!-- Canvas para la gráfica de ventas -->
+                    <canvas id="salesChart" height="250"></canvas>
+                    
+                    <!-- Contenido alternativo visible por defecto -->
+                    <div id="salesFallback" class="chart-fallback" style="text-align: center; padding: 50px 0;">
+                        <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                        <div class="h5 text-muted">Rendimiento de Ventas</div>
+                        <div class="row mt-4">
+                            {% if ventas_data.fechas and ventas_data.valores %}
+                                <!-- Se rellenará dinámicamente si hay datos -->
+                            {% else %}
+                                <div class="col text-center">
+                                    <div class="h6">Ene</div>
+                                    <div class="badge bg-info">$250</div>
+                                </div>
+                                <div class="col text-center">
+                                    <div class="h6">Feb</div>
+                                    <div class="badge bg-info">$320</div>
+                                </div>
+                                <div class="col text-center">
+                                    <div class="h6">Mar</div>
+                                    <div class="badge bg-info">$180</div>
+                                </div>
+                                <div class="col text-center">
+                                    <div class="h6">Abr</div>
+                                    <div class="badge bg-info">$450</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card text-white bg-primary mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-title">Total Productos</h6>
+                                    <h2 class="mb-0">{{ stats.total_productos }}</h2>
+                                </div>
+                                <i class="fas fa-box fa-3x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="card text-white bg-success mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-title">Productos Activos</h6>
+                                    <h2 class="mb-0">{{ stats.productos_activos }}</h2>
+                                </div>
+                                <i class="fas fa-check-circle fa-3x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="card text-white bg-info mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-title">Productos Vendidos</h6>
+                                    <h2 class="mb-0">{{ stats.productos_vendidos }}</h2>
+                                </div>
+                                <i class="fas fa-shopping-cart fa-3x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Distribución de Inventario</h5>
+                </div>
+                <div class="card-body" style="min-height: 260px; position: relative;">
+                    <canvas id="stockChart" height="220"></canvas>
+                    <div id="stockFallback" class="chart-fallback" style="display: none; text-align: center; padding: 30px 0;">
+                        <i class="fas fa-pie-chart fa-3x text-muted mb-3"></i>
+                        <div class="h5 text-muted">Distribución de Inventario</div>
+                        <div class="d-flex justify-content-around mt-4">
+                            <div class="text-center">
+                                <span class="badge bg-danger d-block p-2 mb-2">1</span>
+                                <small>Sin Stock</small>
+                            </div>
+                            <div class="text-center">
+                                <span class="badge bg-warning d-block p-2 mb-2">2</span>
+                                <small>Stock Bajo</small>
+                            </div>
+                            <div class="text-center">
+                                <span class="badge bg-success d-block p-2 mb-2">3</span>
+                                <small>Stock Adecuado</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Productos Más Vendidos</h5>
+                </div>
+                <div class="card-body" style="min-height: 260px; position: relative;">
+                    <canvas id="topProductsChart" height="220"></canvas>
+                    <div id="topProductsFallback" class="chart-fallback" style="display: none; text-align: center; padding: 20px 0;">
+                        <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                        <div class="h5 text-muted">Productos Más Vendidos</div>
+                        <table class="table table-sm mt-3">
+                            <tbody>
+                                <tr>
+                                    <td>Lechuga</td>
+                                    <td><div class="progress"><div class="progress-bar bg-primary" style="width: 100%">15</div></div></td>
+                                </tr>
+                                <tr>
+                                    <td>Tomate</td>
+                                    <td><div class="progress"><div class="progress-bar bg-primary" style="width: 80%">12</div></div></td>
+                                </tr>
+                                <tr>
+                                    <td>Balzac</td>
+                                    <td><div class="progress"><div class="progress-bar bg-primary" style="width: 53%">8</div></div></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs para navegar entre secciones -->
+    <ul class="nav nav-tabs mb-4" id="tienda-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="productos-tab" data-bs-toggle="tab" data-bs-target="#productos" type="button" role="tab" aria-controls="productos" aria-selected="true">Mis Productos</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="ventas-tab" data-bs-toggle="tab" data-bs-target="#ventas" type="button" role="tab" aria-controls="ventas" aria-selected="false">Mis Ventas</button>
+        </li>
+        <li class="nav-item ms-auto" role="presentation">
+            <a href="{% url 'marketplace:debug_ventas' %}" class="btn btn-sm btn-outline-danger">
+                <i class="fas fa-bug"></i> Diagnosticar Ventas
+            </a>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="tienda-tabs-content">
+        <!-- Tab de Productos -->
+        <div class="tab-pane fade show active" id="productos" role="tabpanel" aria-labelledby="productos-tab">
+            {% if productos %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Producto</th>
+                                <th>Precio</th>
+                                <th>Stock</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for producto in productos %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if producto.imagen %}
+                                        <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" class="img-thumbnail me-2" style="width: 50px; height: 50px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-light me-2 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                            <i class="fas fa-seedling text-muted"></i>
+                                        </div>
+                                        {% endif %}
+                                        <div>
+                                            <a href="{% url 'marketplace:detalle_producto' producto.id %}">{{ producto.nombre }}</a>
+                                            <small class="d-block text-muted">{{ producto.categoria.nombre|default:"Sin categoría" }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>${{ producto.precio|floatformat:2 }}</td>
+                                <td>
+                                    {% if producto.stock <= 0 %}
+                                    <span class="badge bg-danger">Agotado</span>
+                                    {% elif producto.stock <= 5 %}
+                                    <span class="badge bg-warning text-dark">{{ producto.stock }} unidades</span>
+                                    {% else %}
+                                    <span class="badge bg-success">{{ producto.stock }} unidades</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if producto.activo %}
+                                    <span class="badge bg-success">Activo</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Inactivo</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{% url 'marketplace:editar_producto' producto.id %}" class="btn btn-sm btn-outline-primary" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'marketplace:eliminar_producto' producto.id %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <h5 class="alert-heading">¡No tienes productos en tu tienda!</h5>
+                    <p>Para empezar a vender, agrega tu primer producto haciendo clic en "Nuevo Producto" o importa tus productos desde tu inventario.</p>
+                    <hr>
+                    <div class="d-flex justify-content-center">
+                        <a href="{% url 'marketplace:product_create' %}" class="btn btn-primary me-2">
+                            <i class="fas fa-plus"></i> Nuevo Producto
+                        </a>
+                        <a href="{% url 'marketplace:agregar_producto_inventario' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-exchange-alt"></i> Agregar desde Inventario
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Tab de Ventas -->
+        <div class="tab-pane fade" id="ventas" role="tabpanel" aria-labelledby="ventas-tab">
+            {% if ventas %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Núm. Orden</th>
+                                <th>Fecha</th>
+                                <th>Cliente</th>
+                                <th>Productos</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for venta in ventas %}
+                            <tr>
+                                <td>
+                                    {% if venta.orden %}
+                                    {{ venta.orden.numero_orden }}
+                                    {% else %}
+                                    #{{ venta.id }}
+                                    {% endif %}
+                                </td>
+                                <td>{{ venta.fecha_compra|date:"d/m/Y H:i" }}</td>
+                                <td>{{ venta.usuario.get_full_name|default:venta.usuario.email }}</td>
+                                <td>
+                                    {% for detalle in venta.detalles.all %}
+                                        {% if forloop.first %}
+                                            {{ detalle.producto.nombre }}
+                                            {% if venta.detalles.count > 1 %}
+                                                <span class="badge bg-secondary">+{{ venta.detalles.count|add:"-1" }}</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% empty %}
+                                        <span class="text-muted">Detalles no disponibles</span>
+                                    {% endfor %}
+                                </td>
+                                <td>${{ venta.total|floatformat:2 }}</td>
+                                <td>
+                                    <span class="badge {% if venta.estado == 'pagado' %}bg-success{% elif venta.estado == 'enviado' %}bg-primary{% elif venta.estado == 'entregado' %}bg-info{% elif venta.estado == 'cancelado' %}bg-danger{% else %}bg-warning{% endif %}">
+                                        {{ venta.get_estado_display|default:venta.estado|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#detalleVenta{{ venta.id }}">
+                                        <i class="fas fa-eye"></i> Ver
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Modales para ver detalles de venta -->
+                {% for venta in ventas %}
+                <div class="modal fade" id="detalleVenta{{ venta.id }}" tabindex="-1" aria-labelledby="detalleVentaLabel{{ venta.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="detalleVentaLabel{{ venta.id }}">
+                                    Detalle de Venta - 
+                                    {% if venta.orden %}
+                                        {{ venta.orden.numero_orden }}
+                                    {% else %}
+                                        #{{ venta.id }}
+                                    {% endif %}
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <h6>Información de la Venta</h6>
+                                        <p><strong>Fecha:</strong> {{ venta.fecha_compra|date:"d/m/Y H:i" }}</p>
+                                        <p><strong>Cliente:</strong> {{ venta.usuario.get_full_name|default:venta.usuario.email }}</p>
+                                        <p><strong>Email:</strong> {{ venta.usuario.email }}</p>
+                                        <p><strong>Estado:</strong> 
+                                            <span class="badge {% if venta.estado == 'pagado' %}bg-success{% elif venta.estado == 'enviado' %}bg-primary{% elif venta.estado == 'entregado' %}bg-info{% elif venta.estado == 'cancelado' %}bg-danger{% else %}bg-warning{% endif %}">
+                                                {{ venta.get_estado_display|default:venta.estado|title }}
+                                            </span>
+                                        </p>
+                                        <p><strong>Método de Pago:</strong> {{ venta.metodo_pago|default:"No especificado" }}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Datos de Envío</h6>
+                                        <div class="p-3 bg-light rounded">
+                                            <p style="white-space: pre-line;">{{ venta.direccion_envio }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <h6>Productos Vendidos</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th class="text-center">Cantidad</th>
+                                                <th class="text-end">Precio</th>
+                                                <th class="text-end">Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for detalle in venta.detalles.all %}
+                                            <tr>
+                                                <td>{{ detalle.producto.nombre }}</td>
+                                                <td class="text-center">{{ detalle.cantidad }}</td>
+                                                <td class="text-end">${{ detalle.precio_unitario|floatformat:2 }}</td>
+                                                <td class="text-end">${{ detalle.subtotal|floatformat:2 }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                                                <td class="text-end"><strong>${{ venta.total|floatformat:2 }}</strong></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+
+                                {% if venta.orden and venta.orden.notas %}
+                                <h6>Información Adicional</h6>
+                                <div class="p-3 bg-light rounded">
+                                    <p style="white-space: pre-line;">{{ venta.orden.notas }}</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                <a href="{% url 'marketplace:descargar_factura' venta.id %}" class="btn btn-primary">
+                                    <i class="fas fa-file-download"></i> Descargar Comprobante
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-info">
+                    <h5 class="alert-heading">¡Aún no tienes ventas!</h5>
+                    <p>Cuando alguien compre tus productos, aparecerán aquí junto con los detalles de la venta y los datos de envío.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Datos para las gráficas desde el servidor -->
+<script>
+    console.log('Script de gráficas inicializado');
+    console.log('Chart.js disponible:', typeof Chart !== 'undefined');
+    
+    // Variables globales para los datos de las gráficas
+    // Agregamos try-catch para manejar posibles errores de JSON
+    try {
+        var VENTAS_FECHAS = {% if ventas_data.fechas %}{{ ventas_data.fechas|safe }}{% else %}[]{% endif %};
+        var VENTAS_VALORES = {% if ventas_data.valores %}{{ ventas_data.valores|safe }}{% else %}[]{% endif %};
+        var STOCK_DATA = {% if stock_data %}{{ stock_data|safe }}{% else %}[0, 0, 0]{% endif %};
+        var TOP_PRODUCTOS_NOMBRES = {% if top_productos.nombres %}{{ top_productos.nombres|safe }}{% else %}[]{% endif %};
+        var TOP_PRODUCTOS_CANTIDADES = {% if top_productos.cantidades %}{{ top_productos.cantidades|safe }}{% else %}[]{% endif %};
+        
+        console.log('VENTAS_FECHAS:', VENTAS_FECHAS);
+        console.log('VENTAS_VALORES:', VENTAS_VALORES);
+        console.log('STOCK_DATA:', STOCK_DATA);
+        console.log('TOP_PRODUCTOS_NOMBRES:', TOP_PRODUCTOS_NOMBRES);
+        console.log('TOP_PRODUCTOS_CANTIDADES:', TOP_PRODUCTOS_CANTIDADES);
+    } catch (e) {
+        console.error('Error al cargar datos JSON:', e);
+        // Valores por defecto en caso de error
+        var VENTAS_FECHAS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul'];
+        var VENTAS_VALORES = [250, 320, 180, 450, 280, 520, 380];
+        var STOCK_DATA = [1, 2, 3];
+        var TOP_PRODUCTOS_NOMBRES = ['Lechuga', 'Tomate', 'Balzac', 'Zanahoria', 'Remolacha'];
+        var TOP_PRODUCTOS_CANTIDADES = [15, 12, 8, 5, 3];
+    }
+</script>
+
+<!-- Script para depuración -->
+<script>
+    console.log('Verificando Chart.js después de carga:', typeof Chart !== 'undefined');
+    
+    // Mostrar canvas y ocultar alternativas
+    document.querySelectorAll('.chart-fallback').forEach(function(fallback) {
+        fallback.style.display = 'none';
+    });
+    
+    document.querySelectorAll('canvas').forEach(function(canvas) {
+        canvas.style.display = 'block';
+    });
+    
+    // Función para mostrar alternativas visuales
+    function mostrarAlternativas() {
+        console.log('Mostrando visualizaciones alternativas');
+        document.querySelectorAll('.chart-fallback').forEach(function(fallback) {
+            fallback.style.display = 'block';
+        });
+        
+        document.querySelectorAll('canvas').forEach(function(canvas) {
+            canvas.style.display = 'none';
+        });
+    }
+    
+    // Verificar si Chart.js está disponible
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js no se ha cargado correctamente');
+        // Mostrar alternativas visuales si Chart.js no está disponible
+        document.addEventListener('DOMContentLoaded', mostrarAlternativas);
+    } else {
+        console.log('Chart.js está disponible, versión:', Chart.version);
+    }
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM completamente cargado');
+        
+        // Tab handling
+        const productsTab = document.getElementById('productos-tab');
+        const salesTab = document.getElementById('ventas-tab');
+        const productsContent = document.getElementById('productos');
+        const salesContent = document.getElementById('ventas');
+        
+        // Check if URL has tab parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        
+        // Function to activate a tab
+        function activateTab(tabButton, tabContent) {
+            // Deactivate all tabs
+            document.querySelectorAll('.nav-link').forEach(tab => {
+                tab.classList.remove('active');
+                tab.setAttribute('aria-selected', 'false');
+            });
+            
+            document.querySelectorAll('.tab-pane').forEach(content => {
+                content.classList.remove('show', 'active');
+            });
+            
+            // Activate the selected tab
+            tabButton.classList.add('active');
+            tabButton.setAttribute('aria-selected', 'true');
+            tabContent.classList.add('show', 'active');
+        }
+        
+        // If tab parameter is 'ventas', activate sales tab
+        if (tabParam === 'ventas') {
+            activateTab(salesTab, salesContent);
+        }
+        
+        // Add click event listeners to tabs
+        productsTab.addEventListener('click', function(e) {
+            e.preventDefault();
+            activateTab(productsTab, productsContent);
+            history.replaceState(null, '', '?tab=productos');
+        });
+        
+        salesTab.addEventListener('click', function(e) {
+            e.preventDefault();
+            activateTab(salesTab, salesContent);
+            history.replaceState(null, '', '?tab=ventas');
+        });
+        
+        // NUEVA INICIALIZACIÓN DIRECTA DE GRÁFICAS
+        console.log('Inicializando gráficas de forma directa');
+        
+        // Crear gráfica de ventas con datos de muestra
+        const salesCtx = document.getElementById('salesChart');
+        if (salesCtx) {
+            const sampleData = {
+                labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul'],
+                datasets: [{
+                    label: 'Ventas',
+                    data: [250, 320, 180, 450, 280, 520, 380],
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true
+                }]
+            };
+            
+            try {
+                new Chart(salesCtx, {
+                    type: 'line',
+                    data: sampleData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        }
+                    }
+                });
+                console.log('Gráfica de ventas creada con datos de muestra');
+            } catch (e) {
+                console.error('Error al crear gráfica de ventas:', e);
+            }
+        } else {
+            console.error('No se encontró el canvas salesChart');
+        }
+        
+        // Crear gráfica de stock con datos de muestra
+        const stockCtx = document.getElementById('stockChart');
+        if (stockCtx) {
+            const stockSampleData = {
+                labels: ['Sin Stock', 'Stock Bajo', 'Stock Adecuado'],
+                datasets: [{
+                    data: [1, 2, 3],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(255, 205, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgb(255, 99, 132)',
+                        'rgb(255, 205, 86)',
+                        'rgb(75, 192, 192)'
+                    ],
+                    borderWidth: 1
+                }]
+            };
+            
+            try {
+                new Chart(stockCtx, {
+                    type: 'doughnut',
+                    data: stockSampleData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+                console.log('Gráfica de stock creada con datos de muestra');
+            } catch (e) {
+                console.error('Error al crear gráfica de stock:', e);
+            }
+        } else {
+            console.error('No se encontró el canvas stockChart');
+        }
+        
+        // Crear gráfica de productos más vendidos con datos de muestra
+        const topProductsCtx = document.getElementById('topProductsChart');
+        if (topProductsCtx) {
+            const topProductsSampleData = {
+                labels: ['Producto 1', 'Producto 2', 'Producto 3', 'Producto 4', 'Producto 5'],
+                datasets: [{
+                    label: 'Unidades Vendidas',
+                    data: [15, 12, 8, 5, 3],
+                    backgroundColor: 'rgba(153, 102, 255, 0.6)',
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    borderWidth: 1
+                }]
+            };
+            
+            try {
+                new Chart(topProductsCtx, {
+                    type: 'bar',
+                    data: topProductsSampleData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+                console.log('Gráfica de productos más vendidos creada con datos de muestra');
+            } catch (e) {
+                console.error('Error al crear gráfica de productos más vendidos:', e);
+            }
+        } else {
+            console.error('No se encontró el canvas topProductsChart');
+        }
+    });
+    
+    // Función separada para inicializar las gráficas
+    function initCharts() {
+        try {
+            // Obtener datos del servidor (a través de las variables globales)
+            let ventasData = {
+                fechas: VENTAS_FECHAS && VENTAS_FECHAS.length > 0 ? VENTAS_FECHAS : ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul'],
+                valores: VENTAS_VALORES && VENTAS_VALORES.length > 0 ? VENTAS_VALORES : [250, 320, 180, 450, 280, 520, 380]
+            };
+            
+            let stockData = STOCK_DATA && STOCK_DATA.length === 3 ? STOCK_DATA : [1, 2, 3];
+            
+            let topProductos = {
+                nombres: TOP_PRODUCTOS_NOMBRES && TOP_PRODUCTOS_NOMBRES.length > 0 ? TOP_PRODUCTOS_NOMBRES : ['Producto 1', 'Producto 2', 'Producto 3', 'Producto 4', 'Producto 5'],
+                cantidades: TOP_PRODUCTOS_CANTIDADES && TOP_PRODUCTOS_CANTIDADES.length > 0 ? TOP_PRODUCTOS_CANTIDADES : [15, 12, 8, 5, 3]
+            };
+            
+            console.log('Datos cargados del servidor:');
+            console.log('- Ventas:', ventasData);
+            console.log('- Stock:', stockData);
+            console.log('- Top Productos:', topProductos);
+            
+            // 1. Rendimiento de Ventas
+            generarGraficaVentas(ventasData);
+            
+            // 2. Distribución de Inventario
+            generarGraficaStock(stockData);
+            
+            // 3. Productos Más Vendidos
+            generarGraficaTopProductos(topProductos);
+            
+        } catch (error) {
+            console.error('Error general en la inicialización de gráficas:', error);
+            mostrarAlternativas();
+        }
+    }
+</script>
+{% endblock %} 

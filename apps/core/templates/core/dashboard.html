@@ -17,6 +17,10 @@
      crossorigin=""/>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Swiper.js CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
+    <!-- Custom Swiper Gallery CSS -->
+    <link rel="stylesheet" href="{% static 'css/swiper-gallery.css' %}">
     
     {% block css %}{% endblock %}
     
@@ -72,7 +76,7 @@
                             <div class="collapse" id="marketplaceDropdown">
                               <ul class="nav flex-column ml-3">
                                 <li class="nav-item">
-                                    <a class="nav-link {% if 'marketplace' in request.path %}active{% endif %}" href="{% url 'marketplace:home' %}">
+                                    <a class="nav-link {% if 'marketplace' in request.path %}active{% endif %}" href="{% url 'marketplace:marketplace_home' %}">
                                         <i class="fas fa-store"></i> Inicio
                                     </a>
                                 </li>
@@ -97,8 +101,8 @@
                                   </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" href="#">
-                                        <i class="fas fa-shopping-cart"></i> Órdenes
+                                  <a class="nav-link small {% if 'lista_pedidos' in request.path %}active{% endif %}" href="{% url 'marketplace:lista_pedidos' %}">
+                                    <i class="fas fa-shopping-cart"></i> Órdenes
                                     </a>
                                 </li>
                               </ul>
@@ -124,7 +128,7 @@
                                 </li>
                                                         <!-- Monitorización (como en el mockup) -->
                                 <li class="nav-item">
-                                    <a class="nav-link {% if request.path == '/dashboard/' %}active{% endif %}" href="{% url 'core:monitorizacion' %}">
+                                    <a class="nav-link {% if request.path == '/dashboard/monitorizacion/' %}active{% endif %}" href="{% url 'core:monitorizacion' %}">
                                         <i class="fas fa-chart-bar"></i> Monitorización
                                     </a>
                                 </li>
@@ -279,6 +283,11 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
      crossorigin=""></script>
+    
+    <!-- Swiper.js (for image sliders) -->
+    <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+    <!-- Custom Swiper initialization -->
+    <script src="{% static 'js/swiper-init.js' %}"></script>
     
     <!-- Chart.js (para gráficos) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

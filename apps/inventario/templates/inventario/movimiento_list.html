@@ -13,6 +13,20 @@
     </div>
 </div>
 
+<!-- Mensajes del sistema -->
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+    <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% elif message.tags == 'warning' %}alert-warning{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
 <!-- Filtros -->
 <div class="card mb-4">
     <div class="card-header">
@@ -26,7 +40,7 @@
                     <option value="">Todos los productos</option>
                     {% for p in productos %}
                     <option value="{{ p.id }}" {% if request.GET.producto == p.id|stringformat:"i" %}selected{% endif %}>
-                        {{ p.nombre }}
+                        {{ p.nombre_producto }}
                     </option>
                     {% endfor %}
                 </select>
@@ -41,12 +55,12 @@
                 </select>
             </div>
             <div class="col-md-3 mb-3">
-                <label for="fecha_desde">Fecha Desde</label>
-                <input type="text" class="form-control datepicker" id="fecha_desde" name="fecha_desde" value="{{ request.GET.fecha_desde|default:'' }}" placeholder="YYYY-MM-DD">
+                <label for="fecha_inicio">Fecha Desde</label>
+                <input type="date" class="form-control datepicker" id="fecha_inicio" name="fecha_inicio" value="{{ request.GET.fecha_inicio }}">
             </div>
             <div class="col-md-3 mb-3">
-                <label for="fecha_hasta">Fecha Hasta</label>
-                <input type="text" class="form-control datepicker" id="fecha_hasta" name="fecha_hasta" value="{{ request.GET.fecha_hasta|default:'' }}" placeholder="YYYY-MM-DD">
+                <label for="fecha_fin">Fecha Hasta</label>
+                <input type="date" class="form-control datepicker" id="fecha_fin" name="fecha_fin" value="{{ request.GET.fecha_fin }}">
             </div>
             <div class="col-md-3 mb-3">
                 <label for="referencia">Referencia</label>
@@ -84,7 +98,7 @@
         </div>
     </div>
     <div class="card-body">
-        {% if movimientos %}
+        {% if page_obj.object_list or movimientos %}
         <div class="table-responsive">
             <table class="table table-hover">
                 <thead>
@@ -99,7 +113,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for movimiento in movimientos %}
+                    {% for movimiento in page_obj.object_list|default:movimientos %}
                     <tr>
                         <td>{{ movimiento.fecha_movimiento|date:"d/m/Y H:i" }}</td>
                         <td>
@@ -112,7 +126,7 @@
                                 {{ movimiento.tipo_movimiento }}
                             </span>
                         </td>
-                        <td class="text-right">{{ movimiento.cantidad_movimiento }} {{ movimiento.producto_inventario.unidad_medida.simbolo }}</td>
+                        <td class="text-right">{{ movimiento.cantidad_movimiento }}{% if movimiento.producto_inventario.unidad_medida %} {{ movimiento.producto_inventario.unidad_medida.simbolo }}{% endif %}</td>
                         <td>{{ movimiento.referencia_documento|default:"-" }}</td>
                         <td>{{ movimiento.usuario.get_full_name|default:movimiento.usuario.email }}</td>
                         <td>
@@ -131,7 +145,7 @@
         </div>
         
         <!-- Paginación -->
-        {% if is_paginated %}
+        {% if page_obj.paginator.num_pages > 1 %}
         <nav aria-label="Paginación de movimientos">
             <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}
@@ -208,18 +222,22 @@
 
 {% block extra_js %}
     {{ block.super }}
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
     <script>
         $(document).ready(function() {
-            // Inicializar select2 para los campos de selección
-            $('#producto, #usuario').select2({
+            // Inicializar select2 para los filtros
+            $('.select2').select2({
                 theme: 'bootstrap4'
             });
             
-            // Inicializar datepickers
-            $('.datepicker').datepicker({
-                format: 'yyyy-mm-dd',
-                autoclose: true,
-                todayHighlight: true
+            // Inicializar datepickers para filtros de fecha
+            $('.datepicker').flatpickr({
+                locale: 'es',
+                altInput: true,
+                altFormat: "d/m/Y",
+                dateFormat: "Y-m-d",
+                allowInput: true
             });
         });
     </script>

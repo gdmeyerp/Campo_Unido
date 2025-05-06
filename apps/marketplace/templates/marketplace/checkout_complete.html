@@ -1,0 +1,94 @@
+{% extends 'core/dashboard.html' %}
+{% load static %}
+
+{% block title %}Compra Finalizada - Campo Unido{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h3 class="card-title mb-0">¡Compra Realizada con Éxito!</h3>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle text-success fa-5x mb-3"></i>
+                        <h4>Gracias por tu compra</h4>
+                        <p class="lead">Tu número de orden es: <strong>{{ orden.numero_orden }}</strong></p>
+                        <p>El comprobante se está descargando automáticamente. Si la descarga no comienza, haz clic en el botón de abajo.</p>
+                    </div>
+                    
+                    <div id="countdown" class="alert alert-info">
+                        Redirigiendo a los detalles de tu pedido en <span id="countdown-number">5</span> segundos...
+                    </div>
+                    
+                    <div class="d-grid gap-2 col-md-8 mx-auto">
+                        <a href="{% url 'marketplace:descargar_factura' compra.id %}" class="btn btn-primary">
+                            <i class="fas fa-file-download me-2"></i>Descargar Comprobante
+                        </a>
+                        <a href="{% url 'marketplace:detalle_pedido' compra.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-eye me-2"></i>Ver Detalles del Pedido
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+{{ block.super }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Variables globales
+        const downloadUrl = "{% url 'marketplace:descargar_factura' compra.id %}";
+        const redirectUrl = "{% url 'marketplace:detalle_pedido' compra.id %}";
+        const statusDiv = document.createElement('div');
+        statusDiv.className = 'alert alert-info mt-3';
+        statusDiv.innerHTML = 'Preparando la descarga del comprobante...';
+        document.querySelector('.card-body').appendChild(statusDiv);
+        
+        // Intentar primero una descarga directa
+        window.location.href = downloadUrl;
+        
+        // Como respaldo, intentar otros métodos de descarga
+        setTimeout(function() {
+            statusDiv.innerHTML = 'Iniciando descarga automática...';
+            
+            // Método 1: Crear un link invisible y hacer clic en él
+            const downloadLink = document.createElement('a');
+            downloadLink.href = downloadUrl;
+            downloadLink.style.display = 'none';
+            downloadLink.setAttribute('download', 'comprobante.pdf');
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            
+            // Método 2: Como respaldo, también usar un iframe
+            setTimeout(function() {
+                statusDiv.innerHTML = 'Verificando descarga...';
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = downloadUrl;
+                document.body.appendChild(iframe);
+            }, 1000);
+        }, 1000);
+        
+        // Countdown para redirect
+        let countdown = 7; // Aumentamos el tiempo para permitir que la descarga inicie
+        const countdownElement = document.getElementById('countdown-number');
+        
+        const interval = setInterval(function() {
+            countdown--;
+            countdownElement.textContent = countdown;
+            
+            if (countdown <= 0) {
+                clearInterval(interval);
+                statusDiv.innerHTML = 'Redirigiendo a los detalles del pedido...';
+                window.location.href = redirectUrl;
+            }
+        }, 1000);
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,399 @@
+{% extends "core/dashboard.html" %}
+{% load static %}
+
+{% block title %}Buscar Cercanos - Campo Unido{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+        <h1 class="h2">Buscar Personas Cercanas</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'ubicaciones:mis_ubicaciones' %}" class="btn btn-outline-secondary">
+                <span data-feather="arrow-left"></span> Volver a Mis Ubicaciones
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Buscar Personas en tu Área</h5>
+                </div>
+                <div class="card-body">
+                    <div id="map" style="height: 500px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Filtros de Búsqueda</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="mb-4">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="distancia">Distancia máxima (km)</label>
+                                    <input type="number" class="form-control" id="distancia" name="distancia" value="{{ distancia }}" min="1" max="1000">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="tipo">Tipo de usuario</label>
+                                    <select class="form-control" id="tipo" name="tipo">
+                                        <option value="">Todos</option>
+                                        <option value="comprador" {% if tipo_usuario == 'comprador' %}selected{% endif %}>Comprador</option>
+                                        <option value="vendedor" {% if tipo_usuario == 'vendedor' %}selected{% endif %}>Vendedor</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="pais">País</label>
+                                    <select class="form-control" id="id_pais" name="pais">
+                                        <option value="">Todos los países</option>
+                                        {% for pais in paises %}
+                                            <option value="{{ pais.id }}" {% if pais_seleccionado|stringformat:"s" == pais.id|stringformat:"s" %}selected{% endif %}>
+                                                {{ pais.nombre }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="estado">Estado/Departamento</label>
+                                    <select class="form-control" id="id_estado" name="estado" {% if not pais_seleccionado %}disabled{% endif %}>
+                                        <option value="">Todos los estados</option>
+                                        {% for estado in estados %}
+                                            <option value="{{ estado.id }}" {% if estado_seleccionado|stringformat:"s" == estado.id|stringformat:"s" %}selected{% endif %}>
+                                                {{ estado.nombre }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mt-3">
+                                <div class="form-group">
+                                    <label for="ciudad">Ciudad</label>
+                                    <select class="form-control" id="id_ciudad" name="ciudad" {% if not estado_seleccionado %}disabled{% endif %}>
+                                        <option value="">Todas las ciudades</option>
+                                        {% for ciudad in ciudades %}
+                                            <option value="{{ ciudad.id }}" {% if ciudad_seleccionada|stringformat:"s" == ciudad.id|stringformat:"s" %}selected{% endif %}>
+                                                {{ ciudad.nombre }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">Aplicar filtros</button>
+                                <a href="{% url 'ubicaciones:buscar_cercanos' %}" class="btn btn-secondary">Limpiar filtros</a>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h5>Resultados de la búsqueda</h5>
+                            {% if ubicaciones or mis_ubicaciones %}
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Usuario</th>
+                                                <th>Nombre de la ubicación</th>
+                                                <th>Dirección</th>
+                                                <th>Ciudad</th>
+                                                <th>Estado/Provincia</th>
+                                                <th>País</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% if ubicacion_principal %}
+                                                <tr class="table-primary">
+                                                    <td><strong>Tú (Principal)</strong></td>
+                                                    <td>{{ ubicacion_principal.nombre }}</td>
+                                                    <td>{{ ubicacion_principal.direccion }}</td>
+                                                    <td>{{ ubicacion_principal.ciudad.nombre }}</td>
+                                                    <td>{{ ubicacion_principal.ciudad.estado.nombre }}</td>
+                                                    <td>{{ ubicacion_principal.ciudad.estado.pais.nombre }}</td>
+                                                    <td>
+                                                        <button 
+                                                            class="btn btn-sm btn-primary mostrar-en-mapa"
+                                                            data-lat="{{ ubicacion_principal.latitud }}"
+                                                            data-lng="{{ ubicacion_principal.longitud }}"
+                                                            data-nombre="{{ ubicacion_principal.nombre }}"
+                                                            data-usuario="Tu ubicación principal">
+                                                            <span data-feather="map-pin"></span> Ver en mapa
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            {% endif %}
+                                            
+                                            {% for ubicacion in mis_ubicaciones %}
+                                                <tr class="table-success">
+                                                    <td><strong>Tú</strong></td>
+                                                    <td>{{ ubicacion.nombre }}</td>
+                                                    <td>{{ ubicacion.direccion }}</td>
+                                                    <td>{{ ubicacion.ciudad.nombre }}</td>
+                                                    <td>{{ ubicacion.ciudad.estado.nombre }}</td>
+                                                    <td>{{ ubicacion.ciudad.estado.pais.nombre }}</td>
+                                                    <td>
+                                                        <button 
+                                                            class="btn btn-sm btn-success mostrar-en-mapa"
+                                                            data-lat="{{ ubicacion.latitud }}"
+                                                            data-lng="{{ ubicacion.longitud }}"
+                                                            data-nombre="{{ ubicacion.nombre }}"
+                                                            data-usuario="Tu ubicación">
+                                                            <span data-feather="map-pin"></span> Ver en mapa
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                            
+                                            {% for ubicacion in ubicaciones %}
+                                                <tr>
+                                                    <td>{{ ubicacion.usuario.username }}</td>
+                                                    <td>{{ ubicacion.nombre }}</td>
+                                                    <td>{{ ubicacion.direccion }}</td>
+                                                    <td>{{ ubicacion.ciudad.nombre }}</td>
+                                                    <td>{{ ubicacion.ciudad.estado.nombre }}</td>
+                                                    <td>{{ ubicacion.ciudad.estado.pais.nombre }}</td>
+                                                    <td>
+                                                        <button 
+                                                            class="btn btn-sm btn-info mostrar-en-mapa"
+                                                            data-lat="{{ ubicacion.latitud }}"
+                                                            data-lng="{{ ubicacion.longitud }}"
+                                                            data-nombre="{{ ubicacion.nombre }}"
+                                                            data-usuario="{{ ubicacion.usuario.username }}">
+                                                            <span data-feather="map-pin"></span> Ver en mapa
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-secondary">
+                                    No se encontraron resultados. Prueba a ajustar los filtros de búsqueda.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block css %}
+<style>
+    #map {
+        width: 100%;
+        height: 500px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+    }
+    @media (max-width: 768px) {
+        #map {
+            height: 350px !important;
+        }
+    }
+    .mi-ubicacion-icon {
+        background-color: blue;
+        border-radius: 50%;
+        border: 2px solid white;
+    }
+    .mi-otra-ubicacion-icon {
+        background-color: green;
+        border-radius: 50%;
+        border: 2px solid white;
+    }
+    .otra-ubicacion-icon {
+        background-color: red;
+        border-radius: 50%;
+        border: 2px solid white;
+    }
+</style>
+{% endblock %}
+
+{% block js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Coordenadas iniciales (centrado en Colombia)
+        var coordenadas_iniciales = [4.6097, -74.0817];
+        var zoom_inicial = 5;
+        
+        // Si hay una ubicación principal, usar esas coordenadas
+        {% if ubicacion_principal %}
+            coordenadas_iniciales = [{{ ubicacion_principal.latitud }}, {{ ubicacion_principal.longitud }}];
+            zoom_inicial = 10;
+        {% endif %}
+        
+        // Inicializar el mapa siguiendo la documentación oficial de Leaflet
+        var map = L.map('map').setView(coordenadas_iniciales, zoom_inicial);
+
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+        
+        // Crear íconos personalizados
+        var miUbicacionIcon = L.divIcon({
+            className: 'mi-ubicacion-icon',
+            iconSize: [15, 15]
+        });
+        
+        var miOtraUbicacionIcon = L.divIcon({
+            className: 'mi-otra-ubicacion-icon',
+            iconSize: [12, 12]
+        });
+        
+        var otraUbicacionIcon = L.divIcon({
+            className: 'otra-ubicacion-icon',
+            iconSize: [12, 12]
+        });
+
+        // Añadir marcador para la ubicación principal del usuario
+        {% if ubicacion_principal %}
+            var miMarcador = L.marker(
+                [{{ ubicacion_principal.latitud }}, {{ ubicacion_principal.longitud }}],
+                { icon: miUbicacionIcon }
+            ).addTo(map);
+            
+            miMarcador.bindPopup(
+                "<b>Tu ubicación principal</b><br>" +
+                "{{ ubicacion_principal.nombre }}<br>" +
+                "{{ ubicacion_principal.direccion }}<br>" +
+                "{{ ubicacion_principal.ciudad.nombre }}, {{ ubicacion_principal.ciudad.estado.nombre }}"
+            );
+            
+            // Añadir un círculo para mostrar el radio de búsqueda
+            var circle = L.circle(
+                [{{ ubicacion_principal.latitud }}, {{ ubicacion_principal.longitud }}], 
+                {
+                    color: 'blue',
+                    fillColor: '#30f',
+                    fillOpacity: 0.1,
+                    radius: {{ distancia }} * 1000 // km a metros
+                }
+            ).addTo(map);
+            
+            // Actualizar el radio cuando cambie el valor del campo distancia
+            document.getElementById('distancia').addEventListener('change', function() {
+                var nuevaDistancia = this.value * 1000; // Convertir km a metros
+                circle.setRadius(nuevaDistancia);
+            });
+        {% endif %}
+        
+        // Añadir marcadores para las demás ubicaciones del usuario actual
+        {% for ubicacion in mis_ubicaciones %}
+            {% if ubicacion.latitud and ubicacion.longitud %}
+                var miOtraMarcador = L.marker(
+                    [{{ ubicacion.latitud }}, {{ ubicacion.longitud }}],
+                    { icon: miOtraUbicacionIcon }
+                ).addTo(map);
+                
+                miOtraMarcador.bindPopup(
+                    "<b>{{ ubicacion.nombre }}</b> (Tu ubicación)<br>" +
+                    "{{ ubicacion.direccion }}<br>" +
+                    "{{ ubicacion.ciudad.nombre }}, {{ ubicacion.ciudad.estado.nombre }}, {{ ubicacion.ciudad.estado.pais.nombre }}"
+                );
+            {% endif %}
+        {% endfor %}
+        
+        // Añadir marcadores para todas las ubicaciones de otros usuarios
+        {% for ubicacion in ubicaciones %}
+            {% if ubicacion.latitud and ubicacion.longitud %}
+                var marker = L.marker(
+                    [{{ ubicacion.latitud }}, {{ ubicacion.longitud }}],
+                    { icon: otraUbicacionIcon }
+                ).addTo(map);
+                
+                marker.bindPopup(
+                    "<b>{{ ubicacion.nombre }}</b><br>" +
+                    "Usuario: {{ ubicacion.usuario.username }}<br>" +
+                    "{{ ubicacion.direccion }}<br>" +
+                    "{{ ubicacion.ciudad.nombre }}, {{ ubicacion.ciudad.estado.nombre }}, {{ ubicacion.ciudad.estado.pais.nombre }}"
+                );
+            {% endif %}
+        {% endfor %}
+        
+        // Eventos para botones "Ver en mapa"
+        document.querySelectorAll('.mostrar-en-mapa').forEach(function(boton) {
+            boton.addEventListener('click', function() {
+                var lat = parseFloat(this.getAttribute('data-lat'));
+                var lng = parseFloat(this.getAttribute('data-lng'));
+                var nombre = this.getAttribute('data-nombre');
+                var usuario = this.getAttribute('data-usuario');
+                
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    map.setView([lat, lng], 15);
+                    // Buscar y abrir el popup del marcador correspondiente
+                    map.eachLayer(function(layer) {
+                        if (layer instanceof L.Marker && layer.getLatLng().lat === lat && layer.getLatLng().lng === lng) {
+                            layer.openPopup();
+                        }
+                    });
+                }
+            });
+        });
+        
+        // Invalidar tamaño después de cargar completamente
+        setTimeout(function() {
+            map.invalidateSize();
+        }, 300);
+
+        // Intentar obtener la ubicación actual del usuario usando geolocalización
+        if (navigator.geolocation && !{% if ubicacion_principal %}true{% else %}false{% endif %}) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    // Éxito al obtener la posición
+                    var userLat = position.coords.latitude;
+                    var userLng = position.coords.longitude;
+
+                    // Actualizar mapa y marcador con la ubicación real
+                    map.setView([userLat, userLng], 13);
+                    
+                    // Si no hay ubicación principal, mostrar un marcador temporal
+                    if (!{% if ubicacion_principal %}true{% else %}false{% endif %}) {
+                        var tmpMarker = L.marker([userLat, userLng], { icon: miUbicacionIcon }).addTo(map);
+                        tmpMarker.bindPopup("<b>Tu ubicación actual</b><br>(No guardada)").openPopup();
+                        
+                        // Círculo temporal
+                        L.circle([userLat, userLng], {
+                            color: 'blue',
+                            fillColor: '#30f',
+                            fillOpacity: 0.1,
+                            radius: {{ distancia }} * 1000
+                        }).addTo(map);
+                    }
+                },
+                function(error) {
+                    console.warn('Error al obtener la ubicación:', error.message);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 5000,
+                    maximumAge: 0
+                }
+            );
+        }
+    });
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'ubicaciones/js/locations.js' %}"></script>
+{% endblock %} 

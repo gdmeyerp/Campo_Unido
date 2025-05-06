@@ -11,6 +11,7 @@ urlpatterns = [
     path('accounts/profile/edit/', views.editar_perfil, name='editar_perfil'),
     path('configuracion/', views.configuracion, name='configuracion'),
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('dashboard/monitorizacion/', views.monitorizacion, name='monitorizacion'),
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('logout/', views.custom_logout, name='logout'),
     path('register/', views.register, name='register'),  # URL para el registro de usuarios

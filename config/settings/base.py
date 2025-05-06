@@ -36,6 +36,7 @@ DJANGO_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
 ]
 
 PROJECT_APPS = [
@@ -173,6 +174,7 @@ CACHES = {
 # Configuración de machina
 MACHINA_FORUM_NAME = 'Campo Unido Forum'
 MACHINA_ATTACHMENT_CACHE_NAME = 'machina_attachments'
+MACHINA_FORUM_ATTACHMENTS_UPLOAD_TO = 'forum_attachments'
 
 # Configuración de django-guardian
 GUARDIAN_RAISE_403 = True

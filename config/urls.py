@@ -27,8 +27,8 @@ urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),  # URLs de autenticación
     path('login/', core_views.login_view, name='login'),  # URL directa para login
     path('register/', core_views.register, name='register'),  # URL directa para registro
-    # Temporarily disabled marketplace due to issues
-    # path('marketplace/', include('apps.marketplace.urls')),  # URLs del marketplace
+    # Marketplace URLs habilitadas de nuevo con archivo limpio
+    path('marketplace/', include('apps.marketplace.urls')),  # URLs del marketplace
     path('foro/', include('apps.foro_machina.urls')),  # URLs del foro
     path('social/', include('apps.social_feed.urls')),  # URLs del feed social
     path('inventario/', include('apps.inventario.urls')),  # URLs del inventario

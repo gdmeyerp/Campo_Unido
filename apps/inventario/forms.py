@@ -76,6 +76,13 @@ class ProductoInventarioForm(forms.ModelForm):
             self.fields['propietario'].required = False
 
 class MovimientoInventarioForm(forms.ModelForm):
+    # Agregar un campo fecha explícito para usar con datepicker
+    fecha_movimiento = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+        label='Fecha'
+    )
+    
     class Meta:
         model = MovimientoInventario
         fields = [
@@ -84,6 +91,13 @@ class MovimientoInventarioForm(forms.ModelForm):
         ]
         widgets = {
             'descripcion_movimiento': forms.Textarea(attrs={'rows': 3}),
+            'tipo_movimiento': forms.Select(choices=[
+                ('', '---------'),
+                ('ENTRADA', 'Entrada'),
+                ('SALIDA', 'Salida'),
+                ('AJUSTE', 'Ajuste')
+            ]),
+            'producto_inventario': forms.Select(attrs={'class': 'select2'}),
         }
     
     def __init__(self, *args, **kwargs):
@@ -94,6 +108,25 @@ class MovimientoInventarioForm(forms.ModelForm):
         # Filtrar productos para mostrar solo los del usuario actual
         if user:
             self.fields['producto_inventario'].queryset = ProductoInventario.objects.filter(propietario=user)
+            
+            # Configurar el widget para product_inventario para usar con select2
+            self.fields['producto_inventario'].widget.attrs.update({
+                'class': 'select2',
+                'data-placeholder': 'Seleccione un producto'
+            })
+            
+            # Asegurar que el campo tipo_movimiento tenga opciones predefinidas
+            self.fields['tipo_movimiento'].choices = [
+                ('', '---------'),
+                ('ENTRADA', 'Entrada'),
+                ('SALIDA', 'Salida'),
+                ('AJUSTE', 'Ajuste')
+            ]
+        
+        # Agregar clases de bootstrap a los campos
+        for field_name, field in self.fields.items():
+            if not isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs.update({'class': 'form-control'})
     
     def clean(self):
         cleaned_data = super().clean()

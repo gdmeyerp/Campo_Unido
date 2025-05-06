@@ -1,193 +1,361 @@
-{% extends "marketplace/base.html" %}
+{% extends 'core/dashboard.html' %}
 {% load static %}
+{% load humanize %}
 
-{% block page_title %}Mi Carrito de Compras{% endblock %}
+{% block title %}Carrito de Compras - CampoUnido{% endblock %}
 
-{% block breadcrumb_items %}
-<li class="breadcrumb-item active">Mi Carrito</li>
-{% endblock %}
+{% block content %}
+<div class="container my-5">
+    <!-- Toast container for notifications -->
+    <div id="toast-container"></div>
 
-{% block marketplace_content %}
-<div class="card">
-    <div class="card-header bg-primary text-white">
-        <h4 class="mb-0">Mi Carrito de Compras</h4>
-    </div>
-    <div class="card-body">
-        {% if items %}
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>Producto</th>
-                            <th>Precio</th>
-                            <th>Cantidad</th>
-                            <th>Subtotal</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in items %}
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        {% if item.producto.imagen_principal %}
-                                            <img src="{{ item.producto.imagen_principal.url }}" alt="{{ item.producto.nombre_producto }}" class="img-thumbnail me-3" style="width: 60px; height: 60px; object-fit: cover;">
-                                        {% else %}
-                                            <img src="{% static 'marketplace/img/default-product.jpg' %}" alt="{{ item.producto.nombre_producto }}" class="img-thumbnail me-3" style="width: 60px; height: 60px; object-fit: cover;">
-                                        {% endif %}
-                                        <div>
-                                            <a href="{% url 'marketplace:producto_detalle' item.producto.slug %}" class="text-decoration-none text-dark">
-                                                <h6 class="mb-0">{{ item.producto.nombre_producto }}</h6>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'marketplace:lista_productos' %}">Tienda</a></li>
+            <li class="breadcrumb-item active">Carrito</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="h4 mb-0"><i class="fas fa-shopping-cart me-2"></i> Tu Carrito de Compras</h2>
+                </div>
+                <div class="card-body">
+                    {% if items %}
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <div class="table-responsive">
+                                    <table class="table table-borderless">
+                                        <tbody>
+                                            {% for item in items %}
+                                                <tr>
+                                                    <td>
+                                                        <div class="d-flex mb-2">
+                                                            <div class="flex-shrink-0">
+                                                                {% if item.producto.imagen %}
+                                                                    <img src="{{ item.producto.imagen.url }}" alt="{{ item.producto.nombre }}" width="70" class="img-fluid">
+                                                                {% else %}
+                                                                    <div class="no-image-placeholder">
+                                                                        <i class="fas fa-image fa-3x text-secondary"></i>
+                                                                    </div>
+                                                                {% endif %}
+                                                            </div>
+                                                            <div class="flex-lg-grow-1 ms-3">
+                                                                <h6 class="small mb-0"><a href="{{ item.producto.get_absolute_url }}" class="text-reset">{{ item.producto.nombre }}</a></h6>
+                                                                <span class="small">Vendedor: {{ item.producto.vendedor.email }}</span>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <form method="post" action="{% url 'marketplace:actualizar_carrito' item.id %}" class="quantity-form d-flex align-items-center">
+                                                            {% csrf_token %}
+                                                            <div class="input-group quantity-control">
+                                                                <button type="button" class="btn btn-sm btn-outline-secondary qty-btn decrease-btn" data-item-id="{{ item.id }}">
+                                                                    <i class="fas fa-minus"></i>
+                                                                </button>
+                                                                <input type="number" name="cantidad" value="{{ item.cantidad }}" min="1" max="{{ item.producto.stock }}" 
+                                                                    class="form-control form-control-sm text-center quantity-input" 
+                                                                    data-item-id="{{ item.id }}" data-stock="{{ item.producto.stock }}">
+                                                                <button type="button" class="btn btn-sm btn-outline-secondary qty-btn increase-btn" data-item-id="{{ item.id }}">
+                                                                    <i class="fas fa-plus"></i>
+                                                                </button>
+                                                            </div>
+                                                            <button type="submit" class="btn btn-sm btn-outline-primary ms-2 update-btn" style="display: none;">
+                                                                <i class="fas fa-sync-alt"></i>
+                                                            </button>
+                                                        </form>
+                                                    </td>
+                                                    <td class="text-end">${{ item.producto.precio }}</td>
+                                                    <td class="text-end" id="subtotal-{{ item.id }}">${{ item.subtotal }}</td>
+                                                    <td class="text-end">
+                                                        <form method="post" action="{% url 'marketplace:eliminar_del_carrito' item.id %}" data-product-id="{{ item.producto.id }}" data-item-id="{{ item.id }}" class="d-inline">
+                                                            {% csrf_token %}
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colspan="3" class="text-end fw-bold">Subtotal:</td>
+                                                <td class="text-end">${{ subtotal }}</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="3" class="text-end fw-bold">Costo de envío:</td>
+                                                <td class="text-end">${{ costo_envio }}</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="3" class="text-end fw-bold">Total:</td>
+                                                <td class="text-end fw-bold">${{ total }}</td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="{% url 'marketplace:lista_productos' %}" class="btn btn-outline-primary">
+                                        <i class="fas fa-arrow-left me-2"></i>Seguir comprando
+                                    </a>
+                                    <a href="{% url 'marketplace:checkout' %}" class="btn btn-primary">
+                                        Proceder al pago<i class="fas fa-arrow-right ms-2"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="card shadow-sm">
+                                    <div class="card-header bg-light">
+                                        <h5 class="mb-0">Resumen de Compra</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Subtotal</span>
+                                            <span class="cart-subtotal">${{ total|floatformat:2|intcomma }}</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Envío</span>
+                                            <span>Gratis</span>
+                                        </div>
+                                        <hr>
+                                        <div class="d-flex justify-content-between mb-3">
+                                            <strong>Total</strong>
+                                            <strong class="cart-total text-primary">${{ total|floatformat:2|intcomma }}</strong>
+                                        </div>
+                                        <div class="d-grid gap-2">
+                                            <a href="{% url 'marketplace:checkout' %}" class="btn btn-primary">
+                                                <i class="fas fa-check-circle me-2"></i>Proceder al Pago
                                             </a>
-                                            <small class="text-muted">{{ item.producto.categoria_producto.nombre_categoria }}</small>
+                                            <a href="{% url 'marketplace:lista_productos' %}" class="btn btn-outline-secondary">
+                                                <i class="fas fa-arrow-left me-2"></i>Seguir Comprando
+                                            </a>
                                         </div>
                                     </div>
-                                </td>
-                                <td>${{ item.producto.precio_actual }}</td>
-                                <td>
-                                    <div class="input-group" style="max-width: 120px;">
-                                        <button class="btn btn-sm btn-outline-secondary decrease-qty" data-item-id="{{ item.id }}">-</button>
-                                        <input type="number" class="form-control form-control-sm text-center item-qty" value="{{ item.cantidad }}" min="1" max="{{ item.producto.stock_actual }}" data-item-id="{{ item.id }}">
-                                        <button class="btn btn-sm btn-outline-secondary increase-qty" data-item-id="{{ item.id }}">+</button>
-                                    </div>
-                                </td>
-                                <td>${{ item.subtotal }}</td>
-                                <td>
-                                    <a href="{% url 'marketplace:carrito_eliminar' item.id %}" class="btn btn-sm btn-danger">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <th colspan="3" class="text-end">Total:</th>
-                            <th>${{ total }}</th>
-                            <th></th>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-            <div class="d-flex justify-content-between mt-4">
-                <a href="{% url 'marketplace:index' %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-2"></i> Seguir comprando
-                </a>
-                <div>
-                    <a href="{% url 'marketplace:carrito_vaciar' %}" class="btn btn-outline-danger me-2">
-                        <i class="fas fa-trash me-2"></i> Vaciar carrito
-                    </a>
-                    <a href="{% url 'marketplace:checkout' %}" class="btn btn-success">
-                        <i class="fas fa-check me-2"></i> Proceder al pago
-                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-shopping-cart fa-4x text-muted mb-3"></i>
+                            <h4>Tu carrito está vacío</h4>
+                            <p class="text-muted">Tu carrito de compras está actualmente vacío.</p>
+                            <a href="{% url 'marketplace:lista_productos' %}" class="btn btn-primary mt-3">
+                                <i class="fas fa-shopping-bag me-2"></i> Ver productos
+                            </a>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
-        {% else %}
-            <div class="text-center py-5">
-                <i class="fas fa-shopping-cart fa-4x text-muted mb-3"></i>
-                <h4>Tu carrito está vacío</h4>
-                <p class="text-muted">No tienes productos en tu carrito de compras.</p>
-                <a href="{% url 'marketplace:index' %}" class="btn btn-primary mt-3">
-                    <i class="fas fa-shopping-bag me-2"></i> Ir a la tienda
-                </a>
-            </div>
-        {% endif %}
+        </div>
     </div>
 </div>
+
+<style>
+    .cart-item {
+        transition: all 0.3s ease;
+    }
+    
+    .cart-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1) !important;
+    }
+    
+    .quantity-control {
+        max-width: 120px;
+        display: flex;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .quantity-control .btn {
+        background-color: #f8f9fa;
+        border: 1px solid #ced4da;
+        padding: 0.25rem 0.5rem;
+        line-height: 1.2;
+    }
+    
+    .quantity-control .form-control {
+        max-width: 45px;
+        text-align: center;
+        padding: 0.25rem 0.5rem;
+        border-left: 0;
+        border-right: 0;
+        border-radius: 0;
+    }
+    
+    .quantity-control .form-control:focus {
+        box-shadow: none;
+    }
+    
+    .quantity-control input::-webkit-outer-spin-button,
+    .quantity-control input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    
+    .quantity-control input[type=number] {
+        -moz-appearance: textfield;
+    }
+
+    .product-image {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+    }
+
+    #toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1050;
+    }
+
+    .toast {
+        margin-bottom: 10px;
+    }
+    
+    .update-btn {
+        transition: all 0.3s ease;
+    }
+</style>
+
 {% endblock %}
 
-{% block marketplace_js %}
+{% block js %}
+{{ block.super }}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Función para actualizar la cantidad
-        function updateQuantity(itemId, newQty) {
-            fetch(`/marketplace/api/carrito/actualizar/`, {
+document.addEventListener('DOMContentLoaded', function() {
+    // Get CSRF token
+    function getCSRFToken() {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name === 'csrftoken') {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    // Show toast notification
+    function showToast(message, type = 'success') {
+        const toastContainer = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        
+        toastContainer.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+        });
+    }
+
+    // Update cart item quantity
+    async function updateCartItemQuantity(itemId, newQuantity) {
+        try {
+            const response = await fetch(`/marketplace/carrito/actualizar/${itemId}/`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCSRFToken()
                 },
-                body: JSON.stringify({
-                    item_id: itemId,
-                    quantity: newQty
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Recargar la página para mostrar los cambios
-                    window.location.reload();
-                } else {
-                    alert(data.error || 'Error al actualizar la cantidad');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error al actualizar la cantidad');
+                body: `cantidad=${newQuantity}`
             });
-        }
-        
-        // Botones de incremento y decremento
-        document.querySelectorAll('.decrease-qty').forEach(button => {
-            button.addEventListener('click', function() {
-                const itemId = this.getAttribute('data-item-id');
-                const input = document.querySelector(`.item-qty[data-item-id="${itemId}"]`);
-                let qty = parseInt(input.value);
-                if (qty > 1) {
-                    input.value = qty - 1;
-                    updateQuantity(itemId, qty - 1);
-                }
-            });
-        });
-        
-        document.querySelectorAll('.increase-qty').forEach(button => {
-            button.addEventListener('click', function() {
-                const itemId = this.getAttribute('data-item-id');
-                const input = document.querySelector(`.item-qty[data-item-id="${itemId}"]`);
-                let qty = parseInt(input.value);
-                const max = parseInt(input.getAttribute('max'));
-                if (qty < max) {
-                    input.value = qty + 1;
-                    updateQuantity(itemId, qty + 1);
-                }
-            });
-        });
-        
-        // Cambio directo en el input
-        document.querySelectorAll('.item-qty').forEach(input => {
-            input.addEventListener('change', function() {
-                const itemId = this.getAttribute('data-item-id');
-                let qty = parseInt(this.value);
-                const max = parseInt(this.getAttribute('max'));
-                
-                // Validar que la cantidad esté dentro de los límites
-                if (qty < 1) {
-                    qty = 1;
-                    this.value = 1;
-                } else if (qty > max) {
-                    qty = max;
-                    this.value = max;
-                }
-                
-                updateQuantity(itemId, qty);
-            });
-        });
-        
-        // Función auxiliar para obtener CSRF token
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
+
+            if (response.ok) {
+                // Reload the page to update all totals
+                window.location.reload();
+                showToast('Cantidad actualizada correctamente');
+            } else {
+                showToast('Error al actualizar la cantidad', 'danger');
             }
-            return cookieValue;
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Error al actualizar la cantidad', 'danger');
         }
+    }
+
+    // Handle quantity buttons
+    const decreaseBtns = document.querySelectorAll('.decrease-btn');
+    const increaseBtns = document.querySelectorAll('.increase-btn');
+    const quantityInputs = document.querySelectorAll('.quantity-input');
+    
+    decreaseBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const itemId = this.getAttribute('data-item-id');
+            const input = document.querySelector(`.quantity-input[data-item-id="${itemId}"]`);
+            let currentValue = parseInt(input.value);
+            if (currentValue > 1) {
+                input.value = currentValue - 1;
+                updateCartItemQuantity(itemId, currentValue - 1);
+            }
+        });
     });
+    
+    increaseBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const itemId = this.getAttribute('data-item-id');
+            const input = document.querySelector(`.quantity-input[data-item-id="${itemId}"]`);
+            let currentValue = parseInt(input.value);
+            let maxStock = parseInt(input.getAttribute('data-stock'));
+            
+            if (currentValue < maxStock) {
+                input.value = currentValue + 1;
+                updateCartItemQuantity(itemId, currentValue + 1);
+            } else {
+                showToast(`Solo hay ${maxStock} unidades disponibles`, 'warning');
+            }
+        });
+    });
+    
+    quantityInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            const itemId = this.getAttribute('data-item-id');
+            let newValue = parseInt(this.value);
+            let maxStock = parseInt(this.getAttribute('data-stock'));
+            
+            // Validate input value
+            if (isNaN(newValue) || newValue < 1) {
+                newValue = 1;
+                this.value = 1;
+            } else if (newValue > maxStock) {
+                newValue = maxStock;
+                this.value = maxStock;
+                showToast(`Solo hay ${maxStock} unidades disponibles`, 'warning');
+            }
+            
+            updateCartItemQuantity(itemId, newValue);
+        });
+    });
+    
+    // Make quantity forms submit when input changes
+    const quantityForms = document.querySelectorAll('.quantity-form');
+    quantityForms.forEach(form => {
+        const input = form.querySelector('.quantity-input');
+        input.addEventListener('change', function() {
+            // Show update button when input is changed manually
+            form.querySelector('.update-btn').style.display = 'inline-block';
+        });
+    });
+});
 </script>
 {% endblock %} 

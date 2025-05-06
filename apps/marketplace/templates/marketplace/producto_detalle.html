@@ -1,12 +1,123 @@
 {% extends "marketplace/base.html" %}
 {% load static %}
+{% load marketplace_tags %}
 
-{% block title %}{{ producto.nombre_producto }}{% endblock %}
+{% block title %}{{ producto.nombre }}{% endblock %}
+
+{% block styles %}
+{{ block.super }}
+<link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
+<link rel="stylesheet" href="{% static 'css/swiper-gallery.css' %}">
+<link rel="stylesheet" href="{% static 'css/card-flip.css' %}">
+<style>
+    /* Estilos optimizados para galería de imágenes con Swiper */
+    .product-gallery {
+        position: relative;
+        margin-bottom: 30px;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .swiper-container {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .main-swiper {
+        height: 450px;
+        background-color: #f8f9fa;
+    }
+    
+    .swiper-slide {
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+    }
+    
+    .swiper-slide img {
+        max-height: 100%;
+        max-width: 100%;
+        object-fit: contain;
+        transition: transform 0.3s ease;
+    }
+    
+    .swiper-slide:hover img {
+        transform: scale(1.02);
+    }
+    
+    .thumbs-swiper {
+        height: 100px;
+        box-sizing: border-box;
+        padding: 10px 0;
+    }
+    
+    .thumbs-swiper .swiper-slide {
+        width: 80px;
+        height: 80px;
+        opacity: 0.6;
+        cursor: pointer;
+        overflow: hidden;
+        border-radius: 6px;
+        border: 2px solid transparent;
+        transition: all 0.3s ease;
+    }
+    
+    .thumbs-swiper .swiper-slide img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .thumbs-swiper .swiper-slide-thumb-active {
+        opacity: 1;
+        border-color: #007bff;
+    }
+    
+    .swiper-button-next, 
+    .swiper-button-prev {
+        background-color: rgba(0,0,0,0.5);
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        color: white;
+    }
+    
+    .swiper-button-next:after, 
+    .swiper-button-prev:after {
+        font-size: 18px;
+    }
+    
+    .swiper-pagination-bullet {
+        width: 10px;
+        height: 10px;
+        opacity: 1;
+        background: rgba(0, 0, 0, 0.2);
+    }
+    
+    .swiper-pagination-bullet-active {
+        background: #007bff;
+    }
+    
+    .progress .progress-bar {
+        width: 0%;
+    }
+    
+    /* Estilos adicionales específicos de esta página */
+    .flipped {
+        transform: rotateY(180deg);
+    }
+</style>
+{% endblock %}
 
 {% block breadcrumb_items %}
-    <li class="breadcrumb-item"><a href="{% url 'marketplace:producto_lista' %}">Productos</a></li>
-    <li class="breadcrumb-item"><a href="{% url 'marketplace:categoria_detalle_by_id' producto.categoria_producto_id_id.categoria_producto_id %}">{{ producto.categoria_producto_id_id.nombre_categoria }}</a></li>
-    <li class="breadcrumb-item active">{{ producto.nombre_producto }}</li>
+    <li class="breadcrumb-item"><a href="{% url 'marketplace:lista_productos' %}">Productos</a></li>
+    {% if producto.categoria %}
+    <li class="breadcrumb-item"><a href="{% url 'marketplace:productos_por_categoria' producto.categoria.id %}">{{ producto.categoria.nombre }}</a></li>
+    {% endif %}
+    <li class="breadcrumb-item active">{{ producto.nombre }}</li>
 {% endblock %}
 
 {% block marketplace_content %}
@@ -15,13 +126,13 @@
             <!-- Acciones de página -->
             <div class="col-12 mb-4">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h1>{{ producto.nombre_producto }}</h1>
+                    <h1>{{ producto.nombre }}</h1>
                     <div>
-                        <a href="{% url 'marketplace:producto_lista' %}" class="btn btn-outline-secondary">
+                        <a href="{% url 'marketplace:lista_productos' %}" class="btn btn-outline-secondary">
                             <i class="fas fa-arrow-left"></i> Volver
                         </a>
-                        {% if user.is_authenticated and user == producto.vendedor_id_id %}
-                            <a href="{% url 'marketplace:producto_editar' producto.slug %}" class="btn btn-outline-primary ml-2">
+                        {% if user.is_authenticated and user == producto.vendedor %}
+                            <a href="{% url 'marketplace:editar_producto' producto.id %}" class="btn btn-outline-primary ml-2">
                                 <i class="fas fa-edit"></i> Editar
                             </a>
                         {% endif %}
@@ -31,25 +142,79 @@
             
             <!-- Contenido principal -->
             <div class="col-md-6">
-                <!-- Galería de imágenes -->
+                <!-- Galería de imágenes - Swiper -->
                 <div class="product-gallery mb-4">
-                    <div class="main-image mb-3">
-                        {% if producto.imagen_principal %}
-                            <img src="{{ producto.imagen_principal.url }}" alt="{{ producto.nombre_producto }}" class="img-fluid rounded">
-                        {% elif imagenes_adicionales.exists %}
-                            <img src="{{ imagenes_adicionales.first.imagen.url }}" alt="{{ producto.nombre_producto }}" class="img-fluid rounded">
+                    <!-- Swiper Principal -->
+                    <div class="swiper-container main-swiper">
+                        <div class="swiper-wrapper">
+                            <!-- Imagen principal -->
+                            <div class="swiper-slide">
+                                <div class="flip-container" style="width: 100%; height: 100%;">
+                                    <div class="flip-card">
+                                        <div class="flip-front">
+                                            {% if producto.imagen %}
+                                                <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" class="d-block w-100">
                         {% else %}
-                            <img src="{% static 'img/no-image.png' %}" alt="Sin imagen" class="img-fluid rounded">
+                                                <img src="{% static 'img/no-image.png' %}" alt="Sin imagen" class="d-block w-100">
+                                            {% endif %}
+                                        </div>
+                                        <div class="flip-back">
+                                            <h3>{{ producto.nombre }}</h3>
+                                            <p>{{ producto.descripcion|truncatechars:150 }}</p>
+                                            <p class="text-white font-weight-bold mt-2">${{ producto.precio }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Imágenes adicionales -->
+                            {% if imagenes_adicionales %}
+                                {% for img in imagenes_adicionales %}
+                                    <div class="swiper-slide">
+                                        <div class="flip-container" style="width: 100%; height: 100%;">
+                                            <div class="flip-card">
+                                                <div class="flip-front">
+                                                    <img src="{{ img.imagen.url }}" alt="{{ producto.nombre }} - Imagen {{ forloop.counter }}" class="d-block w-100">
+                                                </div>
+                                                <div class="flip-back">
+                                                    <h3>{{ producto.nombre }}</h3>
+                                                    <p>Imagen adicional {{ forloop.counter }}</p>
+                                                    <p class="text-white font-weight-bold mt-2">${{ producto.precio }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
                         {% endif %}
+                        </div>
+                        <!-- Controles de navegación -->
+                        <div class="swiper-button-next"></div>
+                        <div class="swiper-button-prev"></div>
+                        <div class="swiper-pagination"></div>
                     </div>
                     
-                    {% if imagenes_adicionales.exists %}
-                        <div class="thumbnails d-flex flex-wrap">
+                    <!-- Swiper de miniaturas -->
+                    {% if producto.imagen or imagenes_adicionales %}
+                        <div class="swiper-container thumbs-swiper">
+                            <div class="swiper-wrapper">
+                                <!-- Miniatura de imagen principal -->
+                                <div class="swiper-slide">
+                                    {% if producto.imagen %}
+                                        <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}">
+                                    {% else %}
+                                        <img src="{% static 'img/no-image.png' %}" alt="Sin imagen">
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Miniaturas de imágenes adicionales -->
+                                {% if imagenes_adicionales %}
                             {% for img in imagenes_adicionales %}
-                                <div class="thumbnail-item mr-2 mb-2">
-                                    <img src="{{ img.imagen.url }}" alt="Imagen {{ forloop.counter }}" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">
+                                        <div class="swiper-slide">
+                                            <img src="{{ img.imagen.url }}" alt="Imagen {{ forloop.counter }}">
                                 </div>
                             {% endfor %}
+                                {% endif %}
+                            </div>
                         </div>
                     {% endif %}
                 </div>
@@ -64,7 +229,7 @@
                         
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div>
-                                <h3 class="text-primary font-weight-bold">${{ producto.precio_base }}</h3>
+                                <h3 class="text-primary font-weight-bold">${{ producto.precio }}</h3>
                                 {% if producto.descuento_activo %}
                                     <span class="badge badge-success">{{ producto.porcentaje_descuento }}% Descuento</span>
                                     <span class="text-muted"><del>${{ producto.precio_actual }}</del></span>
@@ -72,10 +237,10 @@
                             </div>
                             
                             <div class="stock-info">
-                                {% if producto.stock_actual > 10 %}
-                                    <span class="badge badge-success">En stock ({{ producto.stock_actual }})</span>
-                                {% elif producto.stock_actual > 0 %}
-                                    <span class="badge badge-warning">Pocas unidades ({{ producto.stock_actual }})</span>
+                                {% if producto.stock > 10 %}
+                                    <span class="badge badge-success">En stock ({{ producto.stock }})</span>
+                                {% elif producto.stock > 0 %}
+                                    <span class="badge badge-warning">Pocas unidades ({{ producto.stock }})</span>
                                 {% else %}
                                     <span class="badge badge-danger">Agotado</span>
                                 {% endif %}
@@ -84,25 +249,32 @@
                         
                         <div class="seller-info mb-3">
                             <p class="mb-1">Vendedor: 
-                                <a href="{% url 'marketplace:vendedor_perfil' producto.vendedor_id_id.username %}">
-                                    {{ producto.vendedor_id_id.get_full_name|default:producto.vendedor_id_id.username }}
+                                {{ producto.vendedor.get_full_name|default:producto.vendedor.email }}
+                                {% if user.is_authenticated and user != producto.vendedor %}
+                                <a href="javascript:void(0);" class="btn btn-sm btn-outline-primary ml-2 chat-vendedor-btn" 
+                                   data-vendedor-id="{{ producto.vendedor.id }}">
+                                    <i class="fas fa-comment"></i> Chatear
                                 </a>
+                                {% endif %}
                             </p>
+                            {% if producto.categoria %}
                             <p class="mb-1">Categoría: 
-                                <a href="{% url 'marketplace:categoria_detalle_by_id' producto.categoria_producto_id_id.categoria_producto_id %}">
-                                    {{ producto.categoria_producto_id_id.nombre_categoria }}
+                                <a href="{% url 'marketplace:productos_por_categoria' producto.categoria.id %}">
+                                    {{ producto.categoria.nombre }}
                                 </a>
                             </p>
+                            {% endif %}
                             <p class="mb-0">Disponible desde: {{ producto.fecha_creacion|date:"d/m/Y" }}</p>
                         </div>
                         
-                        {% if producto.disponibilidad and producto.stock_actual > 0 %}
+                        {% if producto.activo and producto.stock > 0 %}
                             <div class="d-grid gap-2">
-                                <button id="btn-agregar-carrito" class="btn btn-primary btn-lg" data-producto-id="{{ producto.producto_id }}">
+                                <a href="{% url 'marketplace:agregar_al_carrito' producto.id %}" class="btn btn-primary btn-lg">
                                     <i class="fas fa-shopping-cart"></i> Agregar al carrito
-                                </button>
-                                <button id="btn-toggle-lista-deseos" class="btn btn-outline-danger" data-producto-id="{{ producto.producto_id }}">
-                                    <i class="fas fa-heart"></i> Añadir a favoritos
+                                </a>
+                                <button class="btn btn-outline-danger add-to-wishlist" data-product-id="{{ producto.id }}">
+                                    <i class="{% if producto in request.user.lista_deseos.productos.all %}fas{% else %}far{% endif %} fa-heart"></i> 
+                                    Añadir a favoritos
                                 </button>
                             </div>
                         {% else %}
@@ -125,7 +297,7 @@
                                 <a class="nav-link active" id="specs-tab" data-toggle="tab" href="#specs" role="tab">Especificaciones</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" id="reviews-tab" data-toggle="tab" href="#reviews" role="tab">Valoraciones ({{ valoraciones.count }})</a>
+                                <a class="nav-link" id="reviews-tab" data-toggle="tab" href="#reviews" role="tab">Valoraciones ({{ valoraciones|length }})</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" id="related-tab" data-toggle="tab" href="#related" role="tab">Productos relacionados</a>
@@ -188,7 +360,7 @@
                                                 <div class="d-flex align-items-center mb-2">
                                                     <div class="mr-3">{{ i }} <i class="fas fa-star text-warning"></i></div>
                                                     <div class="progress flex-grow-1" style="height: 10px;">
-                                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ percent }}%"></div>
+                                                        <div class="progress-bar bg-success" role="progressbar" data-width="{{ percent }}" style="width: 0%"></div>
                                                     </div>
                                                     <div class="ml-3 text-muted small">{{ percent }}% ({{ count }})</div>
                                                 </div>
@@ -204,7 +376,7 @@
                                 {% if user.is_authenticated and ha_comprado and not ha_valorado %}
                                 <div class="write-review mb-4">
                                     <h5>Escribe tu valoración</h5>
-                                    <form method="post" action="{% url 'marketplace:valoracion_crear' producto.producto_id %}">
+                                    <form method="post" action="{% url 'marketplace:valoracion_crear' producto.id %}">
                                         {% csrf_token %}
                                         <div class="form-group">
                                             <label for="puntuacion">Puntuación</label>
@@ -267,7 +439,7 @@
                                                 
                                                 <div class="d-flex justify-content-between align-items-center">
                                                     <div class="reviewer">
-                                                        <small class="text-muted">Por: {{ valoracion.usuario_id.get_full_name|default:valoracion.usuario_id.username }}</small>
+                                                        <small class="text-muted">Por: {{ valoracion.usuario_id.get_full_name|default:valoracion.usuario_id.email }}</small>
                                                     </div>
                                                     <div class="review-actions">
                                                         <button class="btn btn-sm btn-outline-secondary btn-util-valoracion" data-valoracion-id="{{ valoracion.valoracion_id }}">
@@ -292,7 +464,7 @@
                                                 {% endfor %}
                                                 
                                                 <!-- Formulario para responder (solo visible para el vendedor) -->
-                                                {% if user.is_authenticated and user == producto.vendedor_id_id and not valoracion.respuestavloracion_set.exists %}
+                                                {% if user.is_authenticated and user == producto.vendedor and not valoracion.respuestavloracion_set.exists %}
                                                     <div class="seller-reply-form mt-3">
                                                         <button class="btn btn-sm btn-outline-info toggle-reply-form">
                                                             <i class="fas fa-reply"></i> Responder a esta valoración
@@ -351,13 +523,13 @@
                                             <div class="card h-100">
                                                 <div class="card-img-top product-card-img-container">
                                                     {% if prod.imagen_principal %}
-                                                        <img src="{{ prod.imagen_principal.url }}" class="card-img-top" alt="{{ prod.nombre_producto }}">
+                                                        <img src="{{ prod.imagen_principal.url }}" class="card-img-top" alt="{{ prod.nombre }}">
                                                     {% else %}
                                                         <img src="{% static 'img/no-image.png' %}" class="card-img-top" alt="Sin imagen">
                                                     {% endif %}
                                                 </div>
                                                 <div class="card-body">
-                                                    <h5 class="card-title">{{ prod.nombre_producto }}</h5>
+                                                    <h5 class="card-title">{{ prod.nombre }}</h5>
                                                     <p class="card-text text-muted">{{ prod.descripcion|truncatechars:100 }}</p>
                                                     <div class="d-flex justify-content-between align-items-center">
                                                         <span class="font-weight-bold">${{ prod.precio_base }}</span>
@@ -384,8 +556,74 @@
 {% endblock %}
 
 {% block marketplace_js %}
+<script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+<script src="{% static 'js/swiper-init.js' %}"></script>
 <script>
     $(document).ready(function() {
+        // Additional script for flip card click handling
+        $('.flip-container').on('click', function() {
+            $(this).find('.flip-card').toggleClass('flipped');
+        });
+        
+        // Fix for progress bars - set width from data attribute
+        $('.progress-bar[data-width]').each(function() {
+            $(this).css('width', $(this).data('width') + '%');
+        });
+        
+        // Initialize chat with seller from data attribute
+        $('.chat-vendedor-btn').click(function() {
+            const vendedorId = $(this).data('vendedor-id');
+            chatConVendedor(vendedorId);
+        });
+                
+        // Inicializar Swiper de miniaturas con opciones mejoradas
+        const thumbsSwiper = new Swiper('.thumbs-swiper', {
+            spaceBetween: 10,
+            slidesPerView: 'auto',
+            freeMode: true,
+            watchSlidesProgress: true,
+            centerInsufficientSlides: true,
+            navigation: {
+                nextEl: '.thumbs-button-next',
+                prevEl: '.thumbs-button-prev',
+            },
+        });
+        
+        // Inicializar Swiper principal con opciones mejoradas
+        const mainSwiper = new Swiper('.main-swiper', {
+            spaceBetween: 10,
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true,
+                dynamicBullets: true,
+            },
+            keyboard: {
+                enabled: true,
+            },
+            thumbs: {
+                swiper: thumbsSwiper,
+            },
+            zoom: {
+                maxRatio: 2,
+                toggle: true,
+            },
+            autoplay: {
+                delay: 5000,
+                disableOnInteraction: false,
+                pauseOnMouseEnter: true
+            },
+            // Detener autoplay cuando haya interacción del usuario
+            on: {
+                click: function() {
+                    this.autoplay.stop();
+                }
+            }
+        });
+        
         // Agregar al carrito
         $('#btn-agregar-carrito').click(function() {
             const productoId = $(this).data('producto-id');
@@ -441,24 +679,29 @@
             });
         });
         
-        // Toggle lista de deseos
-        $('#btn-toggle-lista-deseos').click(function() {
-            const productoId = $(this).data('producto-id');
+        // Manejo de botones de lista de deseos
+        $('.add-to-wishlist').click(function(e) {
+            e.preventDefault();
+            const productId = $(this).data('product-id');
+            const button = $(this);
             
             $.ajax({
                 url: '{% url "marketplace:api_lista_deseos_toggle" %}',
                 type: 'POST',
                 data: {
-                    'producto_id': productoId,
+                    'producto_id': productId,
                     'csrfmiddlewaretoken': '{{ csrf_token }}'
                 },
                 success: function(response) {
                     if (response.status === 'success') {
-                        // Cambiar estado del botón
+                        // Actualizar el ícono
+                        const icon = button.find('i');
                         if (response.added) {
-                            $('#btn-toggle-lista-deseos').addClass('active').html('<i class="fas fa-heart"></i> Añadido a favoritos');
+                            icon.removeClass('far').addClass('fas');
+                            button.addClass('active');
                         } else {
-                            $('#btn-toggle-lista-deseos').removeClass('active').html('<i class="far fa-heart"></i> Añadir a favoritos');
+                            icon.removeClass('fas').addClass('far');
+                            button.removeClass('active');
                         }
                         
                         // Mostrar alerta de éxito
@@ -471,24 +714,13 @@
                             </div>
                         `;
                         $('.marketplace-container').prepend(alert);
-                    } else {
-                        // Mostrar alerta de error
-                        const alert = `
-                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                <strong>Error:</strong> ${response.message}
-                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                        `;
-                        $('.marketplace-container').prepend(alert);
                     }
                 },
                 error: function() {
                     // Mostrar alerta de error
                     const alert = `
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <strong>Error:</strong> Ocurrió un problema al intentar actualizar tu lista de favoritos.
+                            <strong>Error:</strong> Ocurrió un problema al actualizar la lista de deseos.
                             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                             </button>
@@ -559,6 +791,100 @@
             const newSrc = $(this).attr('src');
             $('.main-image img').attr('src', newSrc);
         });
+        
+        // Función para iniciar chat con el vendedor
+        function chatConVendedor(vendedorId) {
+            // Mostrar indicador de carga
+            const alert = `
+                <div class="alert alert-info alert-dismissible fade show" role="alert">
+                    <i class="fas fa-spinner fa-spin"></i> Iniciando conversación con el vendedor...
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            `;
+            $('.marketplace-container').prepend(alert);
+            
+            // Obtener el CSRF token desde las cookies
+            function getCsrfToken() {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, 'csrftoken'.length + 1) === ('csrftoken' + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring('csrftoken'.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            
+            // Crear conversación a través de la API
+            fetch('/chat/api/crear-chat/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({ user_id: vendedorId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Cerrar el alerta independientemente del resultado
+                $('.alert-info').alert('close');
+                
+                if (data.status === 'success') {
+                    // Si existe el botón principal del chat, hacer clic en él para abrir el panel
+                    if (document.getElementById('chat-main-button')) {
+                        document.getElementById('chat-main-button').click();
+                    }
+                    
+                    // Simular el clic en la conversación específica si está en la lista
+                    setTimeout(() => {
+                        const conversationItems = document.querySelectorAll('.chat-conversation-item');
+                        
+                        for (let item of conversationItems) {
+                            if (item.getAttribute('data-room-id') == data.room_id) {
+                                item.click();
+                                return;
+                            }
+                        }
+                        
+                        // Si no se encuentra la conversación en el panel, recargar la página
+                        // para que aparezca actualizada
+                        location.reload();
+                    }, 800);
+                } else {
+                    // Mostrar error
+                    const errorAlert = `
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <strong>Error:</strong> No se pudo iniciar la conversación.
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    `;
+                    $('.marketplace-container').prepend(errorAlert);
+                }
+            })
+            .catch(error => {
+                // Cerrar alerta de carga
+                $('.alert-info').alert('close');
+                
+                console.error('Error:', error);
+                const errorAlert = `
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <strong>Error:</strong> Ocurrió un problema al iniciar la conversación.
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                `;
+                $('.marketplace-container').prepend(errorAlert);
+            });
+        }
     });
 </script>
 {% endblock %} 

@@ -15,6 +15,8 @@ urlpatterns = [
     path('categorias/crear/', views.crear_categoria, name='crear_categoria'),
     path('categorias/<int:pk>/editar/', views.editar_categoria, name='editar_categoria'),
     path('categorias/<int:pk>/eliminar/', views.eliminar_categoria, name='eliminar_categoria'),
+    path('categorias/sincronizar/', views.sincronizar_categorias, name='sincronizar_categorias'),
+    path('categorias/diagnosticar/', views.diagnosticar_categorias, name='diagnosticar_categorias'),
     
     # Estados de Productos
     path('estados/', views.lista_estados, name='lista_estados'),
@@ -89,12 +91,18 @@ urlpatterns = [
     # URLs para Notificaciones
     path('notificaciones/', views.lista_notificaciones, name='lista_notificaciones'),
     path('notificaciones/<int:pk>/', views.detalle_notificacion, name='detalle_notificacion'),
-    path('notificaciones/<int:pk>/marcar-leida/', views.marcar_como_leida, name='marcar_notificacion_leida'),
+    path('notificaciones/<int:pk>/marcar-leida/', views.marcar_como_leida, name='marcar_como_leida'),
     path('notificaciones/marcar-todas-leidas/', views.marcar_todas_como_leidas, name='marcar_todas_leidas'),
     path('notificaciones/<int:pk>/eliminar/', views.eliminar_notificacion, name='eliminar_notificacion'),
     path('notificaciones/eliminar-todas/', views.eliminar_todas, name='eliminar_todas_notificaciones'),
+    
+    # API para notificaciones
     path('api/notificaciones/contador/', views.obtener_contador_notificaciones, name='api_contador_notificaciones'),
     path('api/notificaciones/recientes/', views.obtener_notificaciones_recientes, name='api_notificaciones_recientes'),
-    path('notificaciones/<int:notificacion_id>/marcar-leida/', views.marcar_notificacion_leida, name='marcar_notificacion_leida'),
+    path('api/notificaciones/crear-prueba/', views.crear_notificacion_prueba_api, name='api_crear_notificacion_prueba'),
+    path('api/notificaciones/marcar-leida/<int:notificacion_id>/', views.marcar_notificacion_leida, name='marcar_notificacion_leida'),
+    
+    # Vistas especiales de notificaciones
     path('notificaciones/generar-prueba/', views.generar_notificacion_prueba, name='generar_notificacion_prueba'),
+    path('notificaciones/crear-alerta-stock-prueba/', views.crear_alerta_stock_prueba, name='crear_alerta_stock_prueba'),
 ] 

@@ -1,5 +1,6 @@
 {% extends "foro_machina/base_foro.html" %}
 {% load i18n %}
+{% load static %}
 
 {% block title %}{{ topic.subject }} - {% trans "Foro Campo Unido" %}{% endblock %}
 
@@ -198,6 +199,7 @@
     {{ block.super }}
     {{ post_form.media.css }}
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
     <style>
         .custom-file-input:focus ~ .custom-file-label {
             border-color: #80bdff;
@@ -206,58 +208,26 @@
         .custom-file-label::after {
             content: "Buscar";
         }
+        .editor-toolbar {
+            border-radius: 0.25rem 0.25rem 0 0;
+        }
+        .CodeMirror {
+            border-radius: 0 0 0.25rem 0.25rem;
+        }
     </style>
 {% endblock css %}
 
 {% block js %}
     {{ block.super }}
     {{ post_form.media.js }}
+    <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+    <script src="{% static 'foro_machina/editor_fix.js' %}"></script>
     <script>
-        $(document).ready(function() {
-            // Mostrar el nombre del archivo seleccionado
-            $('.custom-file-input').on('change', function() {
-                var fileName = $(this).val().split('\\').pop();
-                $(this).next('.custom-file-label').html(fileName);
-                
-                // Vista previa de imágenes
-                var previewContainer = $('.image-previews');
-                previewContainer.empty();
-                
-                if (this.files && this.files[0]) {
-                    var file = this.files[0];
-                    if (file.type.match('image.*')) {
-                        var reader = new FileReader();
-                        reader.onload = function(e) {
-                            var img = $('<img class="img-thumbnail mr-2 mb-2" style="max-height: 150px;">');
-                            img.attr('src', e.target.result);
-                            previewContainer.append(img);
-                        }
-                        reader.readAsDataURL(file);
-                    } else {
-                        var fileInfo = $('<span class="badge badge-info mr-2 mb-2 p-2"></span>');
-                        fileInfo.text(file.name);
-                        previewContainer.append(fileInfo);
-                    }
-                }
-            });
-            
-            // Manejar el botón de carga
-            $('#upload-btn').on('click', function() {
-                $('.custom-file-input').click();
-            });
-            
-            // Abrir imágenes adjuntas en modal
-            $('.attachments a').on('click', function(e) {
-                var imgUrl = $(this).attr('href');
-                if (imgUrl.match(/\.(jpeg|jpg|gif|png)$/)) {
-                    e.preventDefault();
-                    var modal = $('<div class="modal fade" tabindex="-1" role="dialog"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Imagen adjunta</h5><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button></div><div class="modal-body text-center"><img src="' + imgUrl + '" class="img-fluid"></div></div></div></div>');
-                    modal.modal('show');
-                    modal.on('hidden.bs.modal', function() {
-                        $(this).remove();
-                    });
-                }
-            });
+        // Actualizar el label del input file cuando se selecciona un archivo
+        document.querySelector('.custom-file-input').addEventListener('change', function(e) {
+            var fileName = e.target.files[0].name;
+            var label = e.target.nextElementSibling;
+            label.innerHTML = fileName;
         });
     </script>
 {% endblock js %} 

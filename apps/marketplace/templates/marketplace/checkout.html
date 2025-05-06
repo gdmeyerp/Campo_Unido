@@ -1,0 +1,227 @@
+{% extends 'core/dashboard.html' %}
+{% load static %}
+
+{% block title %}Finalizar Compra - Campo Unido{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1>Finalizar Compra</h1>
+            <hr>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Columna de resumen de compra -->
+        <div class="col-lg-4 order-lg-2 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Resumen de compra</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>Productos:</h6>
+                        <ul class="list-group">
+                            {% for item in items %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ item.producto.nombre }}
+                                <span>
+                                    {{ item.cantidad }} x ${{ item.producto.precio|floatformat:2 }}
+                                </span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="d-flex justify-content-between mt-3">
+                        <strong>Total:</strong>
+                        <strong>${{ total|floatformat:2 }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna del formulario de checkout -->
+        <div class="col-lg-8 order-lg-1">
+            <form method="post">
+                {% csrf_token %}
+
+                <!-- Datos de comprobante y envío -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0">Datos para el envío</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="nombre_completo">Nombre completo*</label>
+                                    <input type="text" class="form-control" id="nombre_completo" name="nombre_completo" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="telefono">Teléfono de contacto*</label>
+                                    <input type="tel" class="form-control" id="telefono" name="telefono" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="direccion">Dirección completa*</label>
+                            <textarea class="form-control" id="direccion" name="direccion" rows="2" required></textarea>
+                            <small class="form-text text-muted">Calle, número, colonia, etc.</small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label for="ciudad">Ciudad*</label>
+                                    <input type="text" class="form-control" id="ciudad" name="ciudad" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label for="departamento">Departamento/Estado*</label>
+                                    <input type="text" class="form-control" id="departamento" name="departamento" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label for="codigo_postal">Código Postal</label>
+                                    <input type="text" class="form-control" id="codigo_postal" name="codigo_postal">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="instrucciones_envio">Instrucciones especiales para el envío</label>
+                            <textarea class="form-control" id="instrucciones_envio" name="instrucciones_envio" rows="2"></textarea>
+                            <small class="form-text text-muted">Indique cualquier instrucción especial para la entrega (opcional)</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Datos para facturación -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0">Datos para facturación</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="requiere_factura" name="requiere_factura">
+                            <label class="form-check-label" for="requiere_factura">
+                                Requiero factura
+                            </label>
+                        </div>
+                        
+                        <div id="datos_factura" style="display: none;">
+                            <div class="form-group mb-3">
+                                <label for="razon_social">Razón Social / Nombre</label>
+                                <input type="text" class="form-control" id="razon_social" name="razon_social">
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="rfc">RFC / NIF</label>
+                                <input type="text" class="form-control" id="rfc" name="rfc">
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="direccion_fiscal">Dirección Fiscal</label>
+                                <textarea class="form-control" id="direccion_fiscal" name="direccion_fiscal" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selección de método de pago -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0">Método de Pago</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if metodos_pago %}
+                            <div class="form-group">
+                                {% for metodo in metodos_pago %}
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="radio" name="metodo_pago" id="metodo_{{ metodo.id }}" value="{{ metodo.id }}" required>
+                                    <label class="form-check-label" for="metodo_{{ metodo.id }}">
+                                        <strong>{{ metodo.nombre }}</strong> 
+                                        <span class="badge badge-info">{{ metodo.get_tipo_display }}</span>
+                                        {% if metodo.descripcion %}
+                                        <p class="text-muted small mt-1">{{ metodo.descripcion }}</p>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <h5>Método de pago simulado</h5>
+                                <p>Esta versión simula una pasarela de pago para fines de prueba. Todos los pagos serán marcados como válidos automáticamente.</p>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="radio" name="metodo_pago" id="metodo_simulado" value="simulado" checked required>
+                                    <label class="form-check-label" for="metodo_simulado">
+                                        <strong>Pago simulado</strong> 
+                                        <span class="badge badge-info">Prueba</span>
+                                    </label>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'marketplace:ver_carrito' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver al carrito
+                    </a>
+                    <button type="submit" id="btnSubmitOrder" class="btn btn-success">
+                        <i class="fas fa-check"></i> Confirmar Pedido
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const requiereFactura = document.getElementById('requiere_factura');
+        const datosFactura = document.getElementById('datos_factura');
+        
+        requiereFactura.addEventListener('change', function() {
+            datosFactura.style.display = this.checked ? 'block' : 'none';
+        });
+
+        // Agregar validación de formulario
+        const checkoutForm = document.querySelector('form');
+        const submitButton = document.getElementById('btnSubmitOrder');
+
+        checkoutForm.addEventListener('submit', function(e) {
+            // Verificar campos requeridos
+            const nombre = document.getElementById('nombre_completo').value;
+            const telefono = document.getElementById('telefono').value;
+            const direccion = document.getElementById('direccion').value;
+            const ciudad = document.getElementById('ciudad').value;
+            const departamento = document.getElementById('departamento').value;
+
+            if (!nombre || !telefono || !direccion || !ciudad || !departamento) {
+                e.preventDefault();
+                alert('Por favor, completa todos los campos obligatorios marcados con *');
+                return false;
+            }
+
+            // Mostrar indicador de procesamiento
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...';
+            
+            // Feedback visual para el usuario
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-info mt-3';
+            alertDiv.innerHTML = 'Procesando tu compra. Por favor espera un momento...';
+            checkoutForm.appendChild(alertDiv);
+            
+            return true;
+        });
+    });
+</script>
+{% endblock %} 

@@ -9,6 +9,8 @@ from datetime import timedelta
 import csv
 import xlwt
 import json
+from django.urls import reverse
+import logging
 
 from .models import (
     CategoriaProducto, EstadoProducto, UnidadMedida, ProductoInventario,
@@ -45,7 +47,7 @@ def dashboard_inventario(request):
         cantidad_disponible__lte=F('stock_minimo')
     ).order_by('cantidad_disponible')[:10]
     
-    # Productos más vendidos (últimos 30 días)
+    # Productos más vendidos (últimos 30 días) - Datos de inventario interno
     fecha_inicio = timezone.now() - timedelta(days=30)
     movimientos_salida = MovimientoInventario.objects.filter(
         producto_inventario__propietario=request.user,
@@ -61,10 +63,55 @@ def dashboard_inventario(request):
             producto = ProductoInventario.objects.get(id=movimiento['producto_inventario'], propietario=request.user)
             productos_mas_vendidos.append({
                 'producto': producto,
-                'total_vendido': movimiento['total_vendido']
+                'total_vendido': movimiento['total_vendido'],
+                'origen': 'Inventario'  # Añadir origen para los productos del inventario
             })
         except ProductoInventario.DoesNotExist:
             continue
+    
+    # Obtener datos de ventas del marketplace para los productos vinculados
+    try:
+        from apps.marketplace.models import Producto, DetalleCompra
+        
+        # Obtener ventas del marketplace de los últimos 30 días
+        ventas_marketplace = DetalleCompra.objects.filter(
+            producto__vendedor=request.user,
+            producto__producto_inventario_id__isnull=False,  # Solo productos vinculados al inventario
+            compra__fecha_compra__gte=fecha_inicio
+        ).values('producto__producto_inventario_id').annotate(
+            total_vendido=Sum('cantidad')
+        ).order_by('-total_vendido')[:5]
+        
+        # Incluir datos del marketplace en la lista de productos más vendidos
+        for venta in ventas_marketplace:
+            producto_id = venta['producto__producto_inventario_id']
+            if producto_id:
+                try:
+                    producto = ProductoInventario.objects.get(id=producto_id, propietario=request.user)
+                    
+                    # Verificar si ya existe en la lista para sumar
+                    encontrado = False
+                    for item in productos_mas_vendidos:
+                        if item['producto'].id == producto.id:
+                            item['total_vendido'] += venta['total_vendido']
+                            encontrado = True
+                            break
+                    
+                    if not encontrado:
+                        productos_mas_vendidos.append({
+                            'producto': producto,
+                            'total_vendido': venta['total_vendido'],
+                            'origen': 'Marketplace'
+                        })
+                except ProductoInventario.DoesNotExist:
+                    continue
+        
+        # Reordenar la lista combinada por total vendido
+        productos_mas_vendidos = sorted(productos_mas_vendidos, key=lambda x: x['total_vendido'], reverse=True)[:5]
+        
+    except (ImportError, ModuleNotFoundError):
+        # Si no se puede importar el módulo de marketplace, continuar con los datos actuales
+        pass
     
     # Alertas recientes
     alertas_recientes = AlertaStock.objects.filter(
@@ -139,35 +186,19 @@ def lista_productos(request):
 @login_required
 def crear_producto(request):
     if request.method == 'POST':
-        # Para depuración, podemos ver los datos del POST
-        print("POST data:", request.POST)
-        
         # Asegurarnos de que el propietario esté en los datos del formulario
         data = request.POST.copy()
         if 'propietario' not in data or not data['propietario']:
             data['propietario'] = request.user.id
-        
+            
         form = ProductoInventarioForm(data, user=request.user)
         if form.is_valid():
             try:
                 producto = form.save(commit=False)
-                
-                # Asegurarnos de que el producto tenga un propietario
-                producto.propietario = request.user
-                
-                # Verificar que la categoría seleccionada existe
-                categoria_id = form.cleaned_data.get('categoria_producto')
-                if categoria_id:
-                    producto.save()
-                    messages.success(request, f'Producto "{producto.nombre_producto}" creado exitosamente.')
-                    
-                    # Redirigir a la página de gestión de imágenes si el usuario quiere agregar imágenes
-                    if 'agregar_imagenes' in request.POST:
-                        return redirect('inventario:gestionar_imagenes', producto_id=producto.id)
-                    
-                    return redirect('inventario:detalle_producto', pk=producto.id)
-                else:
-                    messages.error(request, 'Debe seleccionar una categoría para el producto.')
+                producto.propietario = request.user  # Asegurar que el propietario sea el usuario actual
+                producto.save()
+                messages.success(request, f'Producto "{producto.nombre_producto}" creado exitosamente.')
+                return redirect('inventario:detalle_producto', pk=producto.id)
             except Exception as e:
                 messages.error(request, f'Error al crear el producto: {str(e)}')
         else:
@@ -177,15 +208,18 @@ def crear_producto(request):
                     messages.error(request, f'Error en el campo {field}: {error}')
     else:
         form = ProductoInventarioForm(user=request.user)
+        form.fields['propietario'].initial = request.user.id
     
-    # Obtener todas las categorías para el modal de creación rápida
-    categorias = CategoriaProducto.objects.all().order_by('nombre_categoria')
-    estados = EstadoProducto.objects.all()
+    # Obtener solo las categorías de inventario sin duplicados
+    categorias_inventario = CategoriaProducto.objects.all().order_by('nombre_categoria')
+    
+    # Obtener los estados de productos disponibles
+    estados = EstadoProducto.objects.all().order_by('nombre_estado')
     
     context = {
         'form': form,
-        'titulo': 'Crear Nuevo Producto',
-        'categorias': categorias,
+        'titulo': 'Crear Producto',
+        'categorias': categorias_inventario,
         'estados': estados
     }
     
@@ -259,14 +293,18 @@ def editar_producto(request, pk):
     else:
         form = ProductoInventarioForm(instance=producto, user=request.user)
     
-    # Obtener categorías para el modal de creación rápida
-    categorias = CategoriaProducto.objects.all().order_by('nombre_categoria')
+    # Obtener solo las categorías de inventario sin duplicados
+    categorias_inventario = CategoriaProducto.objects.all().order_by('nombre_categoria')
+    
+    # Obtener los estados de productos disponibles
+    estados = EstadoProducto.objects.all().order_by('nombre_estado')
     
     context = {
         'form': form,
         'producto': producto,
         'titulo': 'Editar Producto',
-        'categorias': categorias
+        'categorias': categorias_inventario,
+        'estados': estados
     }
     
     return render(request, 'inventario/producto_form.html', context)
@@ -299,6 +337,7 @@ def lista_movimientos(request):
     tipo = request.GET.get('tipo', '')
     fecha_inicio = request.GET.get('fecha_inicio', '')
     fecha_fin = request.GET.get('fecha_fin', '')
+    producto_id = request.GET.get('producto', '')
     
     # Filtrar movimientos para mostrar solo los que corresponden a productos del usuario actual
     movimientos = MovimientoInventario.objects.filter(producto_inventario__propietario=request.user)
@@ -318,6 +357,9 @@ def lista_movimientos(request):
     
     if fecha_fin:
         movimientos = movimientos.filter(fecha_movimiento__lte=fecha_fin)
+        
+    if producto_id:
+        movimientos = movimientos.filter(producto_inventario_id=producto_id)
     
     # Ordenar por fecha (más reciente primero)
     movimientos = movimientos.order_by('-fecha_movimiento')
@@ -347,8 +389,10 @@ def lista_movimientos(request):
         'fecha_inicio': fecha_inicio,
         'fecha_fin': fecha_fin,
         'productos': productos,
+        'producto_seleccionado': producto_id,
         'usuarios': usuarios
     }
+    
     return render(request, 'inventario/movimiento_list.html', context)
 
 @login_required
@@ -392,13 +436,21 @@ def registrar_movimiento(request):
             
         form = MovimientoInventarioForm(initial=initial_data, user=request.user)
     
+    # Preparar tipos de movimiento para el formulario
+    tipos_movimiento = [
+        ('ENTRADA', 'Entrada'),
+        ('SALIDA', 'Salida'),
+        ('AJUSTE', 'Ajuste')
+    ]
+    
     context = {
         'form': form,
         'titulo': 'Registrar Movimiento de Inventario',
         'producto': form['producto_inventario'] if 'producto_inventario' in form.fields else None,
         'tipo': form['tipo_movimiento'] if 'tipo_movimiento' in form.fields else None,
         'cantidad': form['cantidad_movimiento'] if 'cantidad_movimiento' in form.fields else None,
-        'fecha': None  # Este campo no parece estar en el formulario, pero se usa en la plantilla
+        'fecha': None,  # Este campo no parece estar en el formulario, pero se usa en la plantilla
+        'tipos_movimiento': tipos_movimiento
     }
     return render(request, 'inventario/movimiento_form.html', context)
 
@@ -1029,22 +1081,66 @@ def exportar_informe_inventario(request, formato='excel'):
 # API para obtener información del producto
 @login_required
 def api_producto_info(request):
-    """Vista para obtener información básica de un producto por AJAX"""
-    producto_id = request.GET.get('producto_id')
-    if not producto_id:
-        return JsonResponse({'error': 'Producto no especificado'}, status=400)
+    """API para obtener información de productos, ya sea para un producto específico 
+    o para una búsqueda de productos (utilizado por select2)"""
     
-    try:
-        producto = ProductoInventario.objects.get(pk=producto_id)
-        data = {
-            'cantidad_disponible': producto.cantidad_disponible,
-            'stock_minimo': producto.stock_minimo,
-            'stock_maximo': 0,  # Este campo no está en el modelo, pero se usa en la plantilla
-            'unidad_medida': 'unidades'  # Por defecto, si no hay unidad de medida específica
-        }
-        return JsonResponse(data)
-    except ProductoInventario.DoesNotExist:
-        return JsonResponse({'error': 'Producto no encontrado'}, status=404)
+    # Caso 1: Búsqueda para select2
+    if 'search' in request.GET:
+        search_term = request.GET.get('search', '')
+        page = int(request.GET.get('page', 1))
+        page_size = 10
+        
+        # Filtrar productos basados en el término de búsqueda y que pertenezcan al usuario
+        productos = ProductoInventario.objects.filter(
+            Q(nombre_producto__icontains=search_term) | 
+            Q(descripcion_producto__icontains=search_term),
+            propietario=request.user
+        ).order_by('nombre_producto')
+        
+        # Paginación básica
+        start = (page - 1) * page_size
+        end = start + page_size
+        
+        # Formatear resultados para select2
+        results = []
+        for producto in productos[start:end]:
+            results.append({
+                'id': producto.id,
+                'text': f"{producto.nombre_producto} (Stock: {producto.cantidad_disponible})"
+            })
+        
+        # Determinar si hay más resultados
+        has_more = productos.count() > (page * page_size)
+        
+        return JsonResponse({
+            'results': results,
+            'pagination': {
+                'more': has_more
+            }
+        })
+    
+    # Caso 2: Información detallada de un producto específico
+    elif 'producto_id' in request.GET:
+        producto_id = request.GET.get('producto_id')
+        try:
+            producto = get_object_or_404(ProductoInventario, id=producto_id, propietario=request.user)
+            
+            # Devolver información detallada del producto
+            return JsonResponse({
+                'id': producto.id,
+                'nombre': producto.nombre_producto,
+                'cantidad_disponible': producto.cantidad_disponible,
+                'stock_minimo': producto.stock_minimo,
+                'stock_maximo': getattr(producto, 'stock_maximo', None),
+                'unidad_medida': getattr(producto, 'unidad_medida', ''),
+                'precio_venta': float(producto.precio_venta),
+                'precio_compra': float(producto.precio_compra)
+            })
+        except ProductoInventario.DoesNotExist:
+            return JsonResponse({'error': 'Producto no encontrado'}, status=404)
+    
+    # Caso por defecto: Parámetros incorrectos
+    return JsonResponse({'error': 'Parámetros de búsqueda incorrectos'}, status=400)
 
 # Vistas para Categorías de Productos
 @login_required
@@ -1079,6 +1175,26 @@ def crear_categoria(request):
                 return redirect('inventario:lista_categorias')
             
             categoria.save()
+            
+            # También crear la categoría en marketplace para mantener la sincronización
+            try:
+                from apps.marketplace.models import CategoriaProducto as CategoriaMarketplace
+                from django.utils.text import slugify
+                
+                # Crear la categoría en marketplace si no existe
+                CategoriaMarketplace.objects.get_or_create(
+                    nombre=categoria.nombre_categoria,
+                    defaults={
+                        'descripcion': categoria.descripcion,
+                        'slug': slugify(categoria.nombre_categoria),
+                        'activa': True
+                    }
+                )
+            except:
+                # Si hay algún error al crear la categoría en marketplace, continuamos
+                # ya que lo importante es que se cree en inventario
+                pass
+            
             messages.success(request, 'Categoría creada correctamente.')
             return redirect('inventario:lista_categorias')
         else:
@@ -1109,6 +1225,9 @@ def editar_categoria(request, pk):
         categoria.save()
         messages.info(request, "Esta categoría no tenía propietario y se ha asignado a tu cuenta.")
     
+    # Guardar el nombre original para detectar cambios
+    nombre_original = categoria.nombre_categoria
+    
     if request.method == 'POST':
         form = CategoriaProductoForm(request.POST, instance=categoria, user=request.user)
         if form.is_valid():
@@ -1116,7 +1235,7 @@ def editar_categoria(request, pk):
             categoria_actualizada.propietario = request.user  # Asegurar que el propietario siga siendo el usuario actual
             
             # Verificar si el nuevo nombre ya existe en otra categoría del usuario
-            if categoria_actualizada.nombre_categoria != categoria.nombre_categoria:
+            if categoria_actualizada.nombre_categoria != nombre_original:
                 categoria_existente = CategoriaProducto.objects.filter(
                     nombre_categoria=categoria_actualizada.nombre_categoria,
                     propietario=request.user
@@ -1127,6 +1246,33 @@ def editar_categoria(request, pk):
                     return redirect('inventario:editar_categoria', pk=categoria.pk)
             
             categoria_actualizada.save()
+            
+            # Actualizar también la categoría en marketplace
+            try:
+                from apps.marketplace.models import CategoriaProducto as CategoriaMarketplace
+                from django.utils.text import slugify
+                
+                # Buscar la categoría en marketplace por el nombre original
+                categoria_marketplace = CategoriaMarketplace.objects.filter(nombre=nombre_original).first()
+                
+                if categoria_marketplace:
+                    # Si se encontró, actualizar sus datos
+                    categoria_marketplace.nombre = categoria_actualizada.nombre_categoria
+                    categoria_marketplace.descripcion = categoria_actualizada.descripcion
+                    categoria_marketplace.slug = slugify(categoria_actualizada.nombre_categoria)
+                    categoria_marketplace.save()
+                else:
+                    # Si no se encontró, crear una nueva
+                    CategoriaMarketplace.objects.create(
+                        nombre=categoria_actualizada.nombre_categoria,
+                        descripcion=categoria_actualizada.descripcion,
+                        slug=slugify(categoria_actualizada.nombre_categoria),
+                        activa=True
+                    )
+            except:
+                # Si hay algún error al actualizar la categoría en marketplace, continuamos
+                pass
+            
             messages.success(request, 'Categoría actualizada correctamente.')
             return redirect('inventario:lista_categorias')
         else:
@@ -1144,21 +1290,38 @@ def editar_categoria(request, pk):
 
 @login_required
 def eliminar_categoria(request, pk):
-    """Vista para eliminar una categorÃ­a"""
+    """Vista para eliminar una categoría"""
     categoria = get_object_or_404(CategoriaProducto, pk=pk)
     
     if request.method == 'POST':
         try:
+            # Guardar el nombre para usarlo después de eliminar
+            nombre_categoria = categoria.nombre_categoria
+            
+            # Eliminar la categoría
             categoria.delete()
-            messages.success(request, 'CategorÃ­a eliminada correctamente.')
+            
+            # Intentar eliminar también la categoría correspondiente en marketplace
+            try:
+                from apps.marketplace.models import CategoriaProducto as CategoriaMarketplace
+                
+                # Buscar y eliminar la categoría en marketplace por nombre
+                categoria_marketplace = CategoriaMarketplace.objects.filter(nombre=nombre_categoria).first()
+                if categoria_marketplace:
+                    categoria_marketplace.delete()
+            except:
+                # Si hay algún error al eliminar la categoría en marketplace, continuamos
+                pass
+            
+            messages.success(request, 'Categoría eliminada correctamente.')
             return redirect('inventario:lista_categorias')
         except ProtectedError:
-            messages.error(request, 'No se puede eliminar esta categorÃ­a porque estÃ¡ en uso.')
+            messages.error(request, 'No se puede eliminar esta categoría porque está en uso.')
             return redirect('inventario:lista_categorias')
     
     return render(request, 'inventario/categoria_confirm_delete.html', {
         'categoria': categoria,
-        'titulo': 'Eliminar CategorÃ­a'
+        'titulo': 'Eliminar Categoría'
     })
 
 # Vistas para Estados de Productos
@@ -1273,6 +1436,25 @@ def api_crear_categoria(request):
             categoria_padre=categoria_padre,
             propietario=request.user  # Asignar el usuario actual como propietario
         )
+        
+        # También crear la categoría en marketplace para mantener la sincronización
+        try:
+            from apps.marketplace.models import CategoriaProducto as CategoriaMarketplace
+            from django.utils.text import slugify
+            
+            # Crear la categoría en marketplace si no existe
+            CategoriaMarketplace.objects.get_or_create(
+                nombre=nombre,
+                defaults={
+                    'descripcion': descripcion,
+                    'slug': slugify(nombre),
+                    'activa': True
+                }
+            )
+        except:
+            # Si hay algún error al crear la categoría en marketplace, continuamos
+            # ya que lo importante es que se cree en inventario
+            pass
         
         return JsonResponse({
             'success': True,
@@ -1876,8 +2058,15 @@ def eliminar_todas(request):
 @login_required
 def obtener_contador_notificaciones(request):
     """Vista API para obtener el contador de notificaciones no leídas"""
-    count = Notificacion.objects.filter(usuario=request.user, leida=False).count()
-    return JsonResponse({'count': count})
+    try:
+        count = Notificacion.objects.filter(usuario=request.user, leida=False).count()
+        # Usar un identificador seguro para el usuario
+        user_ident = getattr(request.user, 'email', getattr(request.user, 'id', 'desconocido'))
+        print(f"Usuario ID:{user_ident} tiene {count} notificaciones no leídas")
+        return JsonResponse({'count': count})
+    except Exception as e:
+        print(f"Error al obtener contador de notificaciones: {str(e)}")
+        return JsonResponse({'count': 0, 'error': str(e)}, status=500)
 
 @login_required
 def obtener_notificaciones_recientes(request):
@@ -1942,7 +2131,10 @@ def generar_notificacion_prueba(request):
             enlace=request.POST.get('enlace', reverse('inventario:dashboard'))
         )
         
+        # Usar identificador seguro del usuario
+        user_ident = getattr(request.user, 'email', getattr(request.user, 'id', 'desconocido'))
         messages.success(request, f"Notificación de prueba creada: {titulo}")
+        print(f"Notificación de prueba creada para usuario ID:{user_ident}: {notificacion.titulo}")
         
         # Redirigir a la lista de notificaciones o de vuelta a la página de generación
         return redirect('inventario:lista_notificaciones')
@@ -1953,3 +2145,359 @@ def generar_notificacion_prueba(request):
         'niveles_notificacion': Notificacion.NIVEL_CHOICES,
     }
     return render(request, 'inventario/notificaciones/generar_prueba.html', context)
+
+@login_required
+def sincronizar_categorias(request):
+    """Vista para sincronizar todas las categorías entre inventario y marketplace"""
+    
+    if not request.user.is_staff:
+        messages.error(request, "No tienes permisos para realizar esta acción.")
+        return redirect('inventario:lista_categorias')
+    
+    try:
+        from apps.marketplace.models import CategoriaProducto as CategoriaMarketplace
+        from django.utils.text import slugify
+        
+        # Mapeo para categorías con nombres similares pero diferentes
+        nombre_mapping = {
+            # Inventario nombre -> Marketplace nombre
+            'Hidroponía': 'Cultivos Hidropónicos',
+            'Acuaponía': 'Cultivos Acuapónicos',
+            # Agregar otros mapeos según sea necesario
+        }
+        
+        # Mapeo inverso
+        nombre_mapping_inverso = {v: k for k, v in nombre_mapping.items()}
+        
+        # Sincronizar categorías de inventario a marketplace
+        categorias_inventario = CategoriaProducto.objects.all()
+        contador_creadas = 0
+        contador_actualizadas = 0
+        
+        for categoria_inv in categorias_inventario:
+            # Verificar si existe un mapeo para este nombre
+            marketplace_nombre = nombre_mapping.get(categoria_inv.nombre_categoria, categoria_inv.nombre_categoria)
+            
+            # Buscar la categoría en marketplace (por nombre directo o slug)
+            try:
+                cat_marketplace = CategoriaMarketplace.objects.get(
+                    models.Q(nombre=marketplace_nombre) | 
+                    models.Q(slug=slugify(marketplace_nombre))
+                )
+                # Actualizar la descripción si es diferente
+                if cat_marketplace.descripcion != categoria_inv.descripcion:
+                    cat_marketplace.descripcion = categoria_inv.descripcion
+                    cat_marketplace.save()
+                    contador_actualizadas += 1
+            except CategoriaMarketplace.DoesNotExist:
+                # Crear si no existe
+                cat_marketplace = CategoriaMarketplace.objects.create(
+                    nombre=marketplace_nombre,
+                    descripcion=categoria_inv.descripcion,
+                    slug=slugify(marketplace_nombre),
+                    activa=True
+                )
+                contador_creadas += 1
+        
+        # Sincronizar categorías de marketplace a inventario
+        categorias_marketplace = CategoriaMarketplace.objects.filter(activa=True)
+        contador_creadas_inv = 0
+        contador_actualizadas_inv = 0
+        
+        for categoria_market in categorias_marketplace:
+            # Verificar si existe un mapeo inverso para este nombre
+            inventario_nombre = nombre_mapping_inverso.get(categoria_market.nombre, categoria_market.nombre)
+            
+            # Buscar la categoría en inventario
+            try:
+                cat_inv = CategoriaProducto.objects.get(nombre_categoria=inventario_nombre)
+                # Actualizar la descripción si es diferente
+                if cat_inv.descripcion != categoria_market.descripcion:
+                    cat_inv.descripcion = categoria_market.descripcion
+                    cat_inv.save()
+                    contador_actualizadas_inv += 1
+            except CategoriaProducto.DoesNotExist:
+                # Crear si no existe
+                cat_inv = CategoriaProducto.objects.create(
+                    nombre_categoria=inventario_nombre,
+                    descripcion=categoria_market.descripcion,
+                    propietario=request.user
+                )
+                contador_creadas_inv += 1
+                
+                # Si la categoría tiene una categoría padre en marketplace, buscar su equivalente en inventario
+                if hasattr(categoria_market, 'categoria_padre') and categoria_market.categoria_padre:
+                    padre_nombre = nombre_mapping_inverso.get(
+                        categoria_market.categoria_padre.nombre, 
+                        categoria_market.categoria_padre.nombre
+                    )
+                    try:
+                        cat_padre = CategoriaProducto.objects.get(nombre_categoria=padre_nombre)
+                        cat_inv.categoria_padre = cat_padre
+                        cat_inv.save()
+                    except CategoriaProducto.DoesNotExist:
+                        # Si no existe, se deja sin categoría padre
+                        pass
+        
+        messages.success(
+            request, 
+            f'Sincronización completada. Se crearon {contador_creadas} categorías en marketplace y {contador_creadas_inv} en inventario. '
+            f'Se actualizaron {contador_actualizadas} en marketplace y {contador_actualizadas_inv} en inventario.'
+        )
+        
+    except Exception as e:
+        messages.error(request, f'Error al sincronizar categorías: {str(e)}')
+    
+    return redirect('inventario:lista_categorias')
+
+@login_required
+def diagnosticar_categorias(request):
+    """Vista para diagnosticar y reparar problemas con las categorías"""
+    
+    if not request.user.is_staff:
+        messages.error(request, "No tienes permisos para realizar esta acción.")
+        return redirect('inventario:lista_categorias')
+    
+    # Verificar si estamos en modo de reparación
+    fix_mode = 'fix' in request.GET
+    
+    # Diagnóstico de categorías
+    from django.db.models import Count
+    
+    # Buscar categorías duplicadas
+    duplicates = CategoriaProducto.objects.values('nombre_categoria') \
+                                        .annotate(count=Count('id')) \
+                                        .filter(count__gt=1) \
+                                        .order_by('-count')
+    
+    duplicate_categories = []
+    for dup in duplicates:
+        cats = CategoriaProducto.objects.filter(nombre_categoria=dup['nombre_categoria']).order_by('id')
+        cats_info = []
+        for cat in cats:
+            products_count = ProductoInventario.objects.filter(categoria_producto=cat).count()
+            cats_info.append({
+                'id': cat.id,
+                'descripcion': cat.descripcion,
+                'productos': products_count
+            })
+        duplicate_categories.append({
+            'nombre': dup['nombre_categoria'],
+            'count': dup['count'],
+            'categorias': cats_info
+        })
+    
+    # Categorías similares con diferentes nombres
+    similarity_pairs = [
+        ('Hidroponía', 'Cultivos Hidropónicos'),
+        ('Acuaponía', 'Cultivos Acuapónicos'),
+    ]
+    
+    similar_categories = []
+    for name1, name2 in similarity_pairs:
+        cat1 = CategoriaProducto.objects.filter(nombre_categoria=name1).first()
+        cat2 = CategoriaProducto.objects.filter(nombre_categoria=name2).first()
+        
+        if cat1 and cat2:
+            products_count1 = ProductoInventario.objects.filter(categoria_producto=cat1).count()
+            products_count2 = ProductoInventario.objects.filter(categoria_producto=cat2).count()
+            
+            similar_categories.append({
+                'pair': [name1, name2],
+                'categories': [
+                    {
+                        'id': cat1.id,
+                        'nombre': cat1.nombre_categoria,
+                        'descripcion': cat1.descripcion,
+                        'productos': products_count1
+                    },
+                    {
+                        'id': cat2.id,
+                        'nombre': cat2.nombre_categoria,
+                        'descripcion': cat2.descripcion,
+                        'productos': products_count2
+                    }
+                ]
+            })
+    
+    # Estadísticas generales
+    total_categories = CategoriaProducto.objects.count()
+    main_categories = CategoriaProducto.objects.filter(categoria_padre__isnull=True).count()
+    sub_categories = total_categories - main_categories
+    unused_categories = CategoriaProducto.objects.annotate(
+        num_products=Count('productoinventario')
+    ).filter(num_products=0).count()
+    
+    # Top categorías por número de productos
+    top_categories = CategoriaProducto.objects.annotate(
+        num_products=Count('productoinventario')
+    ).filter(num_products__gt=0).order_by('-num_products')[:10]
+    
+    top_categories_list = []
+    for cat in top_categories:
+        top_categories_list.append({
+            'id': cat.id,
+            'nombre': cat.nombre_categoria,
+            'productos': cat.num_products
+        })
+    
+    # Aplicar correcciones si estamos en modo fix
+    if fix_mode:
+        # Función para fusionar categorías duplicadas
+        def merge_categories(categories_to_merge):
+            for category_name, cats_info in categories_to_merge.items():
+                if len(cats_info) <= 1:
+                    continue
+                
+                # Ordenar por ID para mantener la más antigua
+                sorted_cats = sorted(cats_info, key=lambda x: x['id'])
+                keeper = CategoriaProducto.objects.get(id=sorted_cats[0]['id'])
+                
+                for cat_info in sorted_cats[1:]:
+                    category = CategoriaProducto.objects.get(id=cat_info['id'])
+                    # Actualizar productos
+                    ProductoInventario.objects.filter(categoria_producto=category).update(
+                        categoria_producto=keeper
+                    )
+                    # Actualizar subcategorías
+                    CategoriaProducto.objects.filter(categoria_padre=category).update(
+                        categoria_padre=keeper
+                    )
+                    # Eliminar categoría duplicada
+                    category.delete()
+        
+        # Preparar información para la fusión
+        categories_to_merge = {}
+        for dup in duplicate_categories:
+            categories_to_merge[dup['nombre']] = dup['categorias']
+        
+        # Fusionar categorías
+        merge_categories(categories_to_merge)
+        
+        # Fusionar categorías similares
+        for similar in similar_categories:
+            cat1 = similar['categories'][0]
+            cat2 = similar['categories'][1]
+            
+            # Mantener la que tiene más productos
+            if cat1['productos'] >= cat2['productos']:
+                keeper = CategoriaProducto.objects.get(id=cat1['id'])
+                to_remove = CategoriaProducto.objects.get(id=cat2['id'])
+            else:
+                keeper = CategoriaProducto.objects.get(id=cat2['id'])
+                to_remove = CategoriaProducto.objects.get(id=cat1['id'])
+            
+            # Actualizar productos
+            ProductoInventario.objects.filter(categoria_producto=to_remove).update(
+                categoria_producto=keeper
+            )
+            # Actualizar subcategorías
+            CategoriaProducto.objects.filter(categoria_padre=to_remove).update(
+                categoria_padre=keeper
+            )
+            # Eliminar categoría
+            to_remove.delete()
+        
+        messages.success(request, "Se han fusionado las categorías duplicadas y similares correctamente.")
+        return redirect('inventario:lista_categorias')
+    
+    context = {
+        'titulo': 'Diagnóstico de Categorías',
+        'total_categories': total_categories,
+        'main_categories': main_categories,
+        'sub_categories': sub_categories,
+        'unused_categories': unused_categories,
+        'top_categories': top_categories_list,
+        'duplicate_categories': duplicate_categories,
+        'similar_categories': similar_categories,
+        'fix_mode': fix_mode
+    }
+    
+    return render(request, 'inventario/categoria_diagnostico.html', context)
+
+@login_required
+def crear_notificacion_prueba_api(request):
+    """Vista API para crear una notificación de prueba rápidamente"""
+    from .utils import enviar_notificacion_usuario
+    from django.utils.crypto import get_random_string
+    
+    try:
+        notificacion = enviar_notificacion_usuario(
+            usuario=request.user,
+            titulo=f"Notificación de prueba API ({get_random_string(4)})",
+            mensaje=f"Esta es una notificación de prueba creada mediante API el {timezone.now().strftime('%d/%m/%Y %H:%M:%S')}",
+            tipo='SISTEMA',
+            nivel='INFO'
+        )
+        
+        # Usar un identificador seguro para el usuario
+        user_ident = getattr(request.user, 'email', getattr(request.user, 'id', 'desconocido'))
+        print(f"Notificación de prueba creada para usuario ID:{user_ident}: {notificacion.titulo}")
+        return JsonResponse({
+            'success': True, 
+            'notificacion_id': notificacion.id,
+            'total_notificaciones': Notificacion.objects.filter(usuario=request.user).count(),
+            'no_leidas': Notificacion.objects.filter(usuario=request.user, leida=False).count()
+        })
+    except Exception as e:
+        print(f"Error al crear notificación de prueba: {str(e)}")
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@login_required
+def crear_alerta_stock_prueba(request):
+    """
+    Vista para crear una notificación de alerta de stock bajo de prueba
+    """
+    from django.db.models import F
+    
+    try:
+        # Buscar un producto que pertenezca al usuario actual
+        producto = ProductoInventario.objects.filter(propietario=request.user).first()
+        
+        if not producto:
+            messages.error(request, "No se encontró ningún producto para este usuario")
+            return redirect('inventario:lista_notificaciones')
+        
+        # Actualizar temporalmente el producto para simular stock bajo
+        stock_original = producto.cantidad_disponible
+        minimo_original = producto.stock_minimo
+        
+        # Asegurar que el stock sea menor que el mínimo
+        if producto.cantidad_disponible >= producto.stock_minimo:
+            producto.cantidad_disponible = max(1, producto.stock_minimo - 5)
+            producto.save(update_fields=['cantidad_disponible'])
+        
+        # Crear alerta de stock
+        alerta = AlertaStock.objects.create(
+            producto_inventario=producto,
+            cantidad_disponible=producto.cantidad_disponible
+        )
+        
+        # Imprimir información de depuración
+        user_ident = getattr(request.user, 'email', getattr(request.user, 'id', 'desconocido'))
+        print(f"Alerta de stock bajo creada manualmente: Producto {producto.nombre_producto} (ID:{producto.id})")
+        print(f"Usuario: {user_ident}")
+        print(f"Stock: {producto.cantidad_disponible}, Mínimo: {producto.stock_minimo}")
+        
+        # Restaurar valores originales si se modificaron
+        if stock_original != producto.cantidad_disponible:
+            producto.cantidad_disponible = stock_original
+            producto.save(update_fields=['cantidad_disponible'])
+        
+        # Verificar si se creó la notificación
+        notificacion = Notificacion.objects.filter(
+            usuario=request.user,
+            tipo='STOCK_BAJO',
+            leida=False
+        ).order_by('-fecha_creacion').first()
+        
+        if notificacion:
+            messages.success(request, f"Notificación de stock bajo creada: {notificacion.titulo}")
+        else:
+            messages.warning(request, "Se creó la alerta pero no se detectó notificación asociada")
+            
+        return redirect('inventario:lista_notificaciones')
+    
+    except Exception as e:
+        messages.error(request, f"Error al crear alerta de stock bajo: {str(e)}")
+        return redirect('inventario:lista_notificaciones')
